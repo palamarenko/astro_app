@@ -1,0 +1,156 @@
+<resources>
+    <!-- App / Navigation -->
+    <string name="nav_horoscope">Гороскоп</string>
+    <string name="nav_tarot">Таро</string>
+    <string name="nav_compatibility">Союз</string>
+    <string name="nav_profile">Профиль</string>
+
+    <!-- Sign Picker Screen -->
+    <string name="sign_picker_label">ЗВЁЗДНОЕ ВРЕМЯ</string>
+    <string name="sign_picker_title1">Ваш знак</string>
+    <string name="sign_picker_title2">зодиака</string>
+    <string name="sign_picker_subtitle">Выберите свой знак, чтобы узнать предсказание</string>
+
+    <!-- Horoscope Screen -->
+    <string name="horoscope_back">←</string>
+    <string name="horoscope_select_period">Выберите период</string>
+    <string name="horoscope_error">Звёзды недоступны: %s</string>
+    <string name="horoscope_tab_today">Сегодня</string>
+    <string name="horoscope_tab_week">Неделя</string>
+    <string name="horoscope_tab_month">Месяц</string>
+    <string name="horoscope_score_love">Любовь</string>
+    <string name="horoscope_score_career">Карьера</string>
+    <string name="horoscope_score_health">Здоровье</string>
+    <string name="horoscope_score_energy">Энергия</string>
+
+    <!-- Tarot Screen -->
+    <string name="tarot_label">МИСТИКА КАРТ</string>
+    <string name="tarot_title1">Расклад</string>
+    <string name="tarot_title2">Таро</string>
+    <string name="tarot_position_past">Прошлое</string>
+    <string name="tarot_position_present">Настоящее</string>
+    <string name="tarot_position_future">Будущее</string>
+    <string name="tarot_btn_loading">Звёзды говорят…</string>
+    <string name="tarot_btn_open">✦  Открыть карты  ✦</string>
+    <string name="tarot_summary_label">✦ ОБЩИЙ ВЫВОД ✦</string>
+    <string name="tarot_reversed">ПЕРЕВЁРН.</string>
+
+    <!-- Compatibility Screen -->
+    <string name="compat_label">СОЮЗ ЗВЁЗД</string>
+    <string name="compat_title1">Совмести-</string>
+    <string name="compat_title2">мость</string>
+    <string name="compat_sign1">Первый знак</string>
+    <string name="compat_sign2">Второй знак</string>
+    <string name="compat_select_sign1">Выберите первый знак</string>
+    <string name="compat_select_sign2">Выберите второй знак</string>
+    <string name="compat_strengths">Сила союза</string>
+    <string name="compat_challenges">Испытание</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_btn_close">✕  Закрыть</string>
+    <string name="profile_btn_change">Изменить знак</string>
+    <string name="profile_stat_element">Элемент</string>
+    <string name="profile_stat_planet">Планета</string>
+    <string name="profile_stat_period">Период</string>
+    <string name="profile_insight_label">✦ ВАША СУТЬ ✦</string>
+    <string name="profile_insight_loading">Загадка звёзд раскрывается…</string>
+
+    <!-- Zodiac Signs -->
+    <string name="sign_aries">Овен</string>
+    <string name="sign_taurus">Телец</string>
+    <string name="sign_gemini">Близнецы</string>
+    <string name="sign_cancer">Рак</string>
+    <string name="sign_leo">Лев</string>
+    <string name="sign_virgo">Дева</string>
+    <string name="sign_libra">Весы</string>
+    <string name="sign_scorpio">Скорпион</string>
+    <string name="sign_sagittarius">Стрелец</string>
+    <string name="sign_capricorn">Козерог</string>
+    <string name="sign_aquarius">Водолей</string>
+    <string name="sign_pisces">Рыбы</string>
+
+    <!-- Elements -->
+    <string name="element_fire">Огонь</string>
+    <string name="element_earth">Земля</string>
+    <string name="element_air">Воздух</string>
+    <string name="element_water">Вода</string>
+
+    <!-- Planets -->
+    <string name="planet_mars">Марс</string>
+    <string name="planet_venus">Венера</string>
+    <string name="planet_mercury">Меркурий</string>
+    <string name="planet_moon">Луна</string>
+    <string name="planet_sun">Солнце</string>
+    <string name="planet_jupiter">Юпитер</string>
+    <string name="planet_saturn">Сатурн</string>
+    <string name="planet_uranus">Уран</string>
+    <string name="planet_neptune">Нептун</string>
+    <string name="planet_pluto">Плутон</string>
+
+    <!-- Zodiac dates -->
+    <string name="dates_aries">21 мар – 19 апр</string>
+    <string name="dates_taurus">20 апр – 20 май</string>
+    <string name="dates_gemini">21 май – 20 июн</string>
+    <string name="dates_cancer">21 июн – 22 июл</string>
+    <string name="dates_leo">23 июл – 22 авг</string>
+    <string name="dates_virgo">23 авг – 22 сен</string>
+    <string name="dates_libra">23 сен – 22 окт</string>
+    <string name="dates_scorpio">23 окт – 21 ноя</string>
+    <string name="dates_sagittarius">22 ноя – 21 дек</string>
+    <string name="dates_capricorn">22 дек – 19 янв</string>
+    <string name="dates_aquarius">20 янв – 18 фев</string>
+    <string name="dates_pisces">19 фев – 20 мар</string>
+
+    <!-- Tarot card names -->
+    <string name="tarot_fool">Шут</string>
+    <string name="tarot_magician">Маг</string>
+    <string name="tarot_high_priestess">Верховная жрица</string>
+    <string name="tarot_empress">Императрица</string>
+    <string name="tarot_emperor">Император</string>
+    <string name="tarot_hierophant">Иерофант</string>
+    <string name="tarot_lovers">Влюблённые</string>
+    <string name="tarot_chariot">Колесница</string>
+    <string name="tarot_strength">Сила</string>
+    <string name="tarot_hermit">Отшельник</string>
+    <string name="tarot_wheel">Колесо Фортуны</string>
+    <string name="tarot_justice">Справедливость</string>
+    <string name="tarot_hanged">Повешенный</string>
+    <string name="tarot_death">Смерть</string>
+    <string name="tarot_temperance">Умеренность</string>
+    <string name="tarot_devil">Дьявол</string>
+    <string name="tarot_tower">Башня</string>
+    <string name="tarot_star">Звезда</string>
+    <string name="tarot_moon">Луна</string>
+    <string name="tarot_sun">Солнце</string>
+    <string name="tarot_judgement">Суд</string>
+    <string name="tarot_world">Мир</string>
+
+    <!-- Tarot keywords -->
+    <string name="tarot_kw_fool">Начало, свобода, риск</string>
+    <string name="tarot_kw_magician">Воля, мастерство, действие</string>
+    <string name="tarot_kw_high_priestess">Интуиция, тайна, мудрость</string>
+    <string name="tarot_kw_empress">Плодородие, красота, забота</string>
+    <string name="tarot_kw_emperor">Власть, структура, защита</string>
+    <string name="tarot_kw_hierophant">Традиция, духовность, обряд</string>
+    <string name="tarot_kw_lovers">Союз, выбор, гармония</string>
+    <string name="tarot_kw_chariot">Победа, контроль, движение</string>
+    <string name="tarot_kw_strength">Мужество, терпение, страсть</string>
+    <string name="tarot_kw_hermit">Одиночество, поиск, мудрость</string>
+    <string name="tarot_kw_wheel">Судьба, цикл, удача</string>
+    <string name="tarot_kw_justice">Баланс, истина, закон</string>
+    <string name="tarot_kw_hanged">Жертва, пауза, откровение</string>
+    <string name="tarot_kw_death">Трансформация, конец, обновление</string>
+    <string name="tarot_kw_temperance">Равновесие, терпение, цель</string>
+    <string name="tarot_kw_devil">Искушение, цепи, страсть</string>
+    <string name="tarot_kw_tower">Потрясение, перемены, кризис</string>
+    <string name="tarot_kw_star">Надежда, вдохновение, мечта</string>
+    <string name="tarot_kw_moon">Иллюзия, страх, подсознание</string>
+    <string name="tarot_kw_sun">Радость, успех, жизненность</string>
+    <string name="tarot_kw_judgement">Пробуждение, прощение, призыв</string>
+    <string name="tarot_kw_world">Завершение, единство, триумф</string>
+
+    <!-- HoroscopePeriod prompts for AI -->
+    <string name="period_today_prompt">на сегодня</string>
+    <string name="period_week_prompt">на эту неделю</string>
+    <string name="period_month_prompt">на этот месяц</string>
+</resources>
