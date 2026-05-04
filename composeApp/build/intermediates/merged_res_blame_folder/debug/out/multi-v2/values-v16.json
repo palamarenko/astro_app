@@ -4,7 +4,7 @@
             "outputFile": "com.astro.app.composeApp-mergeDebugResources-44:/values-v16/values-v16.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\palam\\.gradle\\caches\\transforms-3\\1c7fb0ddd16fa406d9066b3cb1e8bb15\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
+                    "source": "C:\\Users\\palam\\.gradle\\caches\\transforms-3\\5310dbc4f593ec79843744ac8ab9a361\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\palam\\.gradle\\caches\\transforms-3\\ec2bbe107c4381335e7e317cca9f350a\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
+                    "source": "C:\\Users\\palam\\.gradle\\caches\\transforms-3\\14426649fdf4392406ad58a1d86810bb\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

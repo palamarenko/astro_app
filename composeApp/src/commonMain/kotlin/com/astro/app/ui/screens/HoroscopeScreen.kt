@@ -63,7 +63,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                 }
             }
             Spacer(Modifier.height(Spacing.xl))
-            PeriodTabs(selected = state.period, onSelect = { vm.setPeriod(it, it.localizedPrompt(s)) })
+            PeriodTabs(selected = state.period, onSelect = { vm.setPeriod(it) })
             Spacer(Modifier.height(Spacing.l))
             AnimatedContent(
                 targetState = state,
@@ -77,7 +77,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                         Column {
                             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.m)).background(AppColors.Card).padding(18.dp)) {
                                 Column {
-                                    SectionLabel(h.keyword.uppercase())
+                                    SectionLabel("text")
                                     Spacer(Modifier.height(Spacing.s))
                                     Text(text = h.text, fontSize = AppType.bodyLg, fontStyle = FontStyle.Italic,
                                         fontWeight = FontWeight.Light, color = AppColors.TextSecondary,

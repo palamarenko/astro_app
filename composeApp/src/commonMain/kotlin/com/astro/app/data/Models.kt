@@ -4,26 +4,27 @@ import kotlinx.serialization.Serializable
 
 // ── Zodiac ───────────────────────────────────────────────────────────────────
 data class ZodiacSign(
-    val name: String,   // always RU (used as API key internally)
+    val id: String,     // English slug (e.g. "aries")
+    val name: String,   // RU display name
     val emoji: String,
-    val dates: String,  // always RU (used as fallback)
+    val dates: String,  // RU display dates
     val element: String,
     val planet: String,
 )
 
 val ALL_SIGNS = listOf(
-    ZodiacSign("Овен",     "♈", "21 мар – 19 апр", "Огонь",  "Марс"),
-    ZodiacSign("Телец",    "♉", "20 апр – 20 май", "Земля",  "Венера"),
-    ZodiacSign("Близнецы", "♊", "21 май – 20 июн", "Воздух", "Меркурий"),
-    ZodiacSign("Рак",      "♋", "21 июн – 22 июл", "Вода",   "Луна"),
-    ZodiacSign("Лев",      "♌", "23 июл – 22 авг", "Огонь",  "Солнце"),
-    ZodiacSign("Дева",     "♍", "23 авг – 22 сен", "Земля",  "Меркурий"),
-    ZodiacSign("Весы",     "♎", "23 сен – 22 окт", "Воздух", "Венера"),
-    ZodiacSign("Скорпион", "♏", "23 окт – 21 ноя", "Вода",   "Плутон"),
-    ZodiacSign("Стрелец",  "♐", "22 ноя – 21 дек", "Огонь",  "Юпитер"),
-    ZodiacSign("Козерог",  "♑", "22 дек – 19 янв", "Земля",  "Сатурн"),
-    ZodiacSign("Водолей",  "♒", "20 янв – 18 фев", "Воздух", "Уран"),
-    ZodiacSign("Рыбы",     "♓", "19 фев – 20 мар", "Вода",   "Нептун"),
+    ZodiacSign("aries",       "Овен",     "♈", "21 мар – 19 апр", "Огонь",  "Марс"),
+    ZodiacSign("taurus",      "Телец",    "♉", "20 апр – 20 май", "Земля",  "Венера"),
+    ZodiacSign("gemini",      "Близнецы", "♊", "21 май – 20 июн", "Воздух", "Меркурий"),
+    ZodiacSign("cancer",      "Рак",      "♋", "21 июн – 22 июл", "Вода",   "Луна"),
+    ZodiacSign("leo",         "Лев",      "♌", "23 июл – 22 авг", "Огонь",  "Солнце"),
+    ZodiacSign("virgo",       "Дева",     "♍", "23 авг – 22 сен", "Земля",  "Меркурий"),
+    ZodiacSign("libra",       "Весы",     "♎", "23 сен – 22 окт", "Воздух", "Венера"),
+    ZodiacSign("scorpio",     "Скорпион", "♏", "23 окт – 21 ноя", "Вода",   "Плутон"),
+    ZodiacSign("sagittarius", "Стрелец",  "♐", "22 ноя – 21 дек", "Огонь",  "Юпитер"),
+    ZodiacSign("capricorn",   "Козерог",  "♑", "22 дек – 19 янв", "Земля",  "Сатурн"),
+    ZodiacSign("aquarius",    "Водолей",  "♒", "20 янв – 18 фев", "Воздух", "Уран"),
+    ZodiacSign("pisces",      "Рыбы",     "♓", "19 фев – 20 мар", "Вода",   "Нептун"),
 )
 
 // ── Tarot ────────────────────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ val ALL_TAROT = listOf(
 // ── API Response models ───────────────────────────────────────────────────────
 @Serializable
 data class HoroscopeResponse(
-    val text: String, val keyword: String,
+    val text: String,
     val love: Int, val career: Int, val health: Int, val energy: Int,
 )
 
@@ -80,11 +81,10 @@ data class TarotReadingResponse(
 )
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
-// label and promptRu kept for fallback; use localizedLabel() / localizedPrompt() in UI
-enum class HoroscopePeriod(val label: String, val promptRu: String) {
-    TODAY("Сегодня", "на сегодня"),
-    WEEK("Неделя",   "на эту неделю"),
-    MONTH("Месяц",   "на этот месяц"),
+enum class HoroscopePeriod(val id: String, val label: String, val promptRu: String) {
+    DAILY("daily", "Сегодня", "на сегодня"),
+    WEEKLY("weekly", "Неделя",   "на эту неделю"),
+    MONTHLY("monthly", "Месяц",   "на этот месяц"),
 }
 
 enum class BottomTab { HOROSCOPE, TAROT, COMPATIBILITY, PROFILE }

@@ -7,41 +7,58 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 // ── HoroscopeViewModel ────────────────────────────────────────────────────────
 data class HoroscopeUiState(
     val selectedSign: ZodiacSign? = null,
-    val period: HoroscopePeriod = HoroscopePeriod.TODAY,
+    val period: HoroscopePeriod = HoroscopePeriod.DAILY,
     val horoscope: HoroscopeResponse? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    // Localized prompt stored here so VM can call API with correct language
-    val periodPrompt: String = HoroscopePeriod.TODAY.promptRu,
+    val periodPrompt: String = HoroscopePeriod.DAILY.promptRu,
 )
 
-class HoroscopeViewModel(private val api: ClaudeApiClient) : ViewModel() {
+class HoroscopeViewModel(
+    private val firebase: FirebaseService = FirebaseService()
+) : ViewModel() {
     private val _state = MutableStateFlow(HoroscopeUiState())
     val state: StateFlow<HoroscopeUiState> = _state.asStateFlow()
 
-    fun selectSign(sign: ZodiacSign, periodPrompt: String? = null) {
-        val prompt = periodPrompt ?: _state.value.periodPrompt
+    fun selectSign(sign: ZodiacSign) {
         _state.value = _state.value.copy(selectedSign = sign)
-        loadHoroscope(sign, _state.value.period, prompt)
+        loadHoroscope(sign, _state.value.period)
     }
 
-    fun setPeriod(period: HoroscopePeriod, localizedPrompt: String) {
-        _state.value = _state.value.copy(period = period, periodPrompt = localizedPrompt)
-        _state.value.selectedSign?.let { loadHoroscope(it, period, localizedPrompt) }
+    fun setPeriod(period: HoroscopePeriod) {
+        _state.value = _state.value.copy(period = period)
+        _state.value.selectedSign?.let { loadHoroscope(it, period) }
     }
 
-    private fun loadHoroscope(sign: ZodiacSign, period: HoroscopePeriod, periodPrompt: String) {
+    private fun loadHoroscope(sign: ZodiacSign, period: HoroscopePeriod) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, horoscope = null, error = null)
             try {
-                val result = api.getHoroscope(sign, periodPrompt)
-                _state.value = _state.value.copy(horoscope = result, isLoading = false)
+                val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+                val date = when (period) {
+                    HoroscopePeriod.DAILY -> today.toString()
+                    HoroscopePeriod.WEEKLY -> {
+                        val year = today.year
+                        val week = (today.dayOfYear / 7) + 1
+                        "${year}-W${week.toString().padStart(2, '0')}"
+                    }
+                    HoroscopePeriod.MONTHLY -> "${today.year}-${today.monthNumber.toString().padStart(2, '0')}"
+                }
+                print(date)
+                val response = firebase.getHoroscope("ru", period.id, date, sign.id)
+                _state.value = _state.value.copy(
+                    horoscope = response,
+                    isLoading = false
+                )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(error = e.message, isLoading = false)
+                _state.value = _state.value.copy(error = e.message ?: "Unknown error", isLoading = false)
             }
         }
     }

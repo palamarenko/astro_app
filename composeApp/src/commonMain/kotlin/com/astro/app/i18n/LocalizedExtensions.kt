@@ -114,13 +114,13 @@ fun TarotCard.localizedKeywords(s: StringBundle): String = when (this.number) {
 
 // ── HoroscopePeriod extensions ────────────────────────────────────────────────
 fun HoroscopePeriod.localizedLabel(s: StringBundle): String = when (this) {
-    HoroscopePeriod.TODAY -> s.horoscopeTabToday
-    HoroscopePeriod.WEEK  -> s.horoscopeTabWeek
-    HoroscopePeriod.MONTH -> s.horoscopeTabMonth
+    HoroscopePeriod.DAILY   -> s.horoscopeTabToday
+    HoroscopePeriod.WEEKLY  -> s.horoscopeTabWeek
+    HoroscopePeriod.MONTHLY -> s.horoscopeTabMonth
 }
 
 fun HoroscopePeriod.localizedPrompt(s: StringBundle): String = when (this) {
-    HoroscopePeriod.TODAY -> s.periodTodayPrompt
-    HoroscopePeriod.WEEK  -> s.periodWeekPrompt
-    HoroscopePeriod.MONTH -> s.periodMonthPrompt
+    HoroscopePeriod.DAILY   -> s.periodTodayPrompt
+    HoroscopePeriod.WEEKLY  -> s.periodWeekPrompt
+    HoroscopePeriod.MONTHLY -> s.periodMonthPrompt
 }

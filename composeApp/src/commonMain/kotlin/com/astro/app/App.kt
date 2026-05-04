@@ -53,7 +53,7 @@ fun App() {
 private fun AppContent() {
     val api = remember { ClaudeApiClient(API_KEY) }
 
-    val horoscopeVm = remember { HoroscopeViewModel(api) }
+    val horoscopeVm = remember { HoroscopeViewModel() }
     val tarotVm     = remember { TarotViewModel(api) }
     val compatVm    = remember { CompatibilityViewModel(api) }
     val profileVm   = remember { ProfileViewModel(api) }
@@ -62,6 +62,7 @@ private fun AppContent() {
     var previousTab  by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     // На главной сразу открыт детальный гороскоп выбранного знака
     var showDetail   by remember { mutableStateOf(true) }
+    var showAdmin    by remember { mutableStateOf(false) }
 
     // Текущий выбранный знак (источник истины — ProfileViewModel)
     val profileState by profileVm.state.collectAsState()
@@ -128,7 +129,17 @@ private fun AppContent() {
                     }
                     BottomTab.TAROT         -> TarotScreen(vm = tarotVm, modifier = Modifier.fillMaxSize())
                     BottomTab.COMPATIBILITY -> CompatibilityScreen(vm = compatVm, modifier = Modifier.fillMaxSize())
-                    BottomTab.PROFILE       -> ProfileScreen(vm = profileVm, modifier = Modifier.fillMaxSize())
+                    BottomTab.PROFILE       -> {
+                        if (showAdmin) {
+                            AdminScreen(onNavigateBack = { showAdmin = false })
+                        } else {
+                            ProfileScreen(
+                                vm = profileVm,
+                                modifier = Modifier.fillMaxSize(),
+                                onNavigateToAdmin = { showAdmin = true }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -138,9 +149,8 @@ private fun AppContent() {
             profileIcon = selectedSign.emoji,
             onTabSelected = { tab ->
                 previousTab = activeTab
-                // При переходе на главный таб всегда показываем гороскоп выбранного знака.
-                // К списку знаков можно вернуться кнопкой "back" на детальном экране.
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
+                if (tab != BottomTab.PROFILE) showAdmin = false
                 activeTab = tab
             },
             modifier = Modifier.align(Alignment.BottomCenter)

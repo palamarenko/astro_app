@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +26,7 @@ import com.astro.app.ui.theme.*
 import com.astro.app.viewmodel.ProfileViewModel
 
 @Composable
-fun ProfileScreen(vm: ProfileViewModel, modifier: Modifier = Modifier) {
+fun ProfileScreen(vm: ProfileViewModel, modifier: Modifier = Modifier, onNavigateToAdmin: () -> Unit = {}) {
     val s = strings()
     val state by vm.state.collectAsState()
     val sign = state.sign
@@ -108,6 +109,11 @@ fun ProfileScreen(vm: ProfileViewModel, modifier: Modifier = Modifier) {
                             lineHeight = TextUnit(1.75f * 15, TextUnitType.Sp))
                     }
                 }
+            }
+            Spacer(Modifier.height(Spacing.xl))
+            // Admin link
+            TextButton(onClick = { onNavigateToAdmin() }) {
+                Text("Admin Panel", color = AppColors.AccentGold)
             }
             Spacer(Modifier.height(100.dp))
         }
