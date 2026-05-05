@@ -14,6 +14,7 @@
     <!-- Horoscope Screen -->
     <string name="horoscope_back">←</string>
     <string name="horoscope_select_period">Select a period</string>
+    <string name="horoscope_prediction_label">Prediction</string>
     <string name="horoscope_error">Stars unavailable: %s</string>
     <string name="horoscope_tab_today">Today</string>
     <string name="horoscope_tab_week">Week</string>

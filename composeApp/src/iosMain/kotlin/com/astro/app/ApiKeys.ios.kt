@@ -5,3 +5,8 @@ package com.astro.app
 actual val anthropicApiKey: String =
     platform.Foundation.NSBundle.mainBundle
         .objectForInfoDictionaryKey("ANTHROPIC_API_KEY") as? String ?: ""
+
+// Set GOOGLE_MAPS_API_KEY in your Xcode scheme / Info.plist
+actual val googleMapsApiKey: String =
+    platform.Foundation.NSBundle.mainBundle
+        .objectForInfoDictionaryKey("GOOGLE_MAPS_API_KEY") as? String ?: ""

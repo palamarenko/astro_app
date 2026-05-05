@@ -22,7 +22,6 @@ import com.astro.app.ui.components.HoroscopeNavIcon
 import com.astro.app.ui.components.TarotNavIcon
 import com.astro.app.ui.screens.*
 import com.astro.app.ui.theme.*
-import com.astro.app.viewmodel.*
 
 // Порядок табов для определения направления слайда
 private val TAB_ORDER = listOf(

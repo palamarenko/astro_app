@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -21,11 +22,13 @@ import com.astro.app.data.HoroscopeResponse
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.ZodiacSign
 import com.astro.app.ui.theme.*
-import com.astro.app.viewmodel.AdminViewModel
 
 @Composable
 fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTarot: () -> Unit = {}) {
     val state by vm.state.collectAsState()
+
+    // Автозагрузка при открытии экрана
+    LaunchedEffect(Unit) { vm.load() }
 
     Box(
         modifier = Modifier
@@ -212,55 +215,18 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                 }
             }
 
-            // ── Save All button ───────────────────────────────────────────────
-            Spacer(Modifier.height(Spacing.xl))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.xl),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(Radius.m))
-                        .background(
-                            if (!state.isSaving) AppColors.AccentGold
-                            else AppColors.Surface
-                        )
-                        .clickable(enabled = !state.isSaving && !state.isLoading) { vm.saveAll() }
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = when {
-                            state.isSaving -> "Сохранение…"
-                            else -> "💾  Сохранить всё"
-                        },
-                        color = if (!state.isSaving) Color(0xFF0A0A0F) else AppColors.TextMuted,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp
-                    )
-                }
-
-                Spacer(Modifier.height(Spacing.s))
-
-                AnimatedVisibility(
-                    visible = state.savedCount >= 0 || state.saveError != null,
-                    enter = fadeIn(tween(300)),
-                    exit  = fadeOut(tween(200))
-                ) {
-                    when {
-                        state.saveError != null ->
-                            StatusText("✗ ${state.saveError}", Color(0xFFEB5757))
-                        state.savedCount >= 0 ->
-                            StatusText("✓ Сохранено знаков: ${state.savedCount}", Color(0xFF6FCF97))
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(120.dp))
+            Spacer(Modifier.height(100.dp))
         }
+
+        // ── Floating save bar ─────────────────────────────────────────────────
+        SaveBar(
+            isSaving  = state.isSaving,
+            isLoading = state.isLoading,
+            savedText = if (state.savedCount >= 0) "✓ Сохранено знаков: ${state.savedCount}" else null,
+            errorText = state.saveError?.let { "✗ $it" },
+            onSave    = { vm.saveAll() },
+            modifier  = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -480,4 +446,63 @@ private fun ActionButton(text: String, enabled: Boolean, onClick: () -> Unit) {
 @Composable
 private fun StatusText(text: String, color: Color) {
     Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+}
+
+// ── Floating save bar (shared between horoscope & tarot admin) ────────────────
+
+@Composable
+internal fun SaveBar(
+    isSaving: Boolean,
+    isLoading: Boolean,
+    savedText: String?,
+    errorText: String?,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, AppColors.Background.copy(alpha = 0.97f)),
+                    startY = 0f,
+                    endY = 60f
+                )
+            )
+            .padding(horizontal = Spacing.xl)
+            .padding(top = Spacing.xl, bottom = Spacing.l),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AnimatedVisibility(
+            visible = savedText != null || errorText != null,
+            enter = fadeIn(tween(250)) + expandVertically(tween(250)),
+            exit  = fadeOut(tween(200)) + shrinkVertically(tween(200))
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                when {
+                    errorText != null -> Text(errorText, color = Color(0xFFEB5757), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    savedText != null -> Text(savedText, color = Color(0xFF6FCF97), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                }
+                Spacer(Modifier.height(Spacing.s))
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Radius.m))
+                .background(if (!isSaving) AppColors.AccentGold else AppColors.Surface)
+                .border(1.dp, AppColors.AccentGold.copy(alpha = if (!isSaving) 0f else 0.3f), RoundedCornerShape(Radius.m))
+                .clickable(enabled = !isSaving && !isLoading) { onSave() }
+                .padding(vertical = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (isSaving) "Сохранение…" else "💾  Сохранить всё",
+                color = if (!isSaving) Color(0xFF0A0A0F) else AppColors.TextMuted,
+                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp
+            )
+        }
+    }
 }

@@ -28,7 +28,6 @@ import com.astro.app.data.TarotReadingResponse
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
-import com.astro.app.viewmodel.TarotViewModel
 import astroapp.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.painterResource
 import kotlin.math.*
@@ -78,7 +77,7 @@ fun TarotScreen(vm: TarotViewModel, modifier: Modifier = Modifier) {
             )
 
             AnimatedVisibility(
-                visible = state.reading != null,
+                visible = state.reading?.summary?.isNotBlank() == true,
                 enter = fadeIn(tween(700)) + slideInVertically(tween(700)) { it / 2 }
             ) {
                 state.reading?.let { reading ->

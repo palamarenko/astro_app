@@ -22,7 +22,6 @@ import com.astro.app.data.ZodiacSign
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
-import com.astro.app.viewmodel.CompatibilityViewModel
 
 @Composable
 fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifier) {

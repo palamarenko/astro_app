@@ -1,6 +1,7 @@
 [versions]
 agp = "8.2.2"
 kotlin = "1.9.23"
+coil = "3.0.4"
 composeMultiplatform = "1.6.2"
 ktor = "2.3.12"
 coroutines = "1.8.1"
@@ -28,6 +29,10 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 # Lifecycle / ViewModel
 lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "lifecycle" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+
+# Coil (image loading for KMP)
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor2", version.ref = "coil" }
 
 # Android Activity
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }

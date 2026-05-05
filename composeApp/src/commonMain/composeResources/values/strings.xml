@@ -14,6 +14,7 @@
     <!-- Horoscope Screen -->
     <string name="horoscope_back">←</string>
     <string name="horoscope_select_period">Выберите период</string>
+    <string name="horoscope_prediction_label">Предсказание</string>
     <string name="horoscope_error">Звёзды недоступны: %s</string>
     <string name="horoscope_tab_today">Сегодня</string>
     <string name="horoscope_tab_week">Неделя</string>

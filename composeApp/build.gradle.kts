@@ -55,6 +55,9 @@ kotlin {
 
             implementation(libs.lifecycle.viewmodel)
             implementation(libs.lifecycle.viewmodel.compose)
+
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
     }
 }
@@ -77,6 +80,10 @@ android {
         buildConfigField(
             "String", "ANTHROPIC_API_KEY",
             "\"${localProps["ANTHROPIC_API_KEY"] ?: ""}\""
+        )
+        buildConfigField(
+            "String", "GOOGLE_MAPS_API_KEY",
+            "\"${localProps["GOOGLE_MAPS_API_KEY"] ?: ""}\""
         )
     }
 

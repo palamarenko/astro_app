@@ -12,17 +12,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import astroapp.composeapp.generated.resources.Res
+import astroapp.composeapp.generated.resources.ic_zodiac_wheel
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
-import com.astro.app.viewmodel.HoroscopeViewModel
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
 
+@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val s = strings()
@@ -37,13 +42,27 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
             Spacer(Modifier.height(Spacing.xxl))
             // Top bar
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = s.horoscopeBack, fontSize = TextUnit(22f, TextUnitType.Sp), color = AppColors.TextMuted,
-                    modifier = Modifier.clickable { onBack() })
+                Box(Modifier.width(36.dp))
                 Spacer(Modifier.weight(1f))
                 Text(text = sign.localizedDates(s).uppercase(), fontSize = AppType.caption, color = AppColors.AccentGold,
                     letterSpacing = TextUnit(0.22f, TextUnitType.Em))
                 Spacer(Modifier.weight(1f))
-                Box(Modifier.width(28.dp))
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(elementColor.copy(alpha = 0.12f))
+                        .border(1.dp, elementColor.copy(alpha = 0.35f), CircleShape)
+                        .clickable { onBack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Image(
+                        painter = painterResource(Res.drawable.ic_zodiac_wheel),
+                        contentDescription = "Horoscopes",
+                        modifier = Modifier.size(26.dp),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
             }
             Spacer(Modifier.height(Spacing.xxl))
             // Hero
@@ -77,7 +96,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                         Column {
                             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.m)).background(AppColors.Card).padding(18.dp)) {
                                 Column {
-                                    SectionLabel("text")
+                                    SectionLabel(s.horoscopePredictionLabel)
                                     Spacer(Modifier.height(Spacing.s))
                                     Text(text = h.text, fontSize = AppType.bodyLg, fontStyle = FontStyle.Italic,
                                         fontWeight = FontWeight.Light, color = AppColors.TextSecondary,

@@ -22,7 +22,6 @@ import com.astro.app.data.ALL_TAROT
 import com.astro.app.data.TarotCard
 import com.astro.app.data.TarotCardContent
 import com.astro.app.ui.theme.*
-import com.astro.app.viewmodel.AdminTarotViewModel
 import astroapp.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.painterResource
 
@@ -33,6 +32,11 @@ fun AdminTarotScreen(
     onNavigateBack: () -> Unit,
     onNavigateToHoroscopes: () -> Unit = {},
 ) {
+    // Автозагрузка при открытии экрана
+    LaunchedEffect(Unit) { vm.load() }
+
+    val state by vm.state.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -110,6 +114,16 @@ fun AdminTarotScreen(
             // ── Content ───────────────────────────────────────────────────────
             TarotAdminContent(vm = vm)
         }
+
+        // ── Floating save bar ─────────────────────────────────────────────
+        SaveBar(
+            isSaving  = state.isSaving,
+            isLoading = state.isLoading,
+            savedText = if (state.savedCount >= 0) "✓ Сохранено карт: ${state.savedCount}" else null,
+            errorText = state.saveError?.let { "✗ $it" },
+            onSave    = { vm.saveAll() },
+            modifier  = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -186,36 +200,7 @@ fun TarotAdminContent(vm: AdminTarotViewModel) {
             }
         }
 
-        // ── Save All ──────────────────────────────────────────────────────────
-        Spacer(Modifier.height(Spacing.xl))
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xl),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(Radius.m))
-                    .background(if (!state.isSaving) AppColors.AccentGold else AppColors.Surface)
-                    .clickable(enabled = !state.isSaving && !state.isLoading) { vm.saveAll() }
-                    .padding(vertical = 14.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    if (state.isSaving) "Сохранение…" else "💾  Сохранить всё",
-                    color = if (!state.isSaving) Color(0xFF0A0A0F) else AppColors.TextMuted,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp
-                )
-            }
-            Spacer(Modifier.height(Spacing.s))
-            AnimatedVisibility(visible = state.savedCount >= 0 || state.saveError != null, enter = fadeIn(tween(300))) {
-                when {
-                    state.saveError != null -> Text("✗ ${state.saveError}", color = Color(0xFFEB5757), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    state.savedCount >= 0   -> Text("✓ Сохранено карт: ${state.savedCount}", color = Color(0xFF6FCF97), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                }
-            }
-        }
-        Spacer(Modifier.height(120.dp))
+        Spacer(Modifier.height(100.dp))
     }
 }
 
