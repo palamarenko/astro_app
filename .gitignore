@@ -1,0 +1,61 @@
+# ── Build outputs ─────────────────────────────────────────────────────────────
+build/
+**/build/
+out/
+
+# ── Gradle ────────────────────────────────────────────────────────────────────
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# ── Android local config ───────────────────────────────────────────────────────
+local.properties
+*.keystore
+*.jks
+
+# ── IntelliJ IDEA / Android Studio ────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+# Keep only the files that are useful to share
+!.idea/runConfigurations/
+
+# ── Kotlin / Compose generated ────────────────────────────────────────────────
+**/generated/
+*.class
+
+# ── APK / AAB ─────────────────────────────────────────────────────────────────
+*.apk
+*.aab
+*.ap_
+
+# ── Logs & temp ───────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+Thumbs.db
+
+# ── Capture / profiling ───────────────────────────────────────────────────────
+captures/
+*.hprof
+
+# ── NDK ───────────────────────────────────────────────────────────────────────
+.externalNativeBuild/
+cmake-build-*/
+
+# ── CocoaPods / iOS ───────────────────────────────────────────────────────────
+Pods/
+*.xcworkspace/
+DerivedData/
+
+# ── Fastlane ─────────────────────────────────────────────────────────────────
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# ── Misc folders at root that shouldn't be tracked ────────────────────────────
+create/
+{composeApp/
