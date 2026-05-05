@@ -24,8 +24,6 @@ import com.astro.app.ui.screens.*
 import com.astro.app.ui.theme.*
 import com.astro.app.viewmodel.*
 
-private const val API_KEY = "YOUR_ANTHROPIC_API_KEY"
-
 // Порядок табов для определения направления слайда
 private val TAB_ORDER = listOf(
     BottomTab.HOROSCOPE,
@@ -51,18 +49,21 @@ fun App() {
 
 @Composable
 private fun AppContent() {
-    val api = remember { ClaudeApiClient(API_KEY) }
+    val api = remember { ClaudeApiClient(anthropicApiKey) }
 
     val horoscopeVm = remember { HoroscopeViewModel() }
     val tarotVm     = remember { TarotViewModel(api) }
     val compatVm    = remember { CompatibilityViewModel(api) }
     val profileVm   = remember { ProfileViewModel(api) }
+    val adminVm      = remember { AdminViewModel(api) }
+    val adminTarotVm = remember { AdminTarotViewModel(api) }
 
     var activeTab    by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     var previousTab  by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     // На главной сразу открыт детальный гороскоп выбранного знака
-    var showDetail   by remember { mutableStateOf(true) }
-    var showAdmin    by remember { mutableStateOf(false) }
+    var showDetail      by remember { mutableStateOf(true) }
+    var showAdmin       by remember { mutableStateOf(false) }
+    var showAdminTarot  by remember { mutableStateOf(false) }
 
     // Текущий выбранный знак (источник истины — ProfileViewModel)
     val profileState by profileVm.state.collectAsState()
@@ -130,10 +131,18 @@ private fun AppContent() {
                     BottomTab.TAROT         -> TarotScreen(vm = tarotVm, modifier = Modifier.fillMaxSize())
                     BottomTab.COMPATIBILITY -> CompatibilityScreen(vm = compatVm, modifier = Modifier.fillMaxSize())
                     BottomTab.PROFILE       -> {
-                        if (showAdmin) {
-                            AdminScreen(onNavigateBack = { showAdmin = false })
-                        } else {
-                            ProfileScreen(
+                        when {
+                            showAdminTarot -> AdminTarotScreen(
+                                vm = adminTarotVm,
+                                onNavigateBack = { showAdminTarot = false },
+                                onNavigateToHoroscopes = { showAdminTarot = false; showAdmin = true }
+                            )
+                            showAdmin -> AdminScreen(
+                                vm = adminVm,
+                                onNavigateBack = { showAdmin = false },
+                                onNavigateToTarot = { showAdmin = false; showAdminTarot = true }
+                            )
+                            else -> ProfileScreen(
                                 vm = profileVm,
                                 modifier = Modifier.fillMaxSize(),
                                 onNavigateToAdmin = { showAdmin = true }
@@ -150,7 +159,7 @@ private fun AppContent() {
             onTabSelected = { tab ->
                 previousTab = activeTab
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
-                if (tab != BottomTab.PROFILE) showAdmin = false
+                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false }
                 activeTab = tab
             },
             modifier = Modifier.align(Alignment.BottomCenter)

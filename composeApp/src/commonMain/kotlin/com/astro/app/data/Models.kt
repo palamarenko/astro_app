@@ -64,6 +64,13 @@ val ALL_TAROT = listOf(
 
 // ── API Response models ───────────────────────────────────────────────────────
 @Serializable
+data class TarotCardContent(
+    val past: String = "",
+    val present: String = "",
+    val future: String = "",
+)
+
+@Serializable
 data class HoroscopeResponse(
     val text: String,
     val love: Int, val career: Int, val health: Int, val energy: Int,

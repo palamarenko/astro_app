@@ -9,9 +9,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 
-// ── HoroscopeViewModel ────────────────────────────────────────────────────────
+// ── HoroscopeViewModel ────────────────────────────────────────────
 data class HoroscopeUiState(
     val selectedSign: ZodiacSign? = null,
     val period: HoroscopePeriod = HoroscopePeriod.DAILY,
@@ -43,20 +44,15 @@ class HoroscopeViewModel(
             try {
                 val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
                 val date = when (period) {
-                    HoroscopePeriod.DAILY -> today.toString()
-                    HoroscopePeriod.WEEKLY -> {
-                        val year = today.year
+                    HoroscopePeriod.DAILY   -> today.toString()
+                    HoroscopePeriod.WEEKLY  -> {
                         val week = (today.dayOfYear / 7) + 1
-                        "${year}-W${week.toString().padStart(2, '0')}"
+                        "${today.year}-W${week.toString().padStart(2, '0')}"
                     }
                     HoroscopePeriod.MONTHLY -> "${today.year}-${today.monthNumber.toString().padStart(2, '0')}"
                 }
-                print(date)
                 val response = firebase.getHoroscope("ru", period.id, date, sign.id)
-                _state.value = _state.value.copy(
-                    horoscope = response,
-                    isLoading = false
-                )
+                _state.value = _state.value.copy(horoscope = response, isLoading = false)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(error = e.message ?: "Unknown error", isLoading = false)
             }
@@ -64,7 +60,7 @@ class HoroscopeViewModel(
     }
 }
 
-// ── CompatibilityViewModel ────────────────────────────────────────────────────
+// ── CompatibilityViewModel ────────────────────────────────────────────
 data class CompatibilityUiState(
     val sign1: ZodiacSign? = null,
     val sign2: ZodiacSign? = null,
@@ -155,7 +151,7 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
     }
 }
 
-// ── ProfileViewModel ──────────────────────────────────────────────────────────
+// ── ProfileViewModel ────────────────────────────────────────────
 data class ProfileUiState(
     val sign: ZodiacSign = ALL_SIGNS[4],
     val birthDate: String = "",
@@ -168,26 +164,253 @@ class ProfileViewModel(private val api: ClaudeApiClient) : ViewModel() {
     private val _state = MutableStateFlow(ProfileUiState())
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 
-    init { loadInsight(_state.value.sign) }
 
     fun selectSign(sign: ZodiacSign) {
         _state.value = _state.value.copy(sign = sign, insight = null, showSignPicker = false)
-        loadInsight(sign)
     }
 
     fun setBirthDate(date: String) { _state.value = _state.value.copy(birthDate = date) }
 
     fun toggleSignPicker() { _state.value = _state.value.copy(showSignPicker = !_state.value.showSignPicker) }
 
-    private fun loadInsight(sign: ZodiacSign) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
-            try {
-                val text = api.getSignInsight(sign)
-                _state.value = _state.value.copy(insight = text, isLoading = false)
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(insight = null, isLoading = false)
+
+}
+
+// ── AdminViewModel ────────────────────────────────────────────────────────────
+
+private fun computeAdminDateKey(period: HoroscopePeriod, date: kotlinx.datetime.LocalDate): String =
+    when (period) {
+        HoroscopePeriod.DAILY   -> date.toString()
+        HoroscopePeriod.WEEKLY  -> {
+            val week = (date.dayOfYear / 7) + 1
+            "${date.year}-W${week.toString().padStart(2, '0')}"
+        }
+        HoroscopePeriod.MONTHLY -> "${date.year}-${date.monthNumber.toString().padStart(2, '0')}"
+    }
+
+private fun defaultAdminHoroscopes(): Map<String, HoroscopeResponse> =
+    ALL_SIGNS.associate { it.id to HoroscopeResponse("", 75, 75, 75, 75) }
+
+data class AdminUiState(
+    val lang: String = "ru",
+    val period: HoroscopePeriod = HoroscopePeriod.DAILY,
+    val selectedDate: kotlinx.datetime.LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+    val horoscopes: Map<String, HoroscopeResponse> = defaultAdminHoroscopes(),
+    val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
+    val savedCount: Int = -1,
+    val saveError: String? = null,
+    val loadError: String? = null,
+    val isLoaded: Boolean = false,
+    val generatingSignIds: Set<String> = emptySet(),
+)
+
+class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
+    private val firebase = FirebaseService()
+    private val _state = MutableStateFlow(AdminUiState())
+    val state: StateFlow<AdminUiState> = _state.asStateFlow()
+
+    fun setLang(lang: String) {
+        _state.value = _state.value.copy(lang = lang, isLoaded = false, savedCount = -1, saveError = null)
+    }
+
+    fun setPeriod(period: HoroscopePeriod) {
+        _state.value = _state.value.copy(period = period, isLoaded = false, savedCount = -1, saveError = null)
+    }
+
+    fun navigateDate(forward: Boolean) {
+        val d = _state.value.selectedDate
+        val newDate: kotlinx.datetime.LocalDate = when (_state.value.period) {
+            HoroscopePeriod.DAILY  ->
+                if (forward) d.plus(1, kotlinx.datetime.DateTimeUnit.DAY)
+                else         d.plus(-1, kotlinx.datetime.DateTimeUnit.DAY)
+            HoroscopePeriod.WEEKLY ->
+                if (forward) d.plus(7, kotlinx.datetime.DateTimeUnit.DAY)
+                else         d.plus(-7, kotlinx.datetime.DateTimeUnit.DAY)
+            HoroscopePeriod.MONTHLY -> {
+                val m = d.monthNumber; val y = d.year
+                if (forward) {
+                    if (m == 12) kotlinx.datetime.LocalDate(y + 1, 1, 1)
+                    else         kotlinx.datetime.LocalDate(y, m + 1, 1)
+                } else {
+                    if (m == 1)  kotlinx.datetime.LocalDate(y - 1, 12, 1)
+                    else         kotlinx.datetime.LocalDate(y, m - 1, 1)
+                }
             }
+        }
+        _state.value = _state.value.copy(selectedDate = newDate, isLoaded = false, savedCount = -1, saveError = null)
+    }
+
+    fun load() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, loadError = null, savedCount = -1, saveError = null)
+            try {
+                val key = computeAdminDateKey(_state.value.period, _state.value.selectedDate)
+                val loaded = firebase.getAllSignHoroscopes(_state.value.lang, _state.value.period.id, key)
+                val merged = ALL_SIGNS.associate { sign ->
+                    sign.id to (loaded?.get(sign.id) ?: HoroscopeResponse("", 75, 75, 75, 75))
+                }
+                _state.value = _state.value.copy(horoscopes = merged, isLoading = false, isLoaded = true)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, loadError = e.message ?: "Load error")
+            }
+        }
+    }
+
+    fun updateText(signId: String, text: String) {
+        val h = _state.value.horoscopes.toMutableMap()
+        h[signId] = (h[signId] ?: HoroscopeResponse("", 75, 75, 75, 75)).copy(text = text)
+        _state.value = _state.value.copy(horoscopes = h)
+    }
+
+    fun updateScore(signId: String, field: String, delta: Int) {
+        val h = _state.value.horoscopes.toMutableMap()
+        val cur = h[signId] ?: HoroscopeResponse("", 75, 75, 75, 75)
+        h[signId] = when (field) {
+            "love"   -> cur.copy(love   = (cur.love   + delta).coerceIn(50, 100))
+            "career" -> cur.copy(career = (cur.career + delta).coerceIn(50, 100))
+            "health" -> cur.copy(health = (cur.health + delta).coerceIn(50, 100))
+            "energy" -> cur.copy(energy = (cur.energy + delta).coerceIn(50, 100))
+            else -> cur
+        }
+        _state.value = _state.value.copy(horoscopes = h)
+    }
+
+    fun generateForSign(sign: ZodiacSign) {
+        if (_state.value.generatingSignIds.contains(sign.id)) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                generatingSignIds = _state.value.generatingSignIds + sign.id
+            )
+            try {
+                val key = computeAdminDateKey(_state.value.period, _state.value.selectedDate)
+                val generated = api.generateAdminHoroscope(sign, _state.value.period, _state.value.lang, key)
+                val h = _state.value.horoscopes.toMutableMap()
+                h[sign.id] = generated
+                _state.value = _state.value.copy(
+                    horoscopes = h,
+                    generatingSignIds = _state.value.generatingSignIds - sign.id
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    generatingSignIds = _state.value.generatingSignIds - sign.id
+                )
+            }
+        }
+    }
+
+    fun saveAll() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isSaving = true, savedCount = -1, saveError = null)
+            val key = computeAdminDateKey(_state.value.period, _state.value.selectedDate)
+            var count = 0
+            var hasError = false
+            for (sign in ALL_SIGNS) {
+                val h = _state.value.horoscopes[sign.id] ?: continue
+                if (h.text.isBlank()) continue
+                val ok = firebase.saveFullHoroscope(_state.value.lang, _state.value.period.id, key, sign.id, h)
+                if (ok) count++ else hasError = true
+            }
+            _state.value = _state.value.copy(
+                isSaving = false,
+                savedCount = count,
+                saveError = if (hasError) "Some signs failed to save" else null
+            )
+        }
+    }
+}
+
+
+
+private fun defaultTarotCards(): Map<String, TarotCardContent> =
+    ALL_TAROT.associate { it.resourceKey to TarotCardContent() }
+
+data class AdminTarotUiState(
+    val lang: String = "ru",
+    val cards: Map<String, TarotCardContent> = defaultTarotCards(),
+    val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
+    val savedCount: Int = -1,
+    val saveError: String? = null,
+    val loadError: String? = null,
+    val isLoaded: Boolean = false,
+    val generatingCardKeys: Set<String> = emptySet(),
+)
+
+class AdminTarotViewModel(private val api: ClaudeApiClient? = null) : ViewModel() {
+    private val firebase = FirebaseService()
+    private val _state = MutableStateFlow(AdminTarotUiState())
+    val state: StateFlow<AdminTarotUiState> = _state.asStateFlow()
+
+    fun setLang(lang: String) {
+        _state.value = _state.value.copy(lang = lang, isLoaded = false, savedCount = -1, saveError = null)
+    }
+
+    fun load() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, loadError = null, savedCount = -1, saveError = null)
+            try {
+                val loaded = firebase.getAllTarotCards(_state.value.lang)
+                val merged = ALL_TAROT.associate { card ->
+                    card.resourceKey to (loaded?.get(card.resourceKey) ?: TarotCardContent())
+                }
+                _state.value = _state.value.copy(cards = merged, isLoading = false, isLoaded = true)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, loadError = e.message ?: "Load error")
+            }
+        }
+    }
+
+    fun generateForCard(card: TarotCard) {
+        val client = api ?: return
+        if (_state.value.generatingCardKeys.contains(card.resourceKey)) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(
+                generatingCardKeys = _state.value.generatingCardKeys + card.resourceKey
+            )
+            try {
+                val generated = client.generateAdminTarotCard(card, _state.value.lang)
+                val m = _state.value.cards.toMutableMap()
+                m[card.resourceKey] = generated
+                _state.value = _state.value.copy(
+                    cards = m,
+                    generatingCardKeys = _state.value.generatingCardKeys - card.resourceKey
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    generatingCardKeys = _state.value.generatingCardKeys - card.resourceKey
+                )
+            }
+        }
+    }
+
+    fun updateField(cardKey: String, field: String, text: String) {
+        val m = _state.value.cards.toMutableMap()
+        val cur = m[cardKey] ?: TarotCardContent()
+        m[cardKey] = when (field) {
+            "past"    -> cur.copy(past    = text)
+            "present" -> cur.copy(present = text)
+            else      -> cur.copy(future  = text)
+        }
+        _state.value = _state.value.copy(cards = m)
+    }
+
+    fun saveAll() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isSaving = true, savedCount = -1, saveError = null)
+            var count = 0
+            var hasError = false
+            for (card in ALL_TAROT) {
+                val c = _state.value.cards[card.resourceKey] ?: continue
+                if (c.past.isBlank() && c.present.isBlank() && c.future.isBlank()) continue
+                val ok = firebase.saveTarotCard(_state.value.lang, card.resourceKey, c)
+                if (ok) count++ else hasError = true
+            }
+            _state.value = _state.value.copy(
+                isSaving = false,
+                savedCount = count,
+                saveError = if (hasError) "Some cards failed to save" else null
+            )
         }
     }
 }
