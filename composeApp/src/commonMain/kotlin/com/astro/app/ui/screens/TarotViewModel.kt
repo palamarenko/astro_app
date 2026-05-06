@@ -80,8 +80,12 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
     private val _state = MutableStateFlow(TarotUiState())
     val state: StateFlow<TarotUiState> = _state.asStateFlow()
 
-    private val lang: String = "ru"
-
+    private val lang: String
+        get() = when (AppLanguage.fromCode(getSystemLanguageCode())) {
+            AppLanguage.UK -> "uk"
+            AppLanguage.RU -> "ru"
+            else           -> "en"
+        }
     fun drawCards() {
         val picked = ALL_TAROT.shuffled().take(3).map { card ->
             card.copy(reversed = (0..9).random() > 6)

@@ -1,47 +1,33 @@
 package com.astro.app.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import astroapp.composeapp.generated.resources.Res
+import astroapp.composeapp.generated.resources.ic_zodiac_wheel_mask
+import org.jetbrains.compose.resources.painterResource
 
 // Все иконки нарисованы в системе координат 22x22, как в исходных SVG.
 // Размер контролируется параметром [size]; цвет — параметром [color].
 
 @Composable
 fun HoroscopeNavIcon(color: Color, size: Dp = 22.dp, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.size(size)) {
-        val s = this.size.minDimension / 22f
-        val sw = 1.5f * s
-        val cx = 11f * s
-        val cy = 11f * s
-        val stroke = Stroke(width = sw, cap = StrokeCap.Round)
-
-        // Центральная окружность (солнце)
-        drawCircle(color = color, radius = 4.5f * s, center = Offset(cx, cy), style = stroke)
-
-        // Лучи
-        val rays = listOf(
-            Offset(11f * s, 1f * s)    to Offset(11f * s, 4f * s),
-            Offset(11f * s, 18f * s)   to Offset(11f * s, 21f * s),
-            Offset(1f * s,  11f * s)   to Offset(4f * s,  11f * s),
-            Offset(18f * s, 11f * s)   to Offset(21f * s, 11f * s),
-            Offset(3.5f * s, 3.5f * s) to Offset(5.7f * s, 5.7f * s),
-            Offset(16.3f * s, 16.3f * s) to Offset(18.5f * s, 18.5f * s),
-            Offset(18.5f * s, 3.5f * s) to Offset(16.3f * s, 5.7f * s),
-            Offset(5.7f * s, 16.3f * s) to Offset(3.5f * s, 18.5f * s),
-        )
-        rays.forEach { (a, b) ->
-            drawLine(color = color, start = a, end = b, strokeWidth = sw, cap = StrokeCap.Round)
-        }
-    }
+    Image(
+        painter = painterResource(Res.drawable.ic_zodiac_wheel_mask),
+        contentDescription = null,
+        modifier = modifier.size(size),
+        colorFilter = ColorFilter.tint(color),
+    )
 }
 
 @Composable

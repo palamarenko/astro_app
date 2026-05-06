@@ -181,7 +181,7 @@ class ClaudeApiClient(private val apiKey: String) {
         card: TarotCard,
         lang: String,
     ): TarotCardContent {
-        val langName = if (lang == "uk") "Ukrainian" else "Russian"
+        val langName = when (lang) { "en" -> "English"; "uk" -> "Ukrainian"; else -> "Russian" }
         val prompt = """
             Write tarot card interpretations for the Major Arcana card "${card.name}" (${card.number}), keywords: ${card.keywords}.
             Language: $langName. Style: poetic, mystical, personal, inspiring.
@@ -200,7 +200,7 @@ class ClaudeApiClient(private val apiKey: String) {
         lang: String,
         dateKey: String,
     ): HoroscopeResponse {
-        val langName = if (lang == "uk") "Ukrainian" else "Russian"
+        val langName = when (lang) { "en" -> "English"; "uk" -> "Ukrainian"; else -> "Russian" }
         val periodDesc = when (period) {
             HoroscopePeriod.DAILY   -> "for the day ($dateKey)"
             HoroscopePeriod.WEEKLY  -> "for the week ($dateKey)"

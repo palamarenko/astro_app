@@ -167,13 +167,13 @@ fun TarotAdminContent(vm: AdminTarotViewModel) {
                         .padding(horizontal = 20.dp, vertical = 9.dp)
                 ) {
                     Text(
-                        if (state.isLoading) "Загрузка…" else "Загрузить",
+                        if (state.isLoading) "Loading…" else "Load",
                         color = if (!state.isLoading) AppColors.AccentGold else AppColors.TextDim,
                         fontSize = 13.sp
                     )
                 }
                 when {
-                    state.isLoaded -> Text("✓ Загружено", color = Color(0xFF6FCF97), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    state.isLoaded -> Text("✓ Loaded", color = Color(0xFF6FCF97), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     state.loadError != null -> Text("✗ ${state.loadError}", color = Color(0xFFEB5757), fontSize = 12.sp)
                 }
             }

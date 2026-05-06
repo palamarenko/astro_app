@@ -53,7 +53,7 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                         .clickable { onNavigateBack() }
                         .padding(horizontal = Spacing.m, vertical = Spacing.s)
                 ) {
-                    Text("← Назад", color = AppColors.AccentGold, fontSize = 13.sp)
+                    Text("← Back", color = AppColors.AccentGold, fontSize = 13.sp)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -83,7 +83,7 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                     modifier = Modifier.clip(RoundedCornerShape(Radius.s))
                         .background(AppColors.AccentGold)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🌙 Гороскопы", color = Color(0xFF0A0A0F), fontSize = 12.sp, fontWeight = FontWeight.Medium) }
+                ) { Text("🌙 Horoscopes", color = Color(0xFF0A0A0F), fontSize = 12.sp, fontWeight = FontWeight.Medium) }
                 // Navigate to Tarot
                 Box(
                     modifier = Modifier.clip(RoundedCornerShape(Radius.s))
@@ -91,7 +91,7 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                         .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
                         .clickable { onNavigateToTarot() }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🃏 Таро", color = AppColors.AccentGold, fontSize = 12.sp) }
+                ) { Text("🃏 Tarot", color = AppColors.AccentGold, fontSize = 12.sp) }
             }
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
 
@@ -103,10 +103,10 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                     .padding(top = Spacing.l)
             ) {
                 // Language
-                ControlLabel("Язык")
+                ControlLabel("LANGUAGE")
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("ru" to "RU", "uk" to "UK").forEach { (code, label) ->
+                    listOf("ru" to "RU", "uk" to "UK", "en" to "EN").forEach { (code, label) ->
                         ChipButton(
                             label = label,
                             selected = state.lang == code,
@@ -118,13 +118,13 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                 Spacer(Modifier.height(Spacing.m))
 
                 // Period
-                ControlLabel("Период")
+                ControlLabel("PERIOD")
                 Spacer(Modifier.height(6.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
-                        HoroscopePeriod.DAILY   to "День",
-                        HoroscopePeriod.WEEKLY  to "Неделя",
-                        HoroscopePeriod.MONTHLY to "Месяц"
+                        HoroscopePeriod.DAILY   to "Day",
+                        HoroscopePeriod.WEEKLY  to "Week",
+                        HoroscopePeriod.MONTHLY to "Month"
                     ).forEach { (period, label) ->
                         ChipButton(
                             label = label,
@@ -137,7 +137,7 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                 Spacer(Modifier.height(Spacing.m))
 
                 // Date navigator
-                ControlLabel("Дата / ключ")
+                ControlLabel("DATE / KEY")
                 Spacer(Modifier.height(6.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -178,13 +178,82 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                 // Load button + status
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
                     ActionButton(
-                        text = if (state.isLoading) "Загрузка…" else "Загрузить",
+                        text = if (state.isLoading) "Loading…" else "Load",
                         enabled = !state.isLoading && !state.isSaving,
                         onClick = { vm.load() }
                     )
                     when {
-                        state.isLoaded  -> StatusText("✓ Загружено", Color(0xFF6FCF97))
+                        state.isLoaded  -> StatusText("✓ Loaded", Color(0xFF6FCF97))
                         state.loadError != null -> StatusText("✗ ${state.loadError}", Color(0xFFEB5757))
+                    }
+                }
+
+                Spacer(Modifier.height(Spacing.m))
+
+                // Generate All block
+                ControlLabel("GENERATE ALL SIGNS")
+                Spacer(Modifier.height(6.dp))
+                val remaining = state.generatingSignIds.size
+                val total = 12
+                val genAllEnabled = !state.isGeneratingAll && !state.isLoading && !state.isSaving
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.m)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(Radius.s))
+                            .background(
+                                if (genAllEnabled)
+                                    Brush.horizontalGradient(listOf(AppColors.AccentGold.copy(alpha = 0.14f), AppColors.AccentGold.copy(alpha = 0.07f)))
+                                else
+                                    Brush.horizontalGradient(listOf(AppColors.Surface, AppColors.Surface))
+                            )
+                            .border(
+                                1.dp,
+                                AppColors.AccentGold.copy(alpha = if (genAllEnabled) 0.5f else 0.2f),
+                                RoundedCornerShape(Radius.s)
+                            )
+                            .clickable(enabled = genAllEnabled) { vm.generateAllSigns() }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (state.isGeneratingAll)
+                                "✦ Generating… ($remaining/$total)"
+                            else
+                                "✦ Generate all signs",
+                            color = if (genAllEnabled) AppColors.AccentGold else AppColors.TextDim,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Progress bar when generating all
+                AnimatedVisibility(visible = state.isGeneratingAll) {
+                    Column {
+                        Spacer(Modifier.height(6.dp))
+                        val progress = (total - remaining).toFloat() / total
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(2.dp)
+                                .clip(RoundedCornerShape(1.dp))
+                                .background(AppColors.Surface)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(progress)
+                                    .fillMaxHeight()
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            listOf(AppColors.AccentGold.copy(alpha = 0.7f), AppColors.AccentGold)
+                                        )
+                                    )
+                            )
+                        }
                     }
                 }
             }
@@ -222,7 +291,7 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
         SaveBar(
             isSaving  = state.isSaving,
             isLoading = state.isLoading,
-            savedText = if (state.savedCount >= 0) "✓ Сохранено знаков: ${state.savedCount}" else null,
+            savedText = if (state.savedCount >= 0) "✓ Saved: ${state.savedCount} signs" else null,
             errorText = state.saveError?.let { "✗ $it" },
             onSave    = { vm.saveAll() },
             modifier  = Modifier.align(Alignment.BottomCenter)
@@ -286,7 +355,7 @@ private fun SignCard(
                     .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
-                    text = if (isGenerating) "✦ Генерация…" else "✦ Сгенерировать",
+                    text = if (isGenerating) "✦ Generating…" else "✦ Generate",
                     color = if (isGenerating) AppColors.TextDim else AppColors.AccentGold,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium
@@ -305,7 +374,7 @@ private fun SignCard(
             maxLines = 6,
             placeholder = {
                 Text(
-                    "Введите гороскоп для ${sign.name}…",
+                    "Enter horoscope for ${sign.name}…",
                     color = AppColors.TextDim,
                     fontSize = 12.sp
                 )
@@ -498,7 +567,7 @@ internal fun SaveBar(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (isSaving) "Сохранение…" else "💾  Сохранить всё",
+                text = if (isSaving) "Saving…" else "💾  Save All",
                 color = if (!isSaving) Color(0xFF0A0A0F) else AppColors.TextMuted,
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp

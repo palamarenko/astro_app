@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +41,7 @@ data class AdminUiState(
     val loadError: String? = null,
     val isLoaded: Boolean = false,
     val generatingSignIds: Set<String> = emptySet(),
+    val isGeneratingAll: Boolean = false,
 )
 
 class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
@@ -117,12 +120,9 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
         viewModelScope.launch {
             _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds + sign.id)
             try {
-                val periodPrompt = when (_state.value.period) {
-                    HoroscopePeriod.DAILY   -> if (_state.value.lang == "uk") "на сьогодні"   else "на сегодня"
-                    HoroscopePeriod.WEEKLY  -> if (_state.value.lang == "uk") "на цей тиждень" else "на эту неделю"
-                    HoroscopePeriod.MONTHLY -> if (_state.value.lang == "uk") "на цей місяць"  else "на этот месяц"
-                }
-                val response = api.getHoroscope(sign, periodPrompt)
+                val st = _state.value
+                val key = computeDateKey(st.period, st.selectedDate)
+                val response = api.generateAdminHoroscope(sign, st.period, st.lang, key)
                 val h = _state.value.horoscopes.toMutableMap()
                 h[sign.id] = response
                 _state.value = _state.value.copy(
@@ -130,7 +130,39 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
                     generatingSignIds = _state.value.generatingSignIds - sign.id
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds - sign.id)
+                if (e !is kotlinx.coroutines.CancellationException)
+                    _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds - sign.id)
+            }
+        }
+    }
+
+    fun generateAllSigns() {
+        if (_state.value.isGeneratingAll) return
+        viewModelScope.launch {
+            val st = _state.value
+            val key = computeDateKey(st.period, st.selectedDate)
+            val allIds = ALL_SIGNS.map { it.id }.toSet()
+            _state.value = _state.value.copy(isGeneratingAll = true, generatingSignIds = allIds)
+            try {
+                val deferreds = ALL_SIGNS.map { sign ->
+                    async {
+                        try {
+                            val response = api.generateAdminHoroscope(sign, st.period, st.lang, key)
+                            val h = _state.value.horoscopes.toMutableMap()
+                            h[sign.id] = response
+                            _state.value = _state.value.copy(
+                                horoscopes = h,
+                                generatingSignIds = _state.value.generatingSignIds - sign.id
+                            )
+                        } catch (e: Exception) {
+                            if (e !is kotlinx.coroutines.CancellationException)
+                                _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds - sign.id)
+                        }
+                    }
+                }
+                deferreds.awaitAll()
+            } finally {
+                _state.value = _state.value.copy(isGeneratingAll = false, generatingSignIds = emptySet())
             }
         }
     }

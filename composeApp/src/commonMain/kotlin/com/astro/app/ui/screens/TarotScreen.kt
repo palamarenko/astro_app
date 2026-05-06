@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -348,14 +349,17 @@ private fun TarotCardSlot(
                 .graphicsLayer {
                     rotationY = flipRotation
                     cameraDistance = 14f * density
-                    shape = RoundedCornerShape(Radius.m)
-                    clip = true
+                    // clip убран отсюда — свечение CardBack не должно обрезаться
                 }
         ) {
             if (!showingFront) {
                 CardBack(dimmed = !hasCards || card == null)
             } else {
-                Box(modifier = Modifier.fillMaxSize().graphicsLayer { rotationY = 180f }) {
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(Radius.m))
+                    .graphicsLayer { rotationY = 180f }
+                ) {
                     if (card != null) CardFront(card = card)
                 }
             }
@@ -389,62 +393,92 @@ private fun CardBack(dimmed: Boolean = false) {
     val gold = AppColors.AccentGold
     val breathAlpha by rememberInfiniteTransition(label = "breath").animateFloat(
         initialValue = 0f,
-        targetValue = if (dimmed) 0f else 0.13f,
+        targetValue = if (dimmed) 0f else 0.18f,
         animationSpec = infiniteRepeatable(tween(2400, easing = EaseInOutSine), RepeatMode.Reverse),
         label = "ba"
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Brush.radialGradient(
-                colors = listOf(Color(0xFF1E1B42).copy(alpha = baseAlpha), Color(0xFF090912).copy(alpha = baseAlpha))
-            )),
-        contentAlignment = Alignment.Center
-    ) {
+    // Внешний Box без clip — свечение выходит за скруглённые углы
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+
+        // ── Свечение — бокс шире карты на 40dp с каждой стороны ─────────────
         if (!dimmed) {
-            Box(modifier = Modifier.fillMaxSize().background(
-                Brush.radialGradient(colors = listOf(gold.copy(alpha = breathAlpha), Color.Transparent), radius = 380f)
-            ))
+            Box(
+                modifier = Modifier
+                    .layout { measurable, constraints ->
+                        val extra = 40.dp.roundToPx()
+                        val placeable = measurable.measure(
+                            constraints.copy(
+                                maxWidth  = constraints.maxWidth  + extra * 2,
+                                maxHeight = constraints.maxHeight + extra * 2,
+                            )
+                        )
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeable.place(-extra, -extra)
+                        }
+                    }
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(gold.copy(alpha = breathAlpha), Color.Transparent),
+                            radius = 500f
+                        )
+                    )
+            )
         }
 
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val maxR = minOf(size.width, size.height) * 0.43f
-
-            listOf(0.28f, 0.50f, 0.72f, 0.92f).forEachIndexed { idx, factor ->
-                drawCircle(
-                    color = gold.copy(alpha = baseAlpha * (0.08f + idx * 0.03f)),
-                    radius = maxR * factor,
-                    center = Offset(cx, cy),
-                    style = Stroke(width = 0.8.dp.toPx())
-                )
-            }
-
-            val starR = maxR * 0.30f
-            val innerR = starR * 0.42f
-            val path = Path()
-            for (i in 0 until 8) {
-                val oa = (i * 45.0 - 90.0) * (PI / 180.0)
-                val ia = ((i * 45.0 + 22.5) - 90.0) * (PI / 180.0)
-                val ox = cx + starR * cos(oa).toFloat()
-                val oy = cy + starR * sin(oa).toFloat()
-                val ix = cx + innerR * cos(ia).toFloat()
-                val iy = cy + innerR * sin(ia).toFloat()
-                if (i == 0) path.moveTo(ox, oy) else path.lineTo(ox, oy)
-                path.lineTo(ix, iy)
-            }
-            path.close()
-            drawPath(path, color = gold.copy(alpha = baseAlpha * 0.55f), style = Fill)
-            drawPath(path, color = gold.copy(alpha = baseAlpha * 0.28f), style = Stroke(0.8.dp.toPx()))
-        }
-
+        // ── Тело карты — клипировано по скруглённому прямоугольнику ──────────
         Box(
-            modifier = Modifier.fillMaxSize().padding(7.dp)
-                .border(1.dp, gold.copy(alpha = baseAlpha * 0.22f), RoundedCornerShape(Radius.m - 5.dp))
-        )
-        Text(text = "✦", fontSize = TextUnit(18f, TextUnitType.Sp), color = gold.copy(alpha = baseAlpha * 0.65f))
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(Radius.m))
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF1E1B42).copy(alpha = baseAlpha),
+                            Color(0xFF090912).copy(alpha = baseAlpha),
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val maxR = minOf(size.width, size.height) * 0.43f
+
+                listOf(0.28f, 0.50f, 0.72f, 0.92f).forEachIndexed { idx, factor ->
+                    drawCircle(
+                        color = gold.copy(alpha = baseAlpha * (0.08f + idx * 0.03f)),
+                        radius = maxR * factor,
+                        center = Offset(cx, cy),
+                        style = Stroke(width = 0.8.dp.toPx())
+                    )
+                }
+
+                val starR = maxR * 0.30f
+                val innerR = starR * 0.42f
+                val path = Path()
+                for (i in 0 until 8) {
+                    val oa = (i * 45.0 - 90.0) * (PI / 180.0)
+                    val ia = ((i * 45.0 + 22.5) - 90.0) * (PI / 180.0)
+                    val ox = cx + starR * cos(oa).toFloat()
+                    val oy = cy + starR * sin(oa).toFloat()
+                    val ix = cx + innerR * cos(ia).toFloat()
+                    val iy = cy + innerR * sin(ia).toFloat()
+                    if (i == 0) path.moveTo(ox, oy) else path.lineTo(ox, oy)
+                    path.lineTo(ix, iy)
+                }
+                path.close()
+                drawPath(path, color = gold.copy(alpha = baseAlpha * 0.55f), style = Fill)
+                drawPath(path, color = gold.copy(alpha = baseAlpha * 0.28f), style = Stroke(0.8.dp.toPx()))
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize().padding(7.dp)
+                    .border(1.dp, gold.copy(alpha = baseAlpha * 0.22f), RoundedCornerShape(Radius.m - 5.dp))
+            )
+            Text(text = "✦", fontSize = TextUnit(18f, TextUnitType.Sp), color = gold.copy(alpha = baseAlpha * 0.65f))
+        }
     }
 }
 
