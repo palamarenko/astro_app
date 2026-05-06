@@ -16,18 +16,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.ALL_SIGNS
 import com.astro.app.data.ZodiacSign
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.SectionLabel
 import com.astro.app.ui.theme.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SignPickerScreen(
     onSignSelected: (ZodiacSign) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val s = strings()
     Box(modifier = modifier.fillMaxSize().background(AppColors.Background)) {
         Column(
             modifier = Modifier
@@ -36,12 +37,12 @@ fun SignPickerScreen(
                 .padding(horizontal = Spacing.xl, vertical = Spacing.xxl)
         ) {
             Spacer(Modifier.height(16.dp))
-            SectionLabel(s.signPickerLabel)
+            SectionLabel(stringResource(Res.string.sign_picker_label))
             Spacer(Modifier.height(Spacing.m))
-            Text(text = s.signPickerTitle1, fontSize = AppType.h1, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
-            Text(text = s.signPickerTitle2, fontSize = AppType.h1, fontWeight = FontWeight.Light, fontStyle = FontStyle.Italic, color = AppColors.TextPrimary)
+            Text(text = stringResource(Res.string.sign_picker_title1), fontSize = AppType.h1, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
+            Text(text = stringResource(Res.string.sign_picker_title2), fontSize = AppType.h1, fontWeight = FontWeight.Light, fontStyle = FontStyle.Italic, color = AppColors.TextPrimary)
             Spacer(Modifier.height(Spacing.s))
-            Text(text = s.signPickerSubtitle, fontSize = AppType.caption, color = AppColors.TextDim)
+            Text(text = stringResource(Res.string.sign_picker_subtitle), fontSize = AppType.caption, color = AppColors.TextDim)
             Spacer(Modifier.height(Spacing.xxl))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
@@ -60,7 +61,6 @@ fun SignPickerScreen(
 
 @Composable
 private fun SignCard(sign: ZodiacSign, index: Int, onClick: () -> Unit) {
-    val s = strings()
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(index * 25L)
@@ -88,9 +88,9 @@ private fun SignCard(sign: ZodiacSign, index: Int, onClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(text = sign.emoji, fontSize = TextUnit(24f, TextUnitType.Sp))
                 Spacer(Modifier.height(4.dp))
-                Text(text = sign.localizedName(s), fontSize = AppType.caption, fontWeight = FontWeight.Normal, color = AppColors.TextSecondary)
+                Text(text = sign.localizedName(), fontSize = AppType.caption, fontWeight = FontWeight.Normal, color = AppColors.TextSecondary)
                 Spacer(Modifier.height(2.dp))
-                Text(text = sign.localizedElement(s), fontSize = TextUnit(9f, TextUnitType.Sp), color = elementColor)
+                Text(text = sign.localizedElement(), fontSize = TextUnit(9f, TextUnitType.Sp), color = elementColor)
             }
         }
     }

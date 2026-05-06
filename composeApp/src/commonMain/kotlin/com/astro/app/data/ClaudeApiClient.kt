@@ -14,10 +14,18 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+data class TarotPersonalContext(
+    val name: String? = null,
+    val gender: String? = null,     // "male" | "female"
+    val birthDate: String? = null,
+    val birthSign: String? = null,
+    val birthPlace: String? = null,
+)
+
 @Serializable data class AnthropicMessage(val role: String, val content: String)
 @Serializable data class AnthropicRequest(
     @SerialName("model") val model: String,
-    @SerialName("max_tokens") val maxTokens: Int = 512,
+    @SerialName("max_tokens") val maxTokens: Int,
     val messages: List<AnthropicMessage>,
 )
 @Serializable data class ContentBlock(val type: String, val text: String = "")
@@ -87,17 +95,76 @@ class ClaudeApiClient(private val apiKey: String) {
         return json.decodeFromString(extractJson(complete(prompt)))
     }
 
-    suspend fun getTarotReading(cards: List<TarotCard>): TarotReadingResponse {
-        val positions = listOf("Past", "Present", "Future")
+
+
+    /** Generates only the overall summary for a three-card spread.
+     *  The individual card texts (past/present/future) come from Firebase. */
+    suspend fun getTarotSummary(
+        cards: List<TarotCard>,
+        context: TarotPersonalContext? = null,
+        lang: String = "ru",
+    ): String {
+        val langName = when (lang) {
+            "uk" -> "Ukrainian"
+            "en" -> "English"
+            else -> "Russian"
+        }
+        val positions = when (lang) {
+            "uk" -> listOf("Минуле", "Теперішнє", "Майбутнє")
+            "en" -> listOf("Past", "Present", "Future")
+            else -> listOf("Прошлое", "Настоящее", "Будущее")
+        }
+        val reversedLabel = when (lang) {
+            "uk" -> "перевернута"
+            "en" -> "reversed"
+            else -> "перевёрнутая"
+        }
+
         val cardDesc = cards.mapIndexed { i, c ->
-            "${positions[i]}: ${c.name}${if (c.reversed) " (reversed)" else ""}"
-        }.joinToString(", ")
+            val rev = if (c.reversed) " ($reversedLabel)" else ""
+            "${positions[i]}: ${c.name}$rev"
+        }.joinToString("; ")
+
+        val genderHint = when (context?.gender) {
+            "male"   -> when (lang) {
+                "uk" -> "Стать: чоловіча — використовуй чоловічий рід у зверненні."
+                "en" -> "Gender: male — address the seeker using masculine forms."
+                else -> "Пол: мужской — обращайся к человеку в мужском роде."
+            }
+            "female" -> when (lang) {
+                "uk" -> "Стать: жіноча — використовуй жіночий рід у зверненні."
+                "en" -> "Gender: female — address the seeker using feminine forms."
+                else -> "Пол: женский — обращайся к человеку в женском роде."
+            }
+            else -> ""
+        }
+
+        val contextBlock = if (context != null) {
+            val parts = buildList {
+                context.name?.let { add("имя: $it") }
+                context.birthDate?.let { add("дата рождения: $it") }
+                context.birthSign?.let { add("знак зодиака: $it") }
+                context.birthPlace?.let { add("место рождения: $it") }
+            }
+            if (parts.isNotEmpty())
+                "\nSeekerʼs personal context (weave it naturally where meaningful, do not force it): ${parts.joinToString(", ")}."
+            else ""
+        } else ""
+
+        val genderLine = if (genderHint.isNotEmpty()) "\n$genderHint" else ""
+
         val prompt = """
-            Three-card Tarot spread -- $cardDesc.
-            Respond ONLY with JSON, no markdown:
-            {"past":"1-2 sentences","present":"1-2 sentences","future":"1-2 sentences","summary":"1-2 sentences overall reading"}
+            Three-card Tarot spread: $cardDesc.$contextBlock$genderLine
+            Reversed cards carry the archetype's energy turned inward or blocked.
+            Write a 2-3 sentence overall reading summary grounded in the next 1-2 days — today and tomorrow.
+            Speak directly to what the person may experience, feel, or face in the nearest hours ahead.
+            Language: $langName.
+            Style: warm and light — like a trusted friend sharing an insight, not a formal oracle.
+            Keep the mystical feel but stay conversational: no heavy metaphors, no dramatic flourishes.
+            Plain text only — no JSON, no markdown.
         """.trimIndent()
-        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 600)))
+
+        return complete(prompt, maxTokens = 300)
     }
 
     suspend fun getSignInsight(sign: ZodiacSign): String {
@@ -119,11 +186,11 @@ class ClaudeApiClient(private val apiKey: String) {
             Write tarot card interpretations for the Major Arcana card "${card.name}" (${card.number}), keywords: ${card.keywords}.
             Language: $langName. Style: poetic, mystical, personal, inspiring.
             Context: "past" — how this card's energy manifested in the past; "present" — current situation; "future" — what awaits ahead.
-            Each field: 2-3 sentences. Do NOT repeat keywords verbatim.
+            Each field: exactly ~20 words, one concise sentence. Do NOT repeat keywords verbatim.
             Respond ONLY with valid JSON, no markdown:
             {"past":"...","present":"...","future":"..."}
         """.trimIndent()
-        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 500)))
+        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 200)))
     }
 
     // Admin: generate a horoscope in the target language for a specific period

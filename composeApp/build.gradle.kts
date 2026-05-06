@@ -12,6 +12,9 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
+                freeCompilerArgs += listOf(
+                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi"
+                )
             }
         }
     }
@@ -25,6 +28,13 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+        iosTarget.compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += listOf(
+                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi"
+                )
+            }
+        }
     }
 
     sourceSets {
@@ -32,6 +42,7 @@ kotlin {
             implementation(libs.ktor.client.android)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.appcompat)
+            implementation(libs.play.services.ads)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -85,6 +96,12 @@ android {
             "String", "GOOGLE_MAPS_API_KEY",
             "\"${localProps["GOOGLE_MAPS_API_KEY"] ?: ""}\""
         )
+        buildConfigField(
+            "String", "ADMOB_REWARDED_AD_UNIT_ID",
+            "\"${localProps["ADMOB_REWARDED_AD_UNIT_ID"] ?: ""}\""
+        )
+        manifestPlaceholders["admobAppId"] =
+            localProps["ADMOB_APP_ID"] ?: ""
     }
 
     buildFeatures {

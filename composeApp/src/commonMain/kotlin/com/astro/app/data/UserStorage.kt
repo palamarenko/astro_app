@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
 data class UserProfile(
     val signId: String = "leo",
     val name: String = "",
+    val gender: String = "",        // "male" | "female" | ""
     val birthDay: Int = 0,
     val birthMonth: Int = 0,
     val birthYear: Int = 1990,

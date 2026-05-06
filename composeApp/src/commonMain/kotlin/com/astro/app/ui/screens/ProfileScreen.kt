@@ -25,10 +25,12 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import astroapp.composeapp.generated.resources.*
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -51,7 +53,6 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     onNavigateToAdmin: () -> Unit = {}
 ) {
-    val s     = strings()
     val state by vm.state.collectAsState()
     val sign  = state.sign
     val elementColor = AppColors.elementColor(sign.element)
@@ -91,17 +92,17 @@ fun ProfileScreen(
             Spacer(Modifier.height(Spacing.s))
 
             Text(
-                text = if (state.name.isNotBlank()) state.name else sign.localizedName(s),
+                text = if (state.name.isNotBlank()) state.name else sign.localizedName(),
                 fontSize = AppType.h2, fontWeight = FontWeight.Light, color = AppColors.TextPrimary
             )
 
             if (state.birthDay > 0) {
                 Text(
-                    text = "${sign.emoji} ${sign.localizedName(s)}  ·  ${state.birthDay} ${MONTHS_RU[state.birthMonth - 1]} ${state.birthYear}",
+                    text = "${sign.emoji} ${sign.localizedName()}  ·  ${state.birthDay} ${MONTHS_RU[state.birthMonth - 1]} ${state.birthYear}",
                     fontSize = AppType.caption, color = AppColors.TextDim, textAlign = TextAlign.Center
                 )
             } else {
-                Text(sign.localizedDates(s), fontSize = AppType.caption, color = AppColors.TextDim)
+                Text(sign.localizedDates(), fontSize = AppType.caption, color = AppColors.TextDim)
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -133,6 +134,31 @@ fun ProfileScreen(
                     )
                 }
 
+                // Пол
+                ProfileCard(label = "Пол") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        GenderButton(
+                            label    = "♂  Мужской",
+                            selected = state.gender == "male",
+                            onClick  = {
+                                vm.setGender(if (state.gender == "male") "" else "male")
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GenderButton(
+                            label    = "♀  Женский",
+                            selected = state.gender == "female",
+                            onClick  = {
+                                vm.setGender(if (state.gender == "female") "" else "female")
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
                 // Дата рождения
                 ProfileCard(label = "Дата рождения") {
                     PickerRow(
@@ -154,9 +180,9 @@ fun ProfileScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(sign.emoji, fontSize = 16.sp)
-                            Text(sign.localizedName(s), fontSize = 12.sp, color = AppColors.AccentGold, fontWeight = FontWeight.Medium)
+                            Text(sign.localizedName(), fontSize = 12.sp, color = AppColors.AccentGold, fontWeight = FontWeight.Medium)
                             Text("·", color = AppColors.TextDim, fontSize = 12.sp)
-                            Text(sign.localizedDates(s), fontSize = 11.sp, color = AppColors.TextDim)
+                            Text(sign.localizedDates(), fontSize = 11.sp, color = AppColors.TextDim)
                         }
                     }
                 }
@@ -193,11 +219,11 @@ fun ProfileScreen(
                     .background(AppColors.Card),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(s.profileStatElement, sign.localizedElement(s), elementColor)
+                StatItem(stringResource(Res.string.profile_stat_element), sign.localizedElement(), elementColor)
                 Box(Modifier.width(1.dp).height(48.dp).background(AppColors.Border).align(Alignment.CenterVertically))
-                StatItem(s.profileStatPlanet, sign.localizedPlanet(s), AppColors.AccentGold)
+                StatItem(stringResource(Res.string.profile_stat_planet), sign.localizedPlanet(), AppColors.AccentGold)
                 Box(Modifier.width(1.dp).height(48.dp).background(AppColors.Border).align(Alignment.CenterVertically))
-                StatItem(s.profileStatPeriod, sign.localizedDates(s).split("–").first().trim(), AppColors.TextMuted)
+                StatItem(stringResource(Res.string.profile_stat_period), sign.localizedDates().split("–").first().trim(), AppColors.TextMuted)
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -284,6 +310,32 @@ private fun StatItem(label: String, value: String, color: Color) {
     Column(modifier = Modifier.padding(vertical = 14.dp, horizontal = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, fontSize = AppType.body, color = color, fontWeight = FontWeight.Normal)
         Text(label, fontSize = TextUnit(9f, TextUnitType.Sp), color = AppColors.TextDim)
+    }
+}
+
+// ── Gender button ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun GenderButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val borderColor = if (selected) AppColors.AccentGold else AppColors.Border
+    val bgColor     = if (selected) AppColors.AccentGold.copy(alpha = 0.12f) else AppColors.CardDark
+    val textColor   = if (selected) AppColors.AccentGold else AppColors.TextDim
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(Radius.s))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(Radius.s))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(label, fontSize = 14.sp, color = textColor, fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal)
     }
 }
 

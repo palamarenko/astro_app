@@ -38,6 +38,9 @@ coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor2", version.re
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.6.1" }
 
+# Google Mobile Ads (AdMob)
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version = "23.6.0" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

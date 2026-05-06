@@ -33,6 +33,10 @@
     <string name="tarot_position_future">Future</string>
     <string name="tarot_btn_loading">The stars are speaking…</string>
     <string name="tarot_btn_open">✦  Reveal the Cards  ✦</string>
+    <string name="tarot_ad_badge">AD</string>
+    <string name="tarot_ad_not_ready">Ad is still loading, please try again in a moment</string>
+    <string name="tarot_btn_already_drawn">Cards already drawn today</string>
+    <string name="tarot_already_drawn_hint">Come back tomorrow — the cards reveal themselves once a day</string>
     <string name="tarot_summary_label">✦ OVERALL READING ✦</string>
     <string name="tarot_reversed">REVERSED</string>
 
@@ -40,6 +44,8 @@
     <string name="compat_label">UNION OF STARS</string>
     <string name="compat_title1">Compati-</string>
     <string name="compat_title2">bility</string>
+    <string name="compat_coming_soon">Coming Soon</string>
+    <string name="compat_coming_soon_desc">The stars are aligning.\nThe compatibility section is coming soon.</string>
     <string name="compat_sign1">First sign</string>
     <string name="compat_sign2">Second sign</string>
     <string name="compat_select_sign1">Choose the first sign</string>

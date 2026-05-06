@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 data class TarotUiState(
     val cards: List<TarotCard> = emptyList(),
@@ -16,6 +17,10 @@ data class TarotUiState(
     val isLoading: Boolean = false,
     val revealedCount: Int = 0,
     val error: String? = null,
+    /** true — пользователь уже сделал расклад и может посмотреть рекламу для нового. */
+    val canWatchAd: Boolean = false,
+    /** Временное сообщение о статусе рекламы (показывается и исчезает). */
+    val adMessage: String? = null,
 )
 
 private val MOCK_READINGS = listOf(
@@ -23,85 +28,119 @@ private val MOCK_READINGS = listOf(
         past    = "В прошлом вы прошли сквозь испытания, которые закалили ваш дух. Трудности не сломили — они выковали характер и научили ценить то, что действительно важно.",
         present = "Сейчас вы стоите на перекрёстке. Перед вами открывается новая страница — но её нужно перевернуть самостоятельно. Ваша интуиция особенно сильна в эти дни.",
         future  = "Впереди вас ждёт период трансформации и обновления. То, что казалось недостижимым, начнёт проявляться в вашей жизни. Доверьтесь потоку перемен.",
-        summary = "Карты складываются в историю возрождения. Вы прошли долгий путь и теперь готовы к следующей главе. Звёзды благоволят вашим начинаниям — действуйте смело, но с мудростью. Вселенная видит ваши усилия и готовится вознаградить вас неожиданным образом."
+        summary = "Карты складываются в историю возрождения. Вы прошли долгий путь и теперь готовы к следующей главе. Звёзды благоволят вашим начинаниям — действуйте смело, но с мудростью."
     ),
     TarotReadingResponse(
         past    = "Прошлое хранит в себе незакрытые истории и невысказанные слова. Но именно этот груз помог вам стать тем, кем вы являетесь сегодня — сильным и мудрым.",
         present = "Сейчас вы находитесь в процессе глубокой внутренней работы. Старое уходит, освобождая место для нового. Не цепляйтесь за то, что уже отслужило своё.",
         future  = "Новый цикл несёт с собой свет и вдохновение. Ваши мечты имеют все шансы воплотиться в реальность — главное, не останавливаться и не сомневаться в себе.",
-        summary = "Три карты образуют мощный архетип перерождения. Прошлое было вашим учителем, настоящее — вашей возможностью, а будущее — вашей наградой. Звёзды указывают на особый период в вашей жизни. Оставайтесь открытыми к неожиданным возможностям — они уже на пути к вам."
+        summary = "Три карты образуют мощный архетип перерождения. Прошлое было вашим учителем, настоящее — вашей возможностью, а будущее — вашей наградой."
     ),
     TarotReadingResponse(
         past    = "В прошлом вы отдавали больше, чем получали, и это истощило ваши ресурсы. Но каждая отданная капля энергии была посеяна в почву — скоро она даст ростки.",
         present = "Пришло время заботиться о себе. Расставьте приоритеты и не бойтесь сказать «нет» тому, что вам не служит. Ваша энергия — ваш главный ресурс.",
         future  = "Впереди вас ждёт период изобилия и гармонии. Отношения углубятся, проекты наберут силу, а внутренний покой станет вашим постоянным спутником.",
-        summary = "Расклад указывает на цикл отдачи и получения, который наконец возвращается к балансу. Вселенная не забывает тех, кто действует с открытым сердцем. Доверьтесь процессу — всё складывается именно так, как должно. Ваше время пришло."
-    ),
-    TarotReadingResponse(
-        past    = "Прошлый период был отмечен поиском себя и своего места в мире. Этот поиск не был напрасным — каждый шаг привёл вас именно туда, где вы находитесь сейчас.",
-        present = "Сейчас вы находитесь на пике своих возможностей. Ваша воля и энергия способны сдвинуть горы — важно лишь направить их в нужное русло.",
-        future  = "Предстоящий путь полон возможностей для роста и самовыражения. Не бойтесь быть собой в полной мере — именно ваша уникальность откроет нужные двери.",
-        summary = "Ваш расклад говорит о силе духа и непреклонной воле. Карты выстраиваются в историю победы — не над другими, но над собственными страхами и сомнениями. Звёзды видят вашу готовность к переменам и отвечают — пора. Шагните навстречу своей судьбе."
+        summary = "Расклад указывает на цикл отдачи и получения, который наконец возвращается к балансу. Вселенная не забывает тех, кто действует с открытым сердцем."
     ),
 )
+
+/** Randomly selects which personal fields to include in this reading.
+ *  Each field has an independent probability so that readings feel varied. */
+private fun buildPersonalContext(profile: UserProfile?): TarotPersonalContext? {
+    if (profile == null) return null
+
+    val name       = profile.name.takeIf { it.isNotBlank() && Random.nextFloat() < 0.60f }
+    val gender     = profile.gender.takeIf { it.isNotBlank() }   // всегда передаём если задан
+    val birthSign  = profile.signId.takeIf { it.isNotBlank() && Random.nextFloat() < 0.45f }
+    val birthPlace = profile.birthPlace.takeIf { it.isNotBlank() && Random.nextFloat() < 0.40f }
+
+    // Build birth date string only when day/month are set and random roll passes
+    val birthDate: String? = if (
+        profile.birthDay > 0 && profile.birthMonth > 0 && Random.nextFloat() < 0.45f
+    ) {
+        val day   = profile.birthDay.toString().padStart(2, '0')
+        val month = profile.birthMonth.toString().padStart(2, '0')
+        if (profile.birthYear > 0) "$day.$month.${profile.birthYear}" else "$day.$month"
+    } else null
+
+    // Return null context if none of the fields were selected (so the API call stays clean)
+    if (name == null && gender == null && birthDate == null && birthSign == null && birthPlace == null) return null
+
+    return TarotPersonalContext(
+        name      = name,
+        gender    = gender,
+        birthDate = birthDate,
+        birthSign = birthSign,
+        birthPlace = birthPlace,
+    )
+}
 
 class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
     private val firebase = FirebaseService()
     private val _state = MutableStateFlow(TarotUiState())
     val state: StateFlow<TarotUiState> = _state.asStateFlow()
 
-    private val lang: String
-        get() = when (AppLanguage.fromCode(getSystemLanguageCode())) {
-            AppLanguage.UK -> "uk"
-            else           -> "ru"
-        }
+    private val lang: String = "ru"
 
     fun drawCards() {
         val picked = ALL_TAROT.shuffled().take(3).map { card ->
             card.copy(reversed = (0..9).random() > 6)
         }
         _state.value = TarotUiState(cards = picked, isLoading = true, revealedCount = 0)
+
         viewModelScope.launch {
             kotlinx.coroutines.delay(1800L)
 
             val reading = try {
+                // 1. Card texts from Firebase (past / present / future)
+                val mock = MOCK_READINGS.random()
                 val allCards = firebase.getAllTarotCards(lang)
-                if (allCards != null) {
-                    val c0 = allCards[picked[0].resourceKey] ?: TarotCardContent()
-                    val c1 = allCards[picked[1].resourceKey] ?: TarotCardContent()
-                    val c2 = allCards[picked[2].resourceKey] ?: TarotCardContent()
+                val pastText    = allCards?.get(picked[0].resourceKey)?.past    ?: mock.past
+                val presentText = allCards?.get(picked[1].resourceKey)?.present ?: mock.present
+                val futureText  = allCards?.get(picked[2].resourceKey)?.future  ?: mock.future
 
-                    val pastText    = c0.past
-                    val presentText = c1.present
-                    val futureText  = c2.future
-
-                    if (pastText.isNotBlank() || presentText.isNotBlank() || futureText.isNotBlank()) {
-                        TarotReadingResponse(
-                            past    = pastText,
-                            present = presentText,
-                            future  = futureText,
-                            summary = buildSummary(pastText, presentText, futureText)
-                        )
-                    } else {
-                        MOCK_READINGS.random()
-                    }
-                } else {
-                    MOCK_READINGS.random()
+                // 2. Overall summary from Anthropic, with partial personal context
+                val profile = UserStorage.load()
+                val context = buildPersonalContext(profile)
+                val summary = try {
+                    api.getTarotSummary(picked, context, lang)
+                } catch (e: Exception) {
+                    mock.summary
                 }
+
+                TarotReadingResponse(
+                    past    = pastText,
+                    present = presentText,
+                    future  = futureText,
+                    summary = summary,
+                )
             } catch (e: Exception) {
                 MOCK_READINGS.random()
             }
 
-            _state.value = _state.value.copy(reading = reading, isLoading = false)
+            _state.value = _state.value.copy(
+                reading = reading,
+                isLoading = false,
+                // После первого успешного расклада показываем кнопку рекламы
+                canWatchAd = true,
+            )
             revealCardsWithDelay()
         }
     }
 
-    private fun buildSummary(past: String, present: String, future: String): String {
-        val filled = listOf(past, present, future).count { it.isNotBlank() }
-        return if (filled >= 2)
-            "Карты открыли свои послания. Прислушайтесь к каждому из них — вместе они складываются в единый путь."
-        else ""
+    /** Вызывается когда пользователь досмотрел рекламу — делаем новый расклад. */
+    fun onAdRewarded() {
+        drawCards()
+    }
+
+    /** Вызывается если реклама не готова или произошла ошибка загрузки.
+     *  [message] — локализованная строка, переданная из Composable-слоя. */
+    fun onAdFailed(message: String) {
+        _state.value = _state.value.copy(adMessage = message)
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(3000L)
+            _state.value = _state.value.copy(adMessage = null)
+        }
     }
 
     private suspend fun revealCardsWithDelay() {

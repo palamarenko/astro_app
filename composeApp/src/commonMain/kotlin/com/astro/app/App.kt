@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.*
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.CompatibilityNavIcon
@@ -22,6 +23,7 @@ import com.astro.app.ui.components.HoroscopeNavIcon
 import com.astro.app.ui.components.TarotNavIcon
 import com.astro.app.ui.screens.*
 import com.astro.app.ui.theme.*
+import org.jetbrains.compose.resources.stringResource
 
 // Порядок табов для определения направления слайда
 private val TAB_ORDER = listOf(
@@ -33,17 +35,7 @@ private val TAB_ORDER = listOf(
 
 @Composable
 fun App() {
-    val langCode = remember { getSystemLanguageCode() }
-    val strings = remember(langCode) {
-        when (AppLanguage.fromCode(langCode)) {
-            AppLanguage.UK -> StringsUk
-            AppLanguage.EN -> StringsEn
-            else           -> StringsRu
-        }
-    }
-    CompositionLocalProvider(LocalStrings provides strings) {
-        AppContent()
-    }
+    AppContent()
 }
 
 @Composable
@@ -128,7 +120,7 @@ private fun AppContent() {
                         }
                     }
                     BottomTab.TAROT         -> TarotScreen(vm = tarotVm, modifier = Modifier.fillMaxSize())
-                    BottomTab.COMPATIBILITY -> CompatibilityScreen(vm = compatVm, modifier = Modifier.fillMaxSize())
+                    BottomTab.COMPATIBILITY -> ComingSoonScreen(modifier = Modifier.fillMaxSize())
                     BottomTab.PROFILE       -> {
                         when {
                             showAdminTarot -> AdminTarotScreen(
@@ -180,12 +172,11 @@ private fun BottomNav(
     onTabSelected: (BottomTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val s = strings()
     val navItems = listOf(
-        NavItem(BottomTab.HOROSCOPE,     s.navHoroscope)     { c -> HoroscopeNavIcon(color = c) },
-        NavItem(BottomTab.TAROT,         s.navTarot)         { c -> TarotNavIcon(color = c) },
-        NavItem(BottomTab.COMPATIBILITY, s.navCompatibility) { c -> CompatibilityNavIcon(color = c) },
-        NavItem(BottomTab.PROFILE,       s.navProfile)       { c ->
+        NavItem(BottomTab.HOROSCOPE,     stringResource(Res.string.nav_horoscope))     { c -> HoroscopeNavIcon(color = c) },
+        NavItem(BottomTab.TAROT,         stringResource(Res.string.nav_tarot))         { c -> TarotNavIcon(color = c) },
+        NavItem(BottomTab.COMPATIBILITY, stringResource(Res.string.nav_compatibility)) { c -> CompatibilityNavIcon(color = c) },
+        NavItem(BottomTab.PROFILE,       stringResource(Res.string.nav_profile))       { c ->
             // Профайл — эмодзи выбранного знака
             Text(
                 text = profileIcon,

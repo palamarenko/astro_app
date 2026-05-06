@@ -17,27 +17,28 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.ALL_SIGNS
 import com.astro.app.data.ZodiacSign
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifier) {
-    val s = strings()
     val state by vm.state.collectAsState()
 
     Box(modifier = modifier.fillMaxSize().background(AppColors.Background)) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.xl)) {
             Spacer(Modifier.height(Spacing.xxl))
-            SectionLabel(s.compatLabel)
+            SectionLabel(stringResource(Res.string.compat_label))
             Spacer(Modifier.height(Spacing.m))
-            Text(text = s.compatTitle1, fontSize = AppType.h1, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
-            Text(text = s.compatTitle2, fontSize = AppType.h1, fontWeight = FontWeight.Light, fontStyle = FontStyle.Italic, color = AppColors.TextPrimary)
+            Text(text = stringResource(Res.string.compat_title1), fontSize = AppType.h1, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
+            Text(text = stringResource(Res.string.compat_title2), fontSize = AppType.h1, fontWeight = FontWeight.Light, fontStyle = FontStyle.Italic, color = AppColors.TextPrimary)
             Spacer(Modifier.height(Spacing.xl))
 
-            Text(text = s.compatSign1, fontSize = AppType.caption, color = AppColors.TextMuted)
+            Text(text = stringResource(Res.string.compat_sign1), fontSize = AppType.caption, color = AppColors.TextMuted)
             Spacer(Modifier.height(Spacing.s))
             SignRow(selected = state.sign1, onSelect = { vm.setSign1(it) })
             Spacer(Modifier.height(Spacing.xl))
@@ -49,7 +50,7 @@ fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifie
             }
             Spacer(Modifier.height(Spacing.xl))
 
-            Text(text = s.compatSign2, fontSize = AppType.caption, color = AppColors.TextMuted)
+            Text(text = stringResource(Res.string.compat_sign2), fontSize = AppType.caption, color = AppColors.TextMuted)
             Spacer(Modifier.height(Spacing.s))
             SignRow(selected = state.sign2, onSelect = { if (state.sign1 != null) vm.setSign2(it) }, enabled = state.sign1 != null)
             Spacer(Modifier.height(Spacing.xl))
@@ -76,13 +77,13 @@ fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifie
                             }
                             Spacer(Modifier.height(Spacing.m))
                             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
-                                InfoCard(s.compatStrengths, r.strengths, AppColors.Earth, Modifier.weight(1f))
-                                InfoCard(s.compatChallenges, r.challenges, AppColors.Fire, Modifier.weight(1f))
+                                InfoCard(stringResource(Res.string.compat_strengths), r.strengths, AppColors.Earth, Modifier.weight(1f))
+                                InfoCard(stringResource(Res.string.compat_challenges), r.challenges, AppColors.Fire, Modifier.weight(1f))
                             }
                         }
                     }
                     else -> Text(
-                        text = if (st.sign1 == null) s.compatSelectSign1 else s.compatSelectSign2,
+                        text = if (st.sign1 == null) stringResource(Res.string.compat_select_sign1) else stringResource(Res.string.compat_select_sign2),
                         color = AppColors.TextMuted, fontSize = AppType.body,
                         modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp), textAlign = TextAlign.Center)
                 }
@@ -94,7 +95,6 @@ fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifie
 
 @Composable
 private fun SignRow(selected: ZodiacSign?, onSelect: (ZodiacSign) -> Unit, enabled: Boolean = true) {
-    val s = strings()
     LazyHorizontalGrid(rows = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier.fillMaxWidth().height(88.dp), contentPadding = PaddingValues(vertical = 0.dp)) {
@@ -107,7 +107,7 @@ private fun SignRow(selected: ZodiacSign?, onSelect: (ZodiacSign) -> Unit, enabl
                 .clickable(enabled = enabled) { onSelect(sign) }.padding(4.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = sign.emoji, fontSize = TextUnit(18f, TextUnitType.Sp))
-                    Text(text = sign.localizedName(s), fontSize = TextUnit(8f, TextUnitType.Sp),
+                    Text(text = sign.localizedName(), fontSize = TextUnit(8f, TextUnitType.Sp),
                         color = if (isSelected) elementColor else AppColors.TextDim)
                 }
             }

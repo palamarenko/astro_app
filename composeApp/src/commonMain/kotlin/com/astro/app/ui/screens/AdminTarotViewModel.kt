@@ -63,13 +63,13 @@ class AdminTarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
         viewModelScope.launch {
             _state.value = _state.value.copy(generatingCardKeys = _state.value.generatingCardKeys + card.resourceKey)
             try {
-                val reading = api.getTarotReading(listOf(card))
+                val content = api.generateAdminTarotCard(card, _state.value.lang)
                 val cards = _state.value.cards.toMutableMap()
                 val cur = cards[card.resourceKey] ?: TarotCardContent()
                 cards[card.resourceKey] = cur.copy(
-                    past    = reading.past,
-                    present = reading.present,
-                    future  = reading.future,
+                    past    = content.past,
+                    present = content.present,
+                    future  = content.future,
                 )
                 _state.value = _state.value.copy(
                     cards = cards,

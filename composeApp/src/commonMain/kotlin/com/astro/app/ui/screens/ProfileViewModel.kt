@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 data class ProfileUiState(
     val sign: ZodiacSign = ALL_SIGNS[4],
     val name: String = "",
+    val gender: String = "",        // "male" | "female" | ""
     val birthDay: Int = 0,
     val birthMonth: Int = 0,
     val birthYear: Int = 1990,
@@ -45,6 +46,7 @@ private fun UserProfile.toUiState(): ProfileUiState {
     return ProfileUiState(
         sign = sign,
         name = name,
+        gender = gender,
         birthDay = birthDay,
         birthMonth = birthMonth,
         birthYear = birthYear,
@@ -59,6 +61,7 @@ private fun UserProfile.toUiState(): ProfileUiState {
 private fun ProfileUiState.toProfile() = UserProfile(
     signId = sign.id,
     name = name,
+    gender = gender,
     birthDay = birthDay,
     birthMonth = birthMonth,
     birthYear = birthYear,
@@ -83,6 +86,10 @@ class ProfileViewModel(private val api: ClaudeApiClient) : ViewModel() {
 
     fun setName(name: String) {
         update(_state.value.copy(name = name))
+    }
+
+    fun setGender(gender: String) {
+        update(_state.value.copy(gender = gender))
     }
 
     fun selectSign(sign: ZodiacSign) {

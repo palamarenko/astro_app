@@ -33,6 +33,10 @@
     <string name="tarot_position_future">Майбутнє</string>
     <string name="tarot_btn_loading">Зорі говорять…</string>
     <string name="tarot_btn_open">✦  Відкрити карти  ✦</string>
+    <string name="tarot_ad_badge">AD</string>
+    <string name="tarot_ad_not_ready">Реклама ще завантажується, спробуйте через кілька секунд</string>
+    <string name="tarot_btn_already_drawn">Карти вже відкрито сьогодні</string>
+    <string name="tarot_already_drawn_hint">Поверніться завтра — карти відкриваються раз на день</string>
     <string name="tarot_summary_label">✦ ЗАГАЛЬНИЙ ВИСНОВОК ✦</string>
     <string name="tarot_reversed">ПЕРЕВЕРНУТА</string>
 

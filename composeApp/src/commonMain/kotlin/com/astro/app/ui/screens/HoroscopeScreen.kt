@@ -18,19 +18,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
-import astroapp.composeapp.generated.resources.Res
-import astroapp.composeapp.generated.resources.ic_zodiac_wheel
+import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val s = strings()
     val state by vm.state.collectAsState()
     val sign = state.selectedSign ?: return
     val elementColor = AppColors.elementColor(sign.element)
@@ -44,7 +43,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.width(36.dp))
                 Spacer(Modifier.weight(1f))
-                Text(text = sign.localizedDates(s).uppercase(), fontSize = AppType.caption, color = AppColors.AccentGold,
+                Text(text = sign.localizedDates().uppercase(), fontSize = AppType.caption, color = AppColors.AccentGold,
                     letterSpacing = TextUnit(0.22f, TextUnitType.Em))
                 Spacer(Modifier.weight(1f))
                 Box(
@@ -74,11 +73,11 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                     contentAlignment = Alignment.Center
                 ) { Text(text = sign.emoji, fontSize = TextUnit(30f, TextUnitType.Sp)) }
                 Spacer(Modifier.height(Spacing.m))
-                Text(text = sign.localizedName(s), fontSize = AppType.h2, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
+                Text(text = sign.localizedName(), fontSize = AppType.h2, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
                 Spacer(Modifier.height(Spacing.s))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ElementPill(sign.localizedElement(s), elementColor)
-                    ElementPill(sign.localizedPlanet(s), AppColors.AccentGold)
+                    ElementPill(sign.localizedElement(), elementColor)
+                    ElementPill(sign.localizedPlanet(), AppColors.AccentGold)
                 }
             }
             Spacer(Modifier.height(Spacing.xl))
@@ -96,7 +95,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                         Column {
                             Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.m)).background(AppColors.Card).padding(18.dp)) {
                                 Column {
-                                    SectionLabel(s.horoscopePredictionLabel)
+                                    SectionLabel(stringResource(Res.string.horoscope_prediction_label))
                                     Spacer(Modifier.height(Spacing.s))
                                     Text(text = h.text, fontSize = AppType.bodyLg, fontStyle = FontStyle.Italic,
                                         fontWeight = FontWeight.Light, color = AppColors.TextSecondary,
@@ -106,20 +105,20 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                             Spacer(Modifier.height(Spacing.m))
                             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                                    ScoreCard(label = s.horoscopeScoreLove, icon = "♡", score = h.love, color = AppColors.Fire, modifier = Modifier.weight(1f))
-                                    ScoreCard(label = s.horoscopeScoreCareer, icon = "◈", score = h.career, color = AppColors.AccentGold, modifier = Modifier.weight(1f))
+                                    ScoreCard(label = stringResource(Res.string.horoscope_score_love), icon = "♡", score = h.love, color = AppColors.Fire, modifier = Modifier.weight(1f))
+                                    ScoreCard(label = stringResource(Res.string.horoscope_score_career), icon = "◈", score = h.career, color = AppColors.AccentGold, modifier = Modifier.weight(1f))
                                 }
                                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                                    ScoreCard(label = s.horoscopeScoreHealth, icon = "✦", score = h.health, color = AppColors.Earth, modifier = Modifier.weight(1f))
-                                    ScoreCard(label = s.horoscopeScoreEnergy, icon = "◎", score = h.energy, color = AppColors.Air, modifier = Modifier.weight(1f))
+                                    ScoreCard(label = stringResource(Res.string.horoscope_score_health), icon = "✦", score = h.health, color = AppColors.Earth, modifier = Modifier.weight(1f))
+                                    ScoreCard(label = stringResource(Res.string.horoscope_score_energy), icon = "◎", score = h.energy, color = AppColors.Air, modifier = Modifier.weight(1f))
                                 }
                             }
                         }
                     }
-                    st.error != null -> Text(text = s.horoscopeError(st.error), color = AppColors.Fire,
+                    st.error != null -> Text(text = stringResource(Res.string.horoscope_error, st.error), color = AppColors.Fire,
                         fontSize = AppType.body, modifier = Modifier.padding(vertical = 16.dp))
                     else -> Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
-                        Text(text = s.horoscopeSelectPeriod, color = AppColors.TextMuted, fontSize = AppType.body)
+                        Text(text = stringResource(Res.string.horoscope_select_period), color = AppColors.TextMuted, fontSize = AppType.body)
                     }
                 }
             }
@@ -130,7 +129,6 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
 
 @Composable
 private fun PeriodTabs(selected: HoroscopePeriod, onSelect: (HoroscopePeriod) -> Unit) {
-    val s = strings()
     Row(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.m)).background(AppColors.Card).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -143,7 +141,7 @@ private fun PeriodTabs(selected: HoroscopePeriod, onSelect: (HoroscopePeriod) ->
                     .clickable { onSelect(period) }.padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = period.localizedLabel(s), fontSize = AppType.body,
+                Text(text = period.localizedLabel(), fontSize = AppType.body,
                     color = if (isActive) AppColors.AccentGold else AppColors.TextDim,
                     fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal)
             }

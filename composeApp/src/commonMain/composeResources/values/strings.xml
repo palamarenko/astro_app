@@ -33,6 +33,10 @@
     <string name="tarot_position_future">Будущее</string>
     <string name="tarot_btn_loading">Звёзды говорят…</string>
     <string name="tarot_btn_open">✦  Открыть карты  ✦</string>
+    <string name="tarot_ad_badge">AD</string>
+    <string name="tarot_ad_not_ready">Реклама ещё загружается, попробуйте через несколько секунд</string>
+    <string name="tarot_btn_already_drawn">Карты уже открыты сегодня</string>
+    <string name="tarot_already_drawn_hint">Возвращайтесь завтра — карты раскрываются раз в день</string>
     <string name="tarot_summary_label">✦ ОБЩИЙ ВЫВОД ✦</string>
     <string name="tarot_reversed">ПЕРЕВЁРН.</string>
 
@@ -40,6 +44,8 @@
     <string name="compat_label">СОЮЗ ЗВЁЗД</string>
     <string name="compat_title1">Совмести-</string>
     <string name="compat_title2">мость</string>
+    <string name="compat_coming_soon">Скоро</string>
+    <string name="compat_coming_soon_desc">Звёзды выстраиваются в нужный порядок.\nСкоро здесь откроется раздел совместимости.</string>
     <string name="compat_sign1">Первый знак</string>
     <string name="compat_sign2">Второй знак</string>
     <string name="compat_select_sign1">Выберите первый знак</string>
