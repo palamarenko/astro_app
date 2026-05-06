@@ -160,4 +160,66 @@
     <string name="period_today_prompt">for today</string>
     <string name="period_week_prompt">for this week</string>
     <string name="period_month_prompt">for this month</string>
+
+    <!-- Onboarding — Buttons -->
+    <string name="onb_btn_skip_all">Skip</string>
+    <string name="onb_btn_skip_step">Skip this step</string>
+    <string name="onb_btn_start">Let\'s Start</string>
+    <string name="onb_btn_next">Next</string>
+    <string name="onb_btn_done">Done</string>
+
+    <!-- Onboarding — Welcome -->
+    <string name="onb_welcome_title">Welcome</string>
+    <string name="onb_welcome_subtitle">to the world of astrology</string>
+    <string name="onb_welcome_desc">Tell us a little about yourself — we\'ll\ncreate your personal horoscope</string>
+
+    <!-- Onboarding — Name -->
+    <string name="onb_name_title">What should we call you?</string>
+    <string name="onb_name_subtitle">This name will be used in your personal readings</string>
+    <string name="onb_name_placeholder">Your name…</string>
+
+    <!-- Onboarding — Gender -->
+    <string name="onb_gender_title">Your gender</string>
+    <string name="onb_gender_subtitle">This affects the interpretation of some astrological aspects</string>
+    <string name="onb_gender_male">Male</string>
+    <string name="onb_gender_female">Female</string>
+
+    <!-- Onboarding — Date -->
+    <string name="onb_date_title">When were you born?</string>
+    <string name="onb_date_subtitle">Your date will determine your zodiac sign</string>
+
+    <!-- Onboarding — Time -->
+    <string name="onb_time_title">At what time?</string>
+    <string name="onb_time_subtitle">The exact time helps build your natal chart. Not sure? Skip this step.</string>
+
+    <!-- Onboarding — Place -->
+    <string name="onb_place_title">Where were you born?</string>
+    <string name="onb_place_subtitle">Your birth city is important for calculating your rising sign</string>
+    <string name="onb_place_placeholder">Choose a city…</string>
+
+    <!-- Onboarding — Final -->
+    <string name="onb_final_title">All done!</string>
+    <string name="onb_final_sign_with_name">%s, your sign is</string>
+    <string name="onb_final_sign">Your sign is</string>
+
+    <!-- Onboarding — Summary labels -->
+    <string name="onb_summary_name">Name</string>
+    <string name="onb_summary_gender">Gender</string>
+    <string name="onb_summary_birth_date">Date of birth</string>
+    <string name="onb_summary_birth_time">Time of birth</string>
+    <string name="onb_summary_place">Place</string>
+
+    <!-- Onboarding — Month names -->
+    <string name="onb_month_jan">January</string>
+    <string name="onb_month_feb">February</string>
+    <string name="onb_month_mar">March</string>
+    <string name="onb_month_apr">April</string>
+    <string name="onb_month_may">May</string>
+    <string name="onb_month_jun">June</string>
+    <string name="onb_month_jul">July</string>
+    <string name="onb_month_aug">August</string>
+    <string name="onb_month_sep">September</string>
+    <string name="onb_month_oct">October</string>
+    <string name="onb_month_nov">November</string>
+    <string name="onb_month_dec">December</string>
 </resources>

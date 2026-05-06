@@ -22,7 +22,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import astroapp.composeapp.generated.resources.*
 import com.astro.app.ui.theme.*
+import org.jetbrains.compose.resources.stringResource
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -38,9 +40,20 @@ import com.astro.app.ui.theme.*
  */
 private const val ONBOARDING_TOTAL_STEPS = 7
 
-private val MONTHS_ONB = listOf(
-    "Январь","Февраль","Март","Апрель","Май","Июнь",
-    "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
+@Composable
+private fun monthNames(): List<String> = listOf(
+    stringResource(Res.string.onb_month_jan),
+    stringResource(Res.string.onb_month_feb),
+    stringResource(Res.string.onb_month_mar),
+    stringResource(Res.string.onb_month_apr),
+    stringResource(Res.string.onb_month_may),
+    stringResource(Res.string.onb_month_jun),
+    stringResource(Res.string.onb_month_jul),
+    stringResource(Res.string.onb_month_aug),
+    stringResource(Res.string.onb_month_sep),
+    stringResource(Res.string.onb_month_oct),
+    stringResource(Res.string.onb_month_nov),
+    stringResource(Res.string.onb_month_dec),
 )
 
 private fun daysInMonthOnb(month: Int, year: Int): Int = when (month) {
@@ -159,7 +172,7 @@ fun OnboardingScreen(
                 if (step < ONBOARDING_TOTAL_STEPS - 1) {
                     TextButton(onClick = { finishAll() }) {
                         Text(
-                            text = "Пропустить",
+                            text = stringResource(Res.string.onb_btn_skip_all),
                             fontSize = 12.sp,
                             color = AppColors.TextDim,
                             fontWeight = FontWeight.Normal
@@ -265,16 +278,20 @@ private fun BottomActions(
     val isLast = step == ONBOARDING_TOTAL_STEPS - 1
     val isWelcome = step == 0
 
+    val startLabel = stringResource(Res.string.onb_btn_start)
+    val nextLabel  = stringResource(Res.string.onb_btn_next)
+    val doneLabel  = stringResource(Res.string.onb_btn_done)
+
     // Метка кнопки и условие активности
     val (label, isFilled) = when (step) {
-        0 -> "Начнём"  to true
-        1 -> "Далее"   to state.name.isNotBlank()
-        2 -> "Далее"   to state.gender.isNotBlank()
-        3 -> "Далее"   to (state.birthDay > 0)
-        4 -> "Далее"   to (state.birthHour >= 0)
-        5 -> "Далее"   to state.birthPlace.isNotBlank()
-        6 -> "Готово"  to true
-        else -> "Далее" to true
+        0 -> startLabel to true
+        1 -> nextLabel  to state.name.isNotBlank()
+        2 -> nextLabel  to state.gender.isNotBlank()
+        3 -> nextLabel  to (state.birthDay > 0)
+        4 -> nextLabel  to (state.birthHour >= 0)
+        5 -> nextLabel  to state.birthPlace.isNotBlank()
+        6 -> doneLabel  to true
+        else -> nextLabel to true
     }
 
     Column(
@@ -296,7 +313,7 @@ private fun BottomActions(
             ) {
                 TextButton(onClick = onSkip) {
                     Text(
-                        text = "Пропустить этот шаг",
+                        text = stringResource(Res.string.onb_btn_skip_step),
                         fontSize = 12.sp,
                         color = AppColors.TextMuted,
                     )
@@ -399,7 +416,7 @@ private fun WelcomeStep() {
         Spacer(Modifier.height(Spacing.xxl))
 
         Text(
-            text = "Добро пожаловать",
+            text = stringResource(Res.string.onb_welcome_title),
             fontSize = AppType.h1,
             fontWeight = FontWeight.Light,
             color = AppColors.TextPrimary,
@@ -409,7 +426,7 @@ private fun WelcomeStep() {
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "в мир астрологии",
+            text = stringResource(Res.string.onb_welcome_subtitle),
             fontSize = AppType.title,
             fontWeight = FontWeight.Light,
             color = AppColors.AccentGold,
@@ -419,41 +436,12 @@ private fun WelcomeStep() {
         Spacer(Modifier.height(Spacing.xl))
 
         Text(
-            text = "Расскажите немного о себе — мы\nсоставим ваш персональный гороскоп",
+            text = stringResource(Res.string.onb_welcome_desc),
             fontSize = AppType.body,
             color = AppColors.TextMuted,
             textAlign = TextAlign.Center,
             lineHeight = 22.sp
         )
-
-        Spacer(Modifier.height(Spacing.xxl))
-
-        // Лёгкая «прелюдия» — чем мы будем спрашивать
-        Column(
-            modifier = Modifier.fillMaxWidth(0.85f),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            FeaturePill("✦", "Имя и пол")
-            FeaturePill("📅", "Дата и время рождения")
-            FeaturePill("📍", "Место рождения")
-        }
-    }
-}
-
-@Composable
-private fun FeaturePill(icon: String, text: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(Radius.m))
-            .background(AppColors.Card.copy(alpha = 0.55f))
-            .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.m))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(icon, fontSize = 16.sp)
-        Text(text, fontSize = 14.sp, color = AppColors.TextSecondary)
     }
 }
 
@@ -463,14 +451,14 @@ private fun FeaturePill(icon: String, text: String) {
 private fun NameStep(name: String, onNameChange: (String) -> Unit) {
     StepContainer(
         emoji = "✦",
-        title = "Как к вам обращаться?",
-        subtitle = "Это имя будем использовать в персональных предсказаниях"
+        title = stringResource(Res.string.onb_name_title),
+        subtitle = stringResource(Res.string.onb_name_subtitle)
     ) {
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Ваше имя…", color = AppColors.TextDim, fontSize = 15.sp) },
+            placeholder = { Text(stringResource(Res.string.onb_name_placeholder), color = AppColors.TextDim, fontSize = 15.sp) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
@@ -495,8 +483,8 @@ private fun NameStep(name: String, onNameChange: (String) -> Unit) {
 private fun GenderStep(gender: String, onGenderChange: (String) -> Unit) {
     StepContainer(
         emoji = "☯",
-        title = "Ваш пол",
-        subtitle = "Это влияет на интерпретацию некоторых астрологических аспектов"
+        title = stringResource(Res.string.onb_gender_title),
+        subtitle = stringResource(Res.string.onb_gender_subtitle)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -504,14 +492,14 @@ private fun GenderStep(gender: String, onGenderChange: (String) -> Unit) {
         ) {
             BigGenderCard(
                 emoji = "♂",
-                label = "Мужской",
+                label = stringResource(Res.string.onb_gender_male),
                 selected = gender == "male",
                 onClick = { onGenderChange(if (gender == "male") "" else "male") },
                 modifier = Modifier.weight(1f)
             )
             BigGenderCard(
                 emoji = "♀",
-                label = "Женский",
+                label = stringResource(Res.string.onb_gender_female),
                 selected = gender == "female",
                 onClick = { onGenderChange(if (gender == "female") "" else "female") },
                 modifier = Modifier.weight(1f)
@@ -589,10 +577,11 @@ private fun DateStep(
     }
 
     StepContainer(
-        emoji = "📅",
-        title = "Когда вы родились?",
-        subtitle = "Дата определит ваш знак зодиака"
+        emoji = "☽",
+        title = stringResource(Res.string.onb_date_title),
+        subtitle = stringResource(Res.string.onb_date_subtitle)
     ) {
+        val months = monthNames()
         val days  = remember(month, year) { (1..daysInMonthOnb(month, year)).map { it.toString() } }
         val years = (1930..2015).map { it.toString() }
 
@@ -607,7 +596,7 @@ private fun DateStep(
                 modifier      = Modifier.weight(1f)
             )
             WheelPicker(
-                items         = MONTHS_ONB,
+                items         = months,
                 selectedIndex = (month - 1).coerceIn(0, 11),
                 onIndexChange = { month = it + 1; touched = true },
                 modifier      = Modifier.weight(2f)
@@ -639,9 +628,9 @@ private fun TimeStep(
     }
 
     StepContainer(
-        emoji = "🕐",
-        title = "В котором часу?",
-        subtitle = "Точное время помогает построить натальную карту. Не помните точно — пропустите шаг."
+        emoji = "⊙",
+        title = stringResource(Res.string.onb_time_title),
+        subtitle = stringResource(Res.string.onb_time_subtitle)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
@@ -676,10 +665,11 @@ private fun PlaceStep(vm: ProfileViewModel) {
     val pickerVm: PlacePickerViewModel = viewModel()
 
     StepContainer(
-        emoji = "📍",
-        title = "Где вы родились?",
-        subtitle = "Город рождения важен для расчёта восходящего знака"
+        emoji = "⊕",
+        title = stringResource(Res.string.onb_place_title),
+        subtitle = stringResource(Res.string.onb_place_subtitle)
     ) {
+        val placeholderText = stringResource(Res.string.onb_place_placeholder)
         // Карточка-кнопка для открытия пикера
         Box(
             modifier = Modifier
@@ -700,9 +690,9 @@ private fun PlaceStep(vm: ProfileViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("📍", fontSize = 18.sp)
+                Text("⊕", fontSize = 18.sp, color = AppColors.AccentGold)
                 Text(
-                    text = if (state.birthPlace.isBlank()) "Выбрать город…"
+                    text = if (state.birthPlace.isBlank()) placeholderText
                            else state.birthPlace,
                     fontSize = 15.sp,
                     color = if (state.birthPlace.isBlank()) AppColors.TextDim
@@ -741,20 +731,32 @@ private fun FinalStep(state: ProfileUiState) {
         label = "fglowA"
     )
 
+    val finalTitle      = stringResource(Res.string.onb_final_title)
+    val finalSignName   = stringResource(Res.string.onb_final_sign_with_name, state.name)
+    val finalSign       = stringResource(Res.string.onb_final_sign)
+    val summaryName     = stringResource(Res.string.onb_summary_name)
+    val summaryGender   = stringResource(Res.string.onb_summary_gender)
+    val genderMale      = stringResource(Res.string.onb_gender_male)
+    val genderFemale    = stringResource(Res.string.onb_gender_female)
+    val summaryDate     = stringResource(Res.string.onb_summary_birth_date)
+    val summaryTime     = stringResource(Res.string.onb_summary_birth_time)
+    val summaryPlace    = stringResource(Res.string.onb_summary_place)
+    val months          = monthNames()
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Готово!",
+            text = finalTitle,
             fontSize = AppType.h1,
             fontWeight = FontWeight.Light,
             color = AppColors.TextPrimary
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = if (state.name.isNotBlank()) "${state.name}, ваш знак —" else "Ваш знак —",
+            text = if (state.name.isNotBlank()) finalSignName else finalSign,
             fontSize = AppType.body,
             color = AppColors.TextMuted
         )
@@ -812,25 +814,25 @@ private fun FinalStep(state: ProfileUiState) {
             modifier = Modifier.fillMaxWidth(0.92f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            SummaryRow("Имя", if (state.name.isNotBlank()) state.name else "—")
-            SummaryRow("Пол", when (state.gender) {
-                "male"   -> "Мужской"
-                "female" -> "Женский"
+            SummaryRow(summaryName, if (state.name.isNotBlank()) state.name else "—")
+            SummaryRow(summaryGender, when (state.gender) {
+                "male"   -> genderMale
+                "female" -> genderFemale
                 else     -> "—"
             })
             SummaryRow(
-                "Дата рождения",
+                summaryDate,
                 if (state.birthDay > 0)
-                    "${state.birthDay} ${MONTHS_ONB[state.birthMonth - 1]} ${state.birthYear}"
+                    "${state.birthDay} ${months[state.birthMonth - 1]} ${state.birthYear}"
                 else "—"
             )
             SummaryRow(
-                "Время рождения",
+                summaryTime,
                 if (state.birthHour >= 0)
                     "${state.birthHour.toString().padStart(2, '0')}:${state.birthMinute.toString().padStart(2, '0')}"
                 else "—"
             )
-            SummaryRow("Место", state.birthPlace.ifBlank { "—" })
+            SummaryRow(summaryPlace, state.birthPlace.ifBlank { "—" })
         }
     }
 }
