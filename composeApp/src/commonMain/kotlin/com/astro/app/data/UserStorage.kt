@@ -19,6 +19,12 @@ data class UserProfile(
     val birthPlace: String = "",
     val birthLat: Double = 0.0,
     val birthLng: Double = 0.0,
+
+    // ── Onboarding state ─────────────────────────────────────────────────────
+    /** Последний просмотренный шаг онбординга (0..N). Используется для возобновления. */
+    val onboardingStep: Int = 0,
+    /** true — онбординг завершён (или явно пропущен). Больше не показываем. */
+    val onboardingFinished: Boolean = false,
 )
 
 /**

@@ -67,6 +67,18 @@ private fun AppContent() {
         }
     }
 
+    // ── Онбординг ─────────────────────────────────────────────────────────────
+    // Показываем, если пользователь его ещё не завершил/не пропустил полностью.
+    // Если онбординг был прерван — возобновляем с сохранённого шага.
+    if (!profileState.onboardingFinished) {
+        OnboardingScreen(
+            vm = profileVm,
+            onFinished = { /* флаг уже выставлен внутри VM, перерисовка произойдёт автоматически */ },
+            modifier = Modifier.fillMaxSize()
+        )
+        return
+    }
+
     // Направление: +1 = вправо (новый таб правее), -1 = влево
     val direction = remember(activeTab) {
         val prev = TAB_ORDER.indexOf(previousTab)

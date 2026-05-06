@@ -160,4 +160,66 @@
     <string name="period_today_prompt">на сегодня</string>
     <string name="period_week_prompt">на эту неделю</string>
     <string name="period_month_prompt">на этот месяц</string>
+
+    <!-- Onboarding — Buttons -->
+    <string name="onb_btn_skip_all">Пропустить</string>
+    <string name="onb_btn_skip_step">Пропустить этот шаг</string>
+    <string name="onb_btn_start">Начнём</string>
+    <string name="onb_btn_next">Далее</string>
+    <string name="onb_btn_done">Готово</string>
+
+    <!-- Onboarding — Welcome -->
+    <string name="onb_welcome_title">Добро пожаловать</string>
+    <string name="onb_welcome_subtitle">в мир астрологии</string>
+    <string name="onb_welcome_desc">Расскажите немного о себе — мы\nсоставим ваш персональный гороскоп</string>
+
+    <!-- Onboarding — Name -->
+    <string name="onb_name_title">Как к вам обращаться?</string>
+    <string name="onb_name_subtitle">Это имя будем использовать в персональных предсказаниях</string>
+    <string name="onb_name_placeholder">Ваше имя…</string>
+
+    <!-- Onboarding — Gender -->
+    <string name="onb_gender_title">Ваш пол</string>
+    <string name="onb_gender_subtitle">Это влияет на интерпретацию некоторых астрологических аспектов</string>
+    <string name="onb_gender_male">Мужской</string>
+    <string name="onb_gender_female">Женский</string>
+
+    <!-- Onboarding — Date -->
+    <string name="onb_date_title">Когда вы родились?</string>
+    <string name="onb_date_subtitle">Дата определит ваш знак зодиака</string>
+
+    <!-- Onboarding — Time -->
+    <string name="onb_time_title">В котором часу?</string>
+    <string name="onb_time_subtitle">Точное время помогает построить натальную карту. Не помните точно — пропустите шаг.</string>
+
+    <!-- Onboarding — Place -->
+    <string name="onb_place_title">Где вы родились?</string>
+    <string name="onb_place_subtitle">Город рождения важен для расчёта восходящего знака</string>
+    <string name="onb_place_placeholder">Выбрать город…</string>
+
+    <!-- Onboarding — Final -->
+    <string name="onb_final_title">Готово!</string>
+    <string name="onb_final_sign_with_name">%s, ваш знак —</string>
+    <string name="onb_final_sign">Ваш знак —</string>
+
+    <!-- Onboarding — Summary labels -->
+    <string name="onb_summary_name">Имя</string>
+    <string name="onb_summary_gender">Пол</string>
+    <string name="onb_summary_birth_date">Дата рождения</string>
+    <string name="onb_summary_birth_time">Время рождения</string>
+    <string name="onb_summary_place">Место</string>
+
+    <!-- Onboarding — Month names -->
+    <string name="onb_month_jan">Январь</string>
+    <string name="onb_month_feb">Февраль</string>
+    <string name="onb_month_mar">Март</string>
+    <string name="onb_month_apr">Апрель</string>
+    <string name="onb_month_may">Май</string>
+    <string name="onb_month_jun">Июнь</string>
+    <string name="onb_month_jul">Июль</string>
+    <string name="onb_month_aug">Август</string>
+    <string name="onb_month_sep">Сентябрь</string>
+    <string name="onb_month_oct">Октябрь</string>
+    <string name="onb_month_nov">Ноябрь</string>
+    <string name="onb_month_dec">Декабрь</string>
 </resources>

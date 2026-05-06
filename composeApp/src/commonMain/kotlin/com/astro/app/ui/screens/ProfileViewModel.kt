@@ -24,6 +24,9 @@ data class ProfileUiState(
     val showDatePicker: Boolean = false,
     val showTimePicker: Boolean = false,
     val showPlacePicker: Boolean = false,
+    // ── Onboarding ────────────────────────────────────────────────────────────
+    val onboardingStep: Int = 0,
+    val onboardingFinished: Boolean = false,
 )
 
 private fun zodiacFromDate(month: Int, day: Int): ZodiacSign = when {
@@ -55,6 +58,8 @@ private fun UserProfile.toUiState(): ProfileUiState {
         birthPlace = birthPlace,
         birthLat = birthLat,
         birthLng = birthLng,
+        onboardingStep = onboardingStep,
+        onboardingFinished = onboardingFinished,
     )
 }
 
@@ -70,6 +75,8 @@ private fun ProfileUiState.toProfile() = UserProfile(
     birthPlace = birthPlace,
     birthLat = birthLat,
     birthLng = birthLng,
+    onboardingStep = onboardingStep,
+    onboardingFinished = onboardingFinished,
 )
 
 class ProfileViewModel(private val api: ClaudeApiClient) : ViewModel() {
@@ -118,6 +125,17 @@ class ProfileViewModel(private val api: ClaudeApiClient) : ViewModel() {
     fun hideTimePicker()  { _state.value = _state.value.copy(showTimePicker  = false) }
     fun showPlacePicker() { _state.value = _state.value.copy(showPlacePicker = true) }
     fun hidePlacePicker() { _state.value = _state.value.copy(showPlacePicker = false) }
+
+    // ── Onboarding state management ───────────────────────────────────────────
+    /** Сохранить, на каком шаге онбординга остановился пользователь (для возобновления). */
+    fun setOnboardingStep(step: Int) {
+        update(_state.value.copy(onboardingStep = step))
+    }
+
+    /** Полное завершение/пропуск онбординга — больше не показываем. */
+    fun finishOnboarding() {
+        update(_state.value.copy(onboardingFinished = true))
+    }
 
     // Compat — больше не используется, оставлено чтобы не сломать App.kt
     fun toggleSignPicker() {}

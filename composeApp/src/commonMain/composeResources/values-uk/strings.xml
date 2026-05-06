@@ -44,6 +44,8 @@
     <string name="compat_label">СОЮЗ ЗІРОК</string>
     <string name="compat_title1">Суміс-</string>
     <string name="compat_title2">ність</string>
+    <string name="compat_coming_soon">Незабаром</string>
+    <string name="compat_coming_soon_desc">Зорі вишиковуються в потрібний порядок.\nСкоро тут відкриється розділ сумісності.</string>
     <string name="compat_sign1">Перший знак</string>
     <string name="compat_sign2">Другий знак</string>
     <string name="compat_select_sign1">Оберіть перший знак</string>
