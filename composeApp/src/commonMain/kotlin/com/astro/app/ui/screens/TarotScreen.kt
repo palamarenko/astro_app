@@ -47,7 +47,7 @@ fun TarotScreen(vm: TarotViewModel, modifier: Modifier = Modifier) {
     val positions = listOf(stringResource(Res.string.tarot_position_past), stringResource(Res.string.tarot_position_present), stringResource(Res.string.tarot_position_future))
     val cardTexts = listOf(state.reading?.past, state.reading?.present, state.reading?.future)
 
-    Box(modifier = modifier.fillMaxSize().background(AppColors.Background)) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()

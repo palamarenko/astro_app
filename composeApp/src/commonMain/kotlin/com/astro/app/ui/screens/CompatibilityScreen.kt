@@ -29,7 +29,7 @@ import org.jetbrains.compose.resources.stringResource
 fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsState()
 
-    Box(modifier = modifier.fillMaxSize().background(AppColors.Background)) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.xl)) {
             Spacer(Modifier.height(Spacing.xxl))
             SectionLabel(stringResource(Res.string.compat_label))
@@ -120,11 +120,5 @@ private fun InfoCard(title: String, text: String, color: androidx.compose.ui.gra
     Box(modifier = modifier.clip(RoundedCornerShape(Radius.m)).background(AppColors.Card)
         .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(Radius.m)).padding(14.dp)) {
         Column {
-            Text(text = title.uppercase(), fontSize = AppType.label, color = color,
-                letterSpacing = TextUnit(0.12f, TextUnitType.Em))
-            Spacer(Modifier.height(4.dp))
-            Text(text = text, fontSize = AppType.caption, color = AppColors.TextSecondary,
-                fontWeight = FontWeight.Light, lineHeight = TextUnit(18f, TextUnitType.Sp))
-        }
-    }
-}
+            Text(text = title.uppercase(), fontSize = AppType.label, color = color)}}}
+               

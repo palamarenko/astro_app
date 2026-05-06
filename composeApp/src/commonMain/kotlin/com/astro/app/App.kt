@@ -20,6 +20,7 @@ import com.astro.app.data.*
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.CompatibilityNavIcon
 import com.astro.app.ui.components.HoroscopeNavIcon
+import com.astro.app.ui.components.StarfieldBackground
 import com.astro.app.ui.components.TarotNavIcon
 import com.astro.app.ui.screens.*
 import com.astro.app.ui.theme.*
@@ -92,6 +93,9 @@ private fun AppContent() {
             .background(AppColors.Background)
             .windowInsetsPadding(WindowInsets.systemBars)
     ) {
+        // Глобальный фон — мерцающие звёзды поверх тёмного фона
+        StarfieldBackground(modifier = Modifier.fillMaxSize())
+
         Box(modifier = Modifier.fillMaxSize().padding(bottom = 60.dp)) {
             AnimatedContent(
                 targetState = activeTab to showDetail,

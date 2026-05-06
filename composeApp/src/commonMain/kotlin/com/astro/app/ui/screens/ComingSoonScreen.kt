@@ -46,8 +46,7 @@ fun ComingSoonScreen(modifier: Modifier = Modifier) {
 
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .background(AppColors.Background),
+            .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         // Фоновое свечение

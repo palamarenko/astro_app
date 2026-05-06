@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import astroapp.composeapp.generated.resources.*
+import com.astro.app.ui.components.StarfieldBackground
 import com.astro.app.ui.theme.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -128,8 +129,7 @@ fun OnboardingScreen(
                 )
             )
     ) {
-        // Лёгкое мерцание на фоне
-        StarsTwinkleBackground()
+        StarfieldBackground(modifier = Modifier.fillMaxSize())
 
         Column(
             modifier = Modifier
@@ -922,47 +922,3 @@ private fun StepContainer(
     }
 }
 
-// ── Twinkling stars background ────────────────────────────────────────────────
-
-@Composable
-private fun StarsTwinkleBackground() {
-    val a by rememberInfiniteTransition(label = "stars").animateFloat(
-        initialValue = 0.3f, targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(tween(3000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "starsA"
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .alpha(a * 0.45f)
-    ) {
-        // Несколько символов-звёзд в случайных-фиксированных позициях
-        TwinkleDot(0.10f, 0.12f, "✦", 14.sp)
-        TwinkleDot(0.85f, 0.08f, "·", 18.sp)
-        TwinkleDot(0.22f, 0.32f, "·", 12.sp)
-        TwinkleDot(0.78f, 0.42f, "✦", 12.sp)
-        TwinkleDot(0.05f, 0.62f, "·", 14.sp)
-        TwinkleDot(0.92f, 0.72f, "·", 12.sp)
-        TwinkleDot(0.45f, 0.95f, "✦", 12.sp)
-        TwinkleDot(0.65f, 0.18f, "·", 12.sp)
-    }
-}
-
-@Composable
-private fun BoxScope.TwinkleDot(fx: Float, fy: Float, glyph: String, size: TextUnit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(start = 0.dp)
-    ) {
-        Text(
-            text = glyph,
-            color = AppColors.AccentGold.copy(alpha = 0.5f),
-            fontSize = size,
-            modifier = Modifier
-                .fillMaxSize()
-                .wrapContentSize(Alignment.TopStart)
-                .offset(x = (320 * fx).dp, y = (700 * fy).dp)
-        )
-    }
-}

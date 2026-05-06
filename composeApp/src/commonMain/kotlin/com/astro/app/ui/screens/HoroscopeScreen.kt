@@ -34,7 +34,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
     val sign = state.selectedSign ?: return
     val elementColor = AppColors.elementColor(sign.element)
 
-    Box(modifier = modifier.fillMaxSize().background(AppColors.Background)) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Spacing.xl)
         ) {

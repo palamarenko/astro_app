@@ -29,7 +29,7 @@ fun SignPickerScreen(
     onSignSelected: (ZodiacSign) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxSize().background(AppColors.Background)) {
+    Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
