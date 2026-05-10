@@ -73,6 +73,7 @@ data class TarotCardContent(
 @Serializable
 data class HoroscopeResponse(
     val text: String,
+    val keyword: String = "",
     val love: Int, val career: Int, val health: Int, val energy: Int,
 )
 

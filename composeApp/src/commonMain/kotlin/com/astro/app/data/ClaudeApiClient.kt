@@ -75,13 +75,15 @@ class ClaudeApiClient(private val apiKey: String) {
         return response.content.firstOrNull()?.text ?: ""
     }
 
-    suspend fun getHoroscope(sign: ZodiacSign, periodPrompt: String): HoroscopeResponse {
+    suspend fun getHoroscope(sign: ZodiacSign, periodPrompt: String, lang: String = "ru"): HoroscopeResponse {
+        val langName = when (lang) { "uk" -> "Ukrainian"; "en" -> "English"; else -> "Russian" }
         val prompt = """
             Horoscope for "${sign.name}" (${sign.element}) $periodPrompt.
+            Language: $langName.
             Scores range 50–100 where 50=bad, 75=average, 100=perfect.
             The text must reflect the score levels (low scores → warnings/caution, high → optimism/praise).
             Respond ONLY with JSON, no markdown:
-            {"text":"3-4 poetic sentences","love":72,"career":85,"health":60,"energy":78}
+            {"text":"3-4 poetic sentences","keyword":"1-2 words","love":72,"career":85,"health":60,"energy":78}
         """.trimIndent()
         return json.decodeFromString(extractJson(complete(prompt)))
     }
@@ -218,8 +220,8 @@ class ClaudeApiClient(private val apiKey: String) {
             Text: 3-4 sentences. Scores: integers from 50 to 100 (50=bad, 75=average, 100=perfect).
             The text must reflect the score levels — low scores should hint at caution or challenges, high scores at success and joy.
             Respond ONLY with valid JSON, no markdown:
-            {"text":"...","love":72,"career":85,"health":60,"energy":78}
+            {"text":"...","keyword":"1-2 words","love":72,"career":85,"health":60,"energy":78}
         """.trimIndent()
-        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 400)))
+        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 450)))
     }
 }

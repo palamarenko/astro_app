@@ -43,6 +43,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.appcompat)
             implementation(libs.play.services.ads)
+            implementation(compose.uiTooling)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

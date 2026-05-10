@@ -271,7 +271,7 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                 verticalArrangement = Arrangement.spacedBy(Spacing.m)
             ) {
                 ALL_SIGNS.forEach { sign ->
-                    val horoscope = state.horoscopes[sign.id] ?: HoroscopeResponse("", 5, 5, 5, 5)
+                    val horoscope = state.horoscopes[sign.id] ?: HoroscopeResponse(text = "", love = 5, career = 5, health = 5, energy = 5)
                     val isGenerating = state.generatingSignIds.contains(sign.id)
                     SignCard(
                         sign = sign,

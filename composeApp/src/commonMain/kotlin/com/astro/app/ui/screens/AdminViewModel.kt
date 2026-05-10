@@ -27,7 +27,7 @@ private fun computeDateKey(period: HoroscopePeriod, date: LocalDate): String = w
 }
 
 private fun defaultHoroscopes(): Map<String, HoroscopeResponse> =
-    ALL_SIGNS.associate { it.id to HoroscopeResponse("", 75, 75, 75, 75) }
+    ALL_SIGNS.associate { it.id to HoroscopeResponse(text = "", love = 75, career = 75, health = 75, energy = 75) }
 
 data class AdminUiState(
     val lang: String = "ru",
@@ -86,7 +86,7 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
                 val key = computeDateKey(_state.value.period, _state.value.selectedDate)
                 val loaded = firebase.getAllSignHoroscopes(_state.value.lang, _state.value.period.id, key)
                 val merged = ALL_SIGNS.associate { sign ->
-                    sign.id to (loaded?.get(sign.id) ?: HoroscopeResponse("", 75, 75, 75, 75))
+                    sign.id to (loaded?.get(sign.id) ?: HoroscopeResponse(text = "", love = 75, career = 75, health = 75, energy = 75))
                 }
                 _state.value = _state.value.copy(horoscopes = merged, isLoading = false, isLoaded = true)
             } catch (e: Exception) {
@@ -98,13 +98,13 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
 
     fun updateText(signId: String, text: String) {
         val h = _state.value.horoscopes.toMutableMap()
-        h[signId] = (h[signId] ?: HoroscopeResponse("", 75, 75, 75, 75)).copy(text = text)
+        h[signId] = (h[signId] ?: HoroscopeResponse(text = "", love = 75, career = 75, health = 75, energy = 75)).copy(text = text)
         _state.value = _state.value.copy(horoscopes = h)
     }
 
     fun updateScore(signId: String, field: String, delta: Int) {
         val h = _state.value.horoscopes.toMutableMap()
-        val cur = h[signId] ?: HoroscopeResponse("", 75, 75, 75, 75)
+        val cur = h[signId] ?: HoroscopeResponse(text = "", love = 75, career = 75, health = 75, energy = 75)
         h[signId] = when (field) {
             "love"   -> cur.copy(love   = (cur.love   + delta).coerceIn(50, 100))
             "career" -> cur.copy(career = (cur.career + delta).coerceIn(50, 100))

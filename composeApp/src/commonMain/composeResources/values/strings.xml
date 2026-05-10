@@ -179,6 +179,25 @@
     <string name="tarot_kw_judgement">Пробуждение, прощение, призыв</string>
     <string name="tarot_kw_world">Завершение, единство, триумф</string>
 
+    <!-- Horoscope Wizard -->
+    <string name="wizard_cta_title">Заглянуть в %1$s</string>
+    <string name="wizard_cta_desc">Магистр Звёзд откроет завесу…</string>
+    <string name="wizard_period_acc_daily">завтра</string>
+    <string name="wizard_period_acc_week">следующую неделю</string>
+    <string name="wizard_period_acc_month">следующий месяц</string>
+    <string name="wizard_divider_daily">✦ ЗАВТРА ✦</string>
+    <string name="wizard_divider_week">✦ СЛЕДУЮЩАЯ НЕДЕЛЯ ✦</string>
+    <string name="wizard_divider_month">✦ СЛЕДУЮЩИЙ МЕСЯЦ ✦</string>
+    <string name="wizard_intro_title">Магистр Звёзд предлагает заглянуть в %1$s</string>
+    <string name="wizard_intro_subtitle">Посмотрите короткое послание спонсора — и получите прогноз для %1$s на %2$s</string>
+    <string name="wizard_btn_watch">СМОТРЕТЬ И УЗНАТЬ  ✦</string>
+    <string name="wizard_btn_not_now">не сейчас</string>
+    <string name="wizard_ad_title">РЕКЛАМА · %1$dс</string>
+    <string name="wizard_ad_skip">Пропустить через %1$dс…</string>
+    <string name="wizard_done_text">Завеса приподнята
+Прогноз на %1$s открыт для знака %2$s</string>
+    <string name="wizard_done_btn">ЧИТАТЬ ПРОГНОЗ →</string>
+
     <!-- HoroscopePeriod prompts for AI -->
     <string name="period_today_prompt">на сегодня</string>
     <string name="period_week_prompt">на эту неделю</string>
