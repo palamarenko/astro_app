@@ -28,6 +28,13 @@
     <string name="tarot_label">МІСТИКА КАРТ</string>
     <string name="tarot_title1">Розклад</string>
     <string name="tarot_title2">Таро</string>
+    <string name="tarot_select_period">Оберіть період для ворожіння</string>
+    <string name="tarot_period_day_title">На день</string>
+    <string name="tarot_period_day_desc">Три карти на сьогодні</string>
+    <string name="tarot_period_week_title">На тиждень</string>
+    <string name="tarot_period_week_desc">Розклад на цей тиждень</string>
+    <string name="tarot_period_month_title">На місяць</string>
+    <string name="tarot_period_month_desc">Послання на цей місяць</string>
     <string name="tarot_position_past">Минуле</string>
     <string name="tarot_position_present">Теперішнє</string>
     <string name="tarot_position_future">Майбутнє</string>
@@ -52,6 +59,7 @@
     <string name="compat_select_sign2">Оберіть другий знак</string>
     <string name="compat_strengths">Сила союзу</string>
     <string name="compat_challenges">Випробування</string>
+    <string name="compat_error">Зорі мовчать: %s</string>
 
     <!-- Profile Screen -->
     <string name="profile_btn_close">✕  Закрити</string>

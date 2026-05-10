@@ -28,6 +28,13 @@
     <string name="tarot_label">MYSTIC CARDS</string>
     <string name="tarot_title1">Tarot</string>
     <string name="tarot_title2">Reading</string>
+    <string name="tarot_select_period">Choose a reading period</string>
+    <string name="tarot_period_day_title">For Today</string>
+    <string name="tarot_period_day_desc">Three cards for today</string>
+    <string name="tarot_period_week_title">For the Week</string>
+    <string name="tarot_period_week_desc">Reading for this week</string>
+    <string name="tarot_period_month_title">For the Month</string>
+    <string name="tarot_period_month_desc">Message for this month</string>
     <string name="tarot_position_past">Past</string>
     <string name="tarot_position_present">Present</string>
     <string name="tarot_position_future">Future</string>
@@ -52,6 +59,7 @@
     <string name="compat_select_sign2">Choose the second sign</string>
     <string name="compat_strengths">Union Strengths</string>
     <string name="compat_challenges">Challenges</string>
+    <string name="compat_error">The stars are silent: %s</string>
 
     <!-- Profile Screen -->
     <string name="profile_btn_close">✕  Close</string>

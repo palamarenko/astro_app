@@ -86,9 +86,15 @@ class ClaudeApiClient(private val apiKey: String) {
         return json.decodeFromString(extractJson(complete(prompt)))
     }
 
-    suspend fun getCompatibility(sign1: ZodiacSign, sign2: ZodiacSign): CompatibilityResponse {
+    suspend fun getCompatibility(sign1: ZodiacSign, sign2: ZodiacSign, lang: String = "ru"): CompatibilityResponse {
+        val langName = when (lang) {
+            "uk" -> "Ukrainian"
+            "en" -> "English"
+            else -> "Russian"
+        }
         val prompt = """
             Astrological compatibility of "${sign1.name}" and "${sign2.name}".
+            Language: $langName.
             Respond ONLY with JSON, no markdown:
             {"score":82,"title":"3-5 word title","text":"2-3 poetic sentences","strengths":"1 sentence","challenges":"1 sentence"}
         """.trimIndent()

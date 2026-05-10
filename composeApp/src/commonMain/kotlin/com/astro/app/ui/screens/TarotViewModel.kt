@@ -21,6 +21,10 @@ data class TarotUiState(
     val canWatchAd: Boolean = false,
     /** Временное сообщение о статусе рекламы (показывается и исчезает). */
     val adMessage: String? = null,
+    /** Выбранный период (null = показываем список периодов). */
+    val currentPeriod: HoroscopePeriod? = null,
+    /** Сохранённые расклады по периодам: period.id → снимок */
+    val periodSnapshots: Map<String, TarotPersistState> = emptyMap(),
 )
 
 private val MOCK_READINGS = listOf(
@@ -44,17 +48,15 @@ private val MOCK_READINGS = listOf(
     ),
 )
 
-/** Randomly selects which personal fields to include in this reading.
- *  Each field has an independent probability so that readings feel varied. */
+/** Randomly selects which personal fields to include in this reading. */
 private fun buildPersonalContext(profile: UserProfile?): TarotPersonalContext? {
     if (profile == null) return null
 
     val name       = profile.name.takeIf { it.isNotBlank() && Random.nextFloat() < 0.60f }
-    val gender     = profile.gender.takeIf { it.isNotBlank() }   // всегда передаём если задан
+    val gender     = profile.gender.takeIf { it.isNotBlank() }
     val birthSign  = profile.signId.takeIf { it.isNotBlank() && Random.nextFloat() < 0.45f }
     val birthPlace = profile.birthPlace.takeIf { it.isNotBlank() && Random.nextFloat() < 0.40f }
 
-    // Build birth date string only when day/month are set and random roll passes
     val birthDate: String? = if (
         profile.birthDay > 0 && profile.birthMonth > 0 && Random.nextFloat() < 0.45f
     ) {
@@ -63,7 +65,6 @@ private fun buildPersonalContext(profile: UserProfile?): TarotPersonalContext? {
         if (profile.birthYear > 0) "$day.$month.${profile.birthYear}" else "$day.$month"
     } else null
 
-    // Return null context if none of the fields were selected (so the API call stays clean)
     if (name == null && gender == null && birthDate == null && birthSign == null && birthPlace == null) return null
 
     return TarotPersonalContext(
@@ -73,6 +74,13 @@ private fun buildPersonalContext(profile: UserProfile?): TarotPersonalContext? {
         birthSign = birthSign,
         birthPlace = birthPlace,
     )
+}
+
+/** Возвращает строку-ключ периода для сравнения с датой в TarotPersistState */
+private fun periodCurrentKey(period: HoroscopePeriod): String = when (period) {
+    HoroscopePeriod.DAILY   -> TarotStorage.todayKey()
+    HoroscopePeriod.WEEKLY  -> TarotStorage.weekKey()
+    HoroscopePeriod.MONTHLY -> TarotStorage.monthKey()
 }
 
 class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
@@ -86,24 +94,78 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
             AppLanguage.RU -> "ru"
             else           -> "en"
         }
+
+    init {
+        loadSavedReadings()
+    }
+
+    /** Загружает актуальные сохранённые расклады для всех периодов. */
+    fun loadSavedReadings() {
+        val snapshots = mutableMapOf<String, TarotPersistState>()
+        HoroscopePeriod.entries.forEach { period ->
+            val saved = TarotStorage.loadPeriod(period.id)
+            if (saved != null && saved.date == periodCurrentKey(period)) {
+                snapshots[period.id] = saved
+            }
+        }
+        _state.value = _state.value.copy(periodSnapshots = snapshots)
+    }
+
+    /** Выбирает период: если есть актуальное сохранение — восстанавливает, иначе пустой экран. */
+    fun selectPeriod(period: HoroscopePeriod) {
+        val saved = TarotStorage.loadPeriod(period.id)
+        val snapshots = _state.value.periodSnapshots
+
+        if (saved != null && saved.date == periodCurrentKey(period)) {
+            val cards = saved.cards.mapNotNull { snap ->
+                ALL_TAROT.find { it.number == snap.number }?.copy(reversed = snap.reversed)
+            }
+            _state.value = TarotUiState(
+                currentPeriod   = period,
+                cards           = cards,
+                reading         = saved.reading,
+                revealedCount   = 3,
+                canWatchAd      = true,
+                periodSnapshots = snapshots,
+            )
+        } else {
+            _state.value = TarotUiState(
+                currentPeriod   = period,
+                periodSnapshots = snapshots,
+            )
+        }
+    }
+
+    /** Возврат к списку периодов. */
+    fun clearPeriod() {
+        val snapshots = _state.value.periodSnapshots
+        _state.value = TarotUiState(periodSnapshots = snapshots)
+    }
+
     fun drawCards() {
+        val period = _state.value.currentPeriod
+        val snapshots = _state.value.periodSnapshots
         val picked = ALL_TAROT.shuffled().take(3).map { card ->
             card.copy(reversed = (0..9).random() > 6)
         }
-        _state.value = TarotUiState(cards = picked, isLoading = true, revealedCount = 0)
+        _state.value = TarotUiState(
+            cards           = picked,
+            isLoading       = true,
+            revealedCount   = 0,
+            currentPeriod   = period,
+            periodSnapshots = snapshots,
+        )
 
         viewModelScope.launch {
             kotlinx.coroutines.delay(1800L)
 
             val reading = try {
-                // 1. Card texts from Firebase (past / present / future)
                 val mock = MOCK_READINGS.random()
                 val allCards = firebase.getAllTarotCards(lang)
                 val pastText    = allCards?.get(picked[0].resourceKey)?.past    ?: mock.past
                 val presentText = allCards?.get(picked[1].resourceKey)?.present ?: mock.present
                 val futureText  = allCards?.get(picked[2].resourceKey)?.future  ?: mock.future
 
-                // 2. Overall summary from Anthropic, with partial personal context
                 val profile = UserStorage.load()
                 val context = buildPersonalContext(profile)
                 val summary = try {
@@ -122,23 +184,38 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
                 MOCK_READINGS.random()
             }
 
-            _state.value = _state.value.copy(
-                reading = reading,
-                isLoading = false,
-                // После первого успешного расклада показываем кнопку рекламы
-                canWatchAd = true,
-            )
+            // Сохраняем расклад в хранилище для текущего периода
+            if (period != null) {
+                val dateKey = periodCurrentKey(period)
+                val snapshot = TarotPersistState(
+                    date    = dateKey,
+                    cards   = picked.map { TarotCardSnapshot(it.number, it.reversed) },
+                    reading = reading,
+                )
+                TarotStorage.savePeriod(period.id, snapshot)
+                val newSnapshots = _state.value.periodSnapshots.toMutableMap()
+                newSnapshots[period.id] = snapshot
+                _state.value = _state.value.copy(
+                    reading         = reading,
+                    isLoading       = false,
+                    canWatchAd      = true,
+                    periodSnapshots = newSnapshots,
+                )
+            } else {
+                _state.value = _state.value.copy(
+                    reading    = reading,
+                    isLoading  = false,
+                    canWatchAd = true,
+                )
+            }
             revealCardsWithDelay()
         }
     }
 
-    /** Вызывается когда пользователь досмотрел рекламу — делаем новый расклад. */
     fun onAdRewarded() {
         drawCards()
     }
 
-    /** Вызывается если реклама не готова или произошла ошибка загрузки.
-     *  [message] — локализованная строка, переданная из Composable-слоя. */
     fun onAdFailed(message: String) {
         _state.value = _state.value.copy(adMessage = message)
         viewModelScope.launch {

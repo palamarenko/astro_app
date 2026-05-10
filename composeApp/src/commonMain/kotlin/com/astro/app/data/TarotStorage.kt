@@ -22,20 +22,34 @@ data class TarotCardSnapshot(
 )
 
 /**
- * Платформенно-зависимое хранилище состояния "колоды дня".
+ * Платформенно-зависимое хранилище состояния раскладов.
  *  - Android: SharedPreferences
  *  - iOS:     NSUserDefaults
+ *
+ *  Ключи периодов: "daily" | "weekly" | "monthly"
  */
 expect object TarotStorage {
     /** Ключ сегодняшнего дня в формате YYYY-MM-DD */
     fun todayKey(): String
 
-    /** Загрузить снимок последнего расклада или null. */
+    /** Ключ текущей недели в формате YYYY-Www (напр. 2026-W19) */
+    fun weekKey(): String
+
+    /** Ключ текущего месяца в формате YYYY-MM */
+    fun monthKey(): String
+
+    /** Загрузить снимок для заданного периода или null. */
+    fun loadPeriod(period: String): TarotPersistState?
+
+    /** Сохранить снимок для заданного периода. */
+    fun savePeriod(period: String, state: TarotPersistState)
+
+    /** Загрузить снимок последнего расклада (legacy). */
     fun load(): TarotPersistState?
 
-    /** Сохранить снимок. */
+    /** Сохранить снимок (legacy). */
     fun save(state: TarotPersistState)
 
-    /** Очистить состояние (например, для отладки). */
+    /** Очистить все сохранённые расклады. */
     fun clear()
 }

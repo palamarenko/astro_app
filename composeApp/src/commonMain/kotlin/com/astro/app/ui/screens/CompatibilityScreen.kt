@@ -59,6 +59,10 @@ fun CompatibilityScreen(vm: CompatibilityViewModel, modifier: Modifier = Modifie
                 transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(250)) }, label = "compat") { st ->
                 when {
                     st.isLoading -> Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) { LoadingDots() }
+                    st.error != null -> Text(
+                        text = stringResource(Res.string.compat_error, st.error),
+                        color = AppColors.Fire.copy(alpha = 0.8f), fontSize = AppType.body,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp), textAlign = TextAlign.Center)
                     st.result != null -> {
                         val r = st.result
                         Column {

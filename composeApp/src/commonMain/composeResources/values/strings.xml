@@ -28,6 +28,13 @@
     <string name="tarot_label">МИСТИКА КАРТ</string>
     <string name="tarot_title1">Расклад</string>
     <string name="tarot_title2">Таро</string>
+    <string name="tarot_select_period">Выберите период для гадания</string>
+    <string name="tarot_period_day_title">На день</string>
+    <string name="tarot_period_day_desc">Три карты на сегодня</string>
+    <string name="tarot_period_week_title">На неделю</string>
+    <string name="tarot_period_week_desc">Расклад на эту неделю</string>
+    <string name="tarot_period_month_title">На месяц</string>
+    <string name="tarot_period_month_desc">Послание на этот месяц</string>
     <string name="tarot_position_past">Прошлое</string>
     <string name="tarot_position_present">Настоящее</string>
     <string name="tarot_position_future">Будущее</string>
@@ -52,6 +59,7 @@
     <string name="compat_select_sign2">Выберите второй знак</string>
     <string name="compat_strengths">Сила союза</string>
     <string name="compat_challenges">Испытание</string>
+    <string name="compat_error">Звёзды молчат: %s</string>
 
     <!-- Profile Screen -->
     <string name="profile_btn_close">✕  Закрыть</string>

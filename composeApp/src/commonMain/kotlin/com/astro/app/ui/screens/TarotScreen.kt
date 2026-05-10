@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import com.astro.app.ads.rememberAdManager
+import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.TarotCard
 import com.astro.app.data.TarotReadingResponse
 import com.astro.app.i18n.*
@@ -41,12 +42,19 @@ import kotlin.math.*
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 @Composable
-fun TarotScreen(vm: TarotViewModel, modifier: Modifier = Modifier) {
+fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsState()
     val adManager = rememberAdManager()
     val adNotReadyMsg = stringResource(Res.string.tarot_ad_not_ready)
     val positions = listOf(stringResource(Res.string.tarot_position_past), stringResource(Res.string.tarot_position_present), stringResource(Res.string.tarot_position_future))
     val cardTexts = listOf(state.reading?.past, state.reading?.present, state.reading?.future)
+
+    val periodTitle = when (state.currentPeriod) {
+        HoroscopePeriod.DAILY   -> stringResource(Res.string.tarot_period_day_title)
+        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.tarot_period_week_title)
+        HoroscopePeriod.MONTHLY -> stringResource(Res.string.tarot_period_month_title)
+        null                    -> stringResource(Res.string.tarot_title2)
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -56,16 +64,32 @@ fun TarotScreen(vm: TarotViewModel, modifier: Modifier = Modifier) {
                 .padding(horizontal = Spacing.xl)
         ) {
             Spacer(Modifier.height(Spacing.xxl))
+
+            // Кнопка назад
+            Text(
+                text = "← ${stringResource(Res.string.tarot_title1)}",
+                fontSize = AppType.caption,
+                color = AppColors.TextMuted,
+                modifier = Modifier.clickable { onBack() }
+            )
+            Spacer(Modifier.height(Spacing.s))
+
             SectionLabel(stringResource(Res.string.tarot_label))
             Spacer(Modifier.height(Spacing.m))
             Text(
-                text = "${stringResource(Res.string.tarot_title1)} ${stringResource(Res.string.tarot_title2)}",
+                text = stringResource(Res.string.tarot_title1),
+                fontSize = AppType.h1,
+                fontWeight = FontWeight.Light,
+                color = AppColors.TextPrimary,
+            )
+            Text(
+                text = periodTitle,
                 fontSize = AppType.h1,
                 fontWeight = FontWeight.Light,
                 fontStyle = FontStyle.Italic,
                 color = AppColors.TextPrimary,
             )
-            Spacer(Modifier.height(Spacing.xxl))
+            Spacer(Modifier.height(Spacing.xl))
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Pulsing glow behind cards during loading

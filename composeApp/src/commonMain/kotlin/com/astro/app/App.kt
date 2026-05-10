@@ -51,11 +51,12 @@ private fun AppContent() {
     val adminTarotVm = remember { AdminTarotViewModel(api) }
 
     var activeTab    by remember { mutableStateOf(BottomTab.HOROSCOPE) }
-    var previousTab  by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     // На главной сразу открыт детальный гороскоп выбранного знака
     var showDetail      by remember { mutableStateOf(true) }
     var showAdmin       by remember { mutableStateOf(false) }
     var showAdminTarot  by remember { mutableStateOf(false) }
+    // Таро: выбранный период (null = список)
+    var tarotPeriod     by remember { mutableStateOf<HoroscopePeriod?>(null) }
 
     // Текущий выбранный знак (источник истины — ProfileViewModel)
     val profileState by profileVm.state.collectAsState()
@@ -80,13 +81,6 @@ private fun AppContent() {
         return
     }
 
-    // Направление: +1 = вправо (новый таб правее), -1 = влево
-    val direction = remember(activeTab) {
-        val prev = TAB_ORDER.indexOf(previousTab)
-        val curr = TAB_ORDER.indexOf(activeTab)
-        if (curr >= prev) 1 else -1
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -98,23 +92,37 @@ private fun AppContent() {
 
         Box(modifier = Modifier.fillMaxSize().padding(bottom = 60.dp)) {
             AnimatedContent(
-                targetState = activeTab to showDetail,
+                targetState = Triple(activeTab, showDetail, tarotPeriod),
                 transitionSpec = {
-                    val slideOffset = 60
-                    val enterSlide = slideInHorizontally(
-                        animationSpec = tween(320, easing = FastOutSlowInEasing),
-                        initialOffsetX = { direction * slideOffset }
-                    ) + fadeIn(tween(320))
+                    val (prevTab, prevDetail, prevPeriod) = initialState
+                    val (currTab, currDetail, currPeriod) = targetState
 
-                    val exitSlide = slideOutHorizontally(
-                        animationSpec = tween(280, easing = FastOutSlowInEasing),
-                        targetOffsetX = { -direction * slideOffset }
-                    ) + fadeOut(tween(200))
+                    // Возврат с расклада на список — без анимации
+                    if (prevPeriod != null && currPeriod == null) {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    } else {
+                        // Определяем направление слайда по тому, что именно изменилось
+                        val dir: Int = when {
+                            prevTab != currTab -> {
+                                val p = TAB_ORDER.indexOf(prevTab)
+                                val c = TAB_ORDER.indexOf(currTab)
+                                if (c >= p) 1 else -1
+                            }
+                            prevPeriod == null && currPeriod != null ->  1
+                            !prevDetail && currDetail ->  1
+                            prevDetail && !currDetail -> -1
+                            else -> 1
+                        }
 
-                    enterSlide togetherWith exitSlide
+                        val slideOffset = 60
+                        slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { dir * slideOffset } +
+                            fadeIn(tween(320)) togetherWith
+                        slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { -dir * slideOffset } +
+                            fadeOut(tween(200))
+                    }
                 },
                 label = "tabContent"
-            ) { (tab, detail) ->
+            ) { (tab, detail, _) ->
                 when (tab) {
                     BottomTab.HOROSCOPE -> {
                         if (detail) {
@@ -135,7 +143,27 @@ private fun AppContent() {
                             )
                         }
                     }
-                    BottomTab.TAROT         -> TarotScreen(vm = tarotVm, modifier = Modifier.fillMaxSize())
+                    BottomTab.TAROT         -> {
+                        if (tarotPeriod == null) {
+                            TarotListScreen(
+                                vm = tarotVm,
+                                onPeriodSelected = { period ->
+                                    tarotVm.selectPeriod(period)
+                                    tarotPeriod = period
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            TarotReadingScreen(
+                                vm = tarotVm,
+                                onBack = {
+                                    tarotVm.clearPeriod()
+                                    tarotPeriod = null
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                     BottomTab.COMPATIBILITY -> ComingSoonScreen(modifier = Modifier.fillMaxSize())
                     BottomTab.PROFILE       -> {
                         when {
@@ -164,9 +192,9 @@ private fun AppContent() {
             activeTab = activeTab,
             profileIcon = selectedSign.emoji,
             onTabSelected = { tab ->
-                previousTab = activeTab
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
                 if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false }
+                if (tab != BottomTab.TAROT) { tarotPeriod = null; tarotVm.clearPeriod() }
                 activeTab = tab
             },
             modifier = Modifier.align(Alignment.BottomCenter)

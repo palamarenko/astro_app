@@ -34,11 +34,30 @@ actual object TarotStorage {
     private val isoDate = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply {
         timeZone = TimeZone.getDefault()
     }
+    private val isoWeek = SimpleDateFormat("yyyy-'W'ww", Locale.ROOT).apply {
+        timeZone = TimeZone.getDefault()
+    }
+    private val isoMonth = SimpleDateFormat("yyyy-MM", Locale.ROOT).apply {
+        timeZone = TimeZone.getDefault()
+    }
 
     private fun prefs(): SharedPreferences? =
         TarotStorageInitializer.appContext?.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     actual fun todayKey(): String = isoDate.format(Date())
+    actual fun weekKey(): String  = isoWeek.format(Date())
+    actual fun monthKey(): String = isoMonth.format(Date())
+
+    private fun periodKey(period: String) = "state_${period}_json"
+
+    actual fun loadPeriod(period: String): TarotPersistState? {
+        val raw = prefs()?.getString(periodKey(period), null) ?: return null
+        return runCatching { json.decodeFromString<TarotPersistState>(raw) }.getOrNull()
+    }
+
+    actual fun savePeriod(period: String, state: TarotPersistState) {
+        prefs()?.edit()?.putString(periodKey(period), json.encodeToString(state))?.apply()
+    }
 
     actual fun load(): TarotPersistState? {
         val raw = prefs()?.getString(KEY_STATE, null) ?: return null
@@ -50,6 +69,6 @@ actual object TarotStorage {
     }
 
     actual fun clear() {
-        prefs()?.edit()?.remove(KEY_STATE)?.apply()
+        prefs()?.edit()?.clear()?.apply()
     }
 }
