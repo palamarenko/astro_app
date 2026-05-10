@@ -71,7 +71,14 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                         .background(Brush.radialGradient(listOf(elementColor.copy(alpha = 0.15f), AppColors.Background)))
                         .border(1.dp, elementColor.copy(alpha = 0.27f), CircleShape),
                     contentAlignment = Alignment.Center
-                ) { Text(text = sign.emoji, fontSize = TextUnit(30f, TextUnitType.Sp)) }
+                ) {
+                    androidx.compose.foundation.Image(
+                        painter = sign.iconPainter(),
+                        contentDescription = sign.localizedName(),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(54.dp)
+                    )
+                }
                 Spacer(Modifier.height(Spacing.m))
                 Text(text = sign.localizedName(), fontSize = AppType.h2, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
                 Spacer(Modifier.height(Spacing.s))

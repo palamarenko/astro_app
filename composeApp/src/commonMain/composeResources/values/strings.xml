@@ -62,6 +62,21 @@
     <string name="compat_error">Звёзды молчат: %s</string>
 
     <!-- Profile Screen -->
+    <string name="profile_field_name_label">Как к вам обращаться</string>
+    <string name="profile_field_name_placeholder">Ваше имя…</string>
+    <string name="profile_field_gender_label">Пол</string>
+    <string name="profile_field_gender_male">♂  Мужской</string>
+    <string name="profile_field_gender_female">♀  Женский</string>
+    <string name="profile_field_date_label">Дата рождения</string>
+    <string name="profile_field_date_pick">Выбрать дату →</string>
+    <string name="profile_field_time_label">Точное время рождения</string>
+    <string name="profile_field_time_pick">Выбрать время →</string>
+    <string name="profile_field_place_label">Место рождения</string>
+    <string name="profile_field_place_pick">Выбрать место →</string>
+    <string name="profile_dialog_cancel">Отмена</string>
+    <string name="profile_dialog_confirm">Готово</string>
+    <string name="profile_dialog_date_title">Дата рождения</string>
+    <string name="profile_dialog_time_title">Время рождения</string>
     <string name="profile_btn_close">✕  Закрыть</string>
     <string name="profile_btn_change">Изменить знак</string>
     <string name="profile_stat_element">Элемент</string>

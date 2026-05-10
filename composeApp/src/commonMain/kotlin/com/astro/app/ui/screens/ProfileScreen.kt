@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -34,9 +35,14 @@ import org.jetbrains.compose.resources.stringResource
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-private val MONTHS_RU = listOf(
-    "Январь","Февраль","Март","Апрель","Май","Июнь",
-    "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
+@Composable
+private fun localizedMonths() = listOf(
+    stringResource(Res.string.onb_month_jan), stringResource(Res.string.onb_month_feb),
+    stringResource(Res.string.onb_month_mar), stringResource(Res.string.onb_month_apr),
+    stringResource(Res.string.onb_month_may), stringResource(Res.string.onb_month_jun),
+    stringResource(Res.string.onb_month_jul), stringResource(Res.string.onb_month_aug),
+    stringResource(Res.string.onb_month_sep), stringResource(Res.string.onb_month_oct),
+    stringResource(Res.string.onb_month_nov), stringResource(Res.string.onb_month_dec),
 )
 
 private fun daysInMonth(month: Int, year: Int): Int = when (month) {
@@ -53,9 +59,10 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     onNavigateToAdmin: () -> Unit = {}
 ) {
-    val state by vm.state.collectAsState()
-    val sign  = state.sign
+    val state  by vm.state.collectAsState()
+    val sign   = state.sign
     val elementColor = AppColors.elementColor(sign.element)
+    val months = localizedMonths()
 
     val glowAlpha by rememberInfiniteTransition(label = "glow").animateFloat(
         initialValue = 0.3f, targetValue = 0.8f,
@@ -86,7 +93,12 @@ fun ProfileScreen(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(sign.emoji, fontSize = TextUnit(36f, TextUnitType.Sp))
+                Image(
+                    painter = sign.iconPainter(),
+                    contentDescription = sign.localizedName(),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(58.dp)
+                )
             }
 
             Spacer(Modifier.height(Spacing.s))
@@ -97,10 +109,21 @@ fun ProfileScreen(
             )
 
             if (state.birthDay > 0) {
-                Text(
-                    text = "${sign.emoji} ${sign.localizedName()}  ·  ${state.birthDay} ${MONTHS_RU[state.birthMonth - 1]} ${state.birthYear}",
-                    fontSize = AppType.caption, color = AppColors.TextDim, textAlign = TextAlign.Center
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Image(
+                        painter = sign.iconPainter(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "${sign.localizedName()}  ·  ${state.birthDay} ${months[state.birthMonth - 1]} ${state.birthYear}",
+                        fontSize = AppType.caption, color = AppColors.TextDim, textAlign = TextAlign.Center
+                    )
+                }
             } else {
                 Text(sign.localizedDates(), fontSize = AppType.caption, color = AppColors.TextDim)
             }
@@ -111,12 +134,12 @@ fun ProfileScreen(
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
 
                 // Имя
-                ProfileCard(label = "Как к вам обращаться") {
+                ProfileCard(label = stringResource(Res.string.profile_field_name_label)) {
                     OutlinedTextField(
                         value = state.name,
                         onValueChange = { vm.setName(it) },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Ваше имя…", color = AppColors.TextDim, fontSize = 14.sp) },
+                        placeholder = { Text(stringResource(Res.string.profile_field_name_placeholder), color = AppColors.TextDim, fontSize = 14.sp) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
@@ -135,36 +158,32 @@ fun ProfileScreen(
                 }
 
                 // Пол
-                ProfileCard(label = "Пол") {
+                ProfileCard(label = stringResource(Res.string.profile_field_gender_label)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         GenderButton(
-                            label    = "♂  Мужской",
+                            label    = stringResource(Res.string.profile_field_gender_male),
                             selected = state.gender == "male",
-                            onClick  = {
-                                vm.setGender(if (state.gender == "male") "" else "male")
-                            },
+                            onClick  = { vm.setGender(if (state.gender == "male") "" else "male") },
                             modifier = Modifier.weight(1f)
                         )
                         GenderButton(
-                            label    = "♀  Женский",
+                            label    = stringResource(Res.string.profile_field_gender_female),
                             selected = state.gender == "female",
-                            onClick  = {
-                                vm.setGender(if (state.gender == "female") "" else "female")
-                            },
+                            onClick  = { vm.setGender(if (state.gender == "female") "" else "female") },
                             modifier = Modifier.weight(1f)
                         )
                     }
                 }
 
                 // Дата рождения
-                ProfileCard(label = "Дата рождения") {
+                ProfileCard(label = stringResource(Res.string.profile_field_date_label)) {
                     PickerRow(
                         value  = if (state.birthDay > 0)
-                            "${state.birthDay} ${MONTHS_RU[state.birthMonth - 1]} ${state.birthYear}"
-                        else "Выбрать дату →",
+                            "${state.birthDay} ${months[state.birthMonth - 1]} ${state.birthYear}"
+                        else stringResource(Res.string.profile_field_date_pick),
                         icon   = "📅",
                         filled = state.birthDay > 0,
                         onClick = { vm.showDatePicker() }
@@ -179,7 +198,12 @@ fun ProfileScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(sign.emoji, fontSize = 16.sp)
+                            Image(
+                                painter = sign.iconPainter(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.size(18.dp)
+                            )
                             Text(sign.localizedName(), fontSize = 12.sp, color = AppColors.AccentGold, fontWeight = FontWeight.Medium)
                             Text("·", color = AppColors.TextDim, fontSize = 12.sp)
                             Text(sign.localizedDates(), fontSize = 11.sp, color = AppColors.TextDim)
@@ -188,11 +212,11 @@ fun ProfileScreen(
                 }
 
                 // Время рождения
-                ProfileCard(label = "Точное время рождения") {
+                ProfileCard(label = stringResource(Res.string.profile_field_time_label)) {
                     PickerRow(
                         value  = if (state.birthHour >= 0)
                             "${state.birthHour.toString().padStart(2, '0')}:${state.birthMinute.toString().padStart(2, '0')}"
-                        else "Выбрать время →",
+                        else stringResource(Res.string.profile_field_time_pick),
                         icon   = "🕐",
                         filled = state.birthHour >= 0,
                         onClick = { vm.showTimePicker() }
@@ -200,9 +224,9 @@ fun ProfileScreen(
                 }
 
                 // Место рождения
-                ProfileCard(label = "Место рождения") {
+                ProfileCard(label = stringResource(Res.string.profile_field_place_label)) {
                     PickerRow(
-                        value  = state.birthPlace.ifBlank { "Выбрать место →" },
+                        value  = state.birthPlace.ifBlank { stringResource(Res.string.profile_field_place_pick) },
                         icon   = "📍",
                         filled = state.birthPlace.isNotBlank(),
                         onClick = { vm.showPlacePicker() }
@@ -467,12 +491,12 @@ private fun PickerDialogShell(
                         .background(AppColors.Card).border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s))
                         .clickable(onClick = onDismiss).padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
-                ) { Text("Отмена", color = AppColors.TextMuted, fontSize = 14.sp) }
+                ) { Text(stringResource(Res.string.profile_dialog_cancel), color = AppColors.TextMuted, fontSize = 14.sp) }
                 Box(
                     modifier = Modifier.weight(1f).clip(RoundedCornerShape(Radius.s))
                         .background(AppColors.AccentGold).clickable(onClick = onConfirm).padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
-                ) { Text("Готово", color = Color(0xFF0A0A0F), fontSize = 14.sp, fontWeight = FontWeight.Medium) }
+                ) { Text(stringResource(Res.string.profile_dialog_confirm), color = Color(0xFF0A0A0F), fontSize = 14.sp, fontWeight = FontWeight.Medium) }
             }
         }
     }
@@ -489,7 +513,7 @@ private fun DatePickerDialog(
     var day   by remember { mutableStateOf(initialDay.coerceIn(1, 31)) }
     var month by remember { mutableStateOf(initialMonth.coerceIn(1, 12)) }
     var year  by remember { mutableStateOf(initialYear) }
-
+    val months = localizedMonths()
     val days  = remember(month, year) { (1..daysInMonth(month, year)).map { it.toString() } }
     val years = (1930..2015).map { it.toString() }
 
@@ -507,7 +531,7 @@ private fun DatePickerDialog(
                 modifier      = Modifier.weight(1f)
             )
             WheelPicker(
-                items         = MONTHS_RU,
+                items         = months,
                 selectedIndex = (month - 1).coerceIn(0, 11),
                 onIndexChange = { month = it + 1 },
                 modifier      = Modifier.weight(2f)

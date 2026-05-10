@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -110,7 +111,12 @@ private fun SignRow(selected: ZodiacSign?, onSelect: (ZodiacSign) -> Unit, enabl
                 .border(1.dp, if (isSelected) elementColor.copy(alpha = 0.5f) else AppColors.Border, RoundedCornerShape(Radius.s))
                 .clickable(enabled = enabled) { onSelect(sign) }.padding(4.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = sign.emoji, fontSize = TextUnit(18f, TextUnitType.Sp))
+                    Image(
+                        painter = sign.iconPainter(),
+                        contentDescription = sign.localizedName(),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(28.dp)
+                    )
                     Text(text = sign.localizedName(), fontSize = TextUnit(8f, TextUnitType.Sp),
                         color = if (isSelected) elementColor else AppColors.TextDim)
                 }

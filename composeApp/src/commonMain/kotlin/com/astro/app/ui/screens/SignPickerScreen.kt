@@ -11,11 +11,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.dp
 import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.ALL_SIGNS
 import com.astro.app.data.ZodiacSign
@@ -86,7 +87,12 @@ private fun SignCard(sign: ZodiacSign, index: Int, onClick: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = sign.emoji, fontSize = TextUnit(24f, TextUnitType.Sp))
+                Image(
+                    painter = sign.iconPainter(),
+                    contentDescription = sign.localizedName(),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(36.dp)
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(text = sign.localizedName(), fontSize = AppType.caption, fontWeight = FontWeight.Normal, color = AppColors.TextSecondary)
                 Spacer(Modifier.height(2.dp))

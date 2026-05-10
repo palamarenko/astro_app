@@ -5,9 +5,26 @@ import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.TarotCard
 import com.astro.app.data.ZodiacSign
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 // ── ZodiacSign extensions ─────────────────────────────────────────────────────
+
+@Composable
+fun ZodiacSign.iconPainter() = painterResource(when (this.id) {
+    "aries"       -> Res.drawable.zodiac_aries
+    "taurus"      -> Res.drawable.zodiac_taurus
+    "gemini"      -> Res.drawable.zodiac_gemini
+    "cancer"      -> Res.drawable.zodiac_cancer
+    "leo"         -> Res.drawable.zodiac_leo
+    "virgo"       -> Res.drawable.zodiac_virgo
+    "libra"       -> Res.drawable.zodiac_libra
+    "scorpio"     -> Res.drawable.zodiac_scorpio
+    "sagittarius" -> Res.drawable.zodiac_sagittarius
+    "capricorn"   -> Res.drawable.zodiac_capricorn
+    "aquarius"    -> Res.drawable.zodiac_aquarius
+    else          -> Res.drawable.zodiac_pisces
+})
 
 @Composable
 fun ZodiacSign.localizedName(): String = stringResource(when (this.id) {

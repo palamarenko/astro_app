@@ -62,6 +62,21 @@
     <string name="compat_error">The stars are silent: %s</string>
 
     <!-- Profile Screen -->
+    <string name="profile_field_name_label">What should we call you</string>
+    <string name="profile_field_name_placeholder">Your name…</string>
+    <string name="profile_field_gender_label">Gender</string>
+    <string name="profile_field_gender_male">♂  Male</string>
+    <string name="profile_field_gender_female">♀  Female</string>
+    <string name="profile_field_date_label">Date of birth</string>
+    <string name="profile_field_date_pick">Choose date →</string>
+    <string name="profile_field_time_label">Exact birth time</string>
+    <string name="profile_field_time_pick">Choose time →</string>
+    <string name="profile_field_place_label">Place of birth</string>
+    <string name="profile_field_place_pick">Choose place →</string>
+    <string name="profile_dialog_cancel">Cancel</string>
+    <string name="profile_dialog_confirm">Done</string>
+    <string name="profile_dialog_date_title">Date of birth</string>
+    <string name="profile_dialog_time_title">Time of birth</string>
     <string name="profile_btn_close">✕  Close</string>
     <string name="profile_btn_change">Change sign</string>
     <string name="profile_stat_element">Element</string>

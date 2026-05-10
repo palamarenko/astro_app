@@ -15,6 +15,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
 import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.*
 import com.astro.app.i18n.*
@@ -190,7 +192,7 @@ private fun AppContent() {
 
         BottomNav(
             activeTab = activeTab,
-            profileIcon = selectedSign.emoji,
+            selectedSign = selectedSign,
             onTabSelected = { tab ->
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
                 if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false }
@@ -212,7 +214,7 @@ private data class NavItem(
 @Composable
 private fun BottomNav(
     activeTab: BottomTab,
-    profileIcon: String,
+    selectedSign: ZodiacSign,
     onTabSelected: (BottomTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -220,12 +222,13 @@ private fun BottomNav(
         NavItem(BottomTab.HOROSCOPE,     stringResource(Res.string.nav_horoscope))     { c -> HoroscopeNavIcon(color = c) },
         NavItem(BottomTab.TAROT,         stringResource(Res.string.nav_tarot))         { c -> TarotNavIcon(color = c) },
         NavItem(BottomTab.COMPATIBILITY, stringResource(Res.string.nav_compatibility)) { c -> CompatibilityNavIcon(color = c) },
-        NavItem(BottomTab.PROFILE,       stringResource(Res.string.nav_profile))       { c ->
-            // Профайл — эмодзи выбранного знака
-            Text(
-                text = profileIcon,
-                fontSize = TextUnit(20f, TextUnitType.Sp),
-                color = c,
+        NavItem(BottomTab.PROFILE,       stringResource(Res.string.nav_profile))       { _ ->
+            // Профайл — иконка выбранного знака
+            Image(
+                painter = selectedSign.iconPainter(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(22.dp),
             )
         },
     )

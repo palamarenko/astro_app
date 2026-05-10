@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import astroapp.composeapp.generated.resources.*
+import com.astro.app.i18n.iconPainter
 import com.astro.app.ui.components.StarfieldBackground
 import com.astro.app.ui.theme.*
 import org.jetbrains.compose.resources.stringResource
@@ -789,7 +791,12 @@ private fun FinalStep(state: ProfileUiState) {
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(sign.emoji, fontSize = 70.sp)
+            Image(
+                painter = sign.iconPainter(),
+                contentDescription = sign.name,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(120.dp)
+            )
         }
 
         Spacer(Modifier.height(Spacing.xl))

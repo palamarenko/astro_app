@@ -62,6 +62,21 @@
     <string name="compat_error">Зорі мовчать: %s</string>
 
     <!-- Profile Screen -->
+    <string name="profile_field_name_label">Як до вас звертатись</string>
+    <string name="profile_field_name_placeholder">Ваше ім\'я…</string>
+    <string name="profile_field_gender_label">Стать</string>
+    <string name="profile_field_gender_male">♂  Чоловіча</string>
+    <string name="profile_field_gender_female">♀  Жіноча</string>
+    <string name="profile_field_date_label">Дата народження</string>
+    <string name="profile_field_date_pick">Обрати дату →</string>
+    <string name="profile_field_time_label">Точний час народження</string>
+    <string name="profile_field_time_pick">Обрати час →</string>
+    <string name="profile_field_place_label">Місце народження</string>
+    <string name="profile_field_place_pick">Обрати місце →</string>
+    <string name="profile_dialog_cancel">Скасувати</string>
+    <string name="profile_dialog_confirm">Готово</string>
+    <string name="profile_dialog_date_title">Дата народження</string>
+    <string name="profile_dialog_time_title">Час народження</string>
     <string name="profile_btn_close">✕  Закрити</string>
     <string name="profile_btn_change">Змінити знак</string>
     <string name="profile_stat_element">Елемент</string>
