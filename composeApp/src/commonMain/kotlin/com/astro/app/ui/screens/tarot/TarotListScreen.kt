@@ -1,4 +1,4 @@
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.tarot
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*

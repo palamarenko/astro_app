@@ -1,4 +1,4 @@
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.compatibility
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

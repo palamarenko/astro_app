@@ -25,6 +25,11 @@ import com.astro.app.ui.components.HoroscopeNavIcon
 import com.astro.app.ui.components.StarfieldBackground
 import com.astro.app.ui.components.TarotNavIcon
 import com.astro.app.ui.screens.*
+import com.astro.app.ui.screens.horoscope.*
+import com.astro.app.ui.screens.tarot.*
+import com.astro.app.ui.screens.compatibility.*
+import com.astro.app.ui.screens.profile.*
+import com.astro.app.ui.screens.admin.*
 import com.astro.app.ui.theme.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -99,32 +104,28 @@ private fun AppContent() {
                     val (prevTab, prevDetail, prevPeriod) = initialState
                     val (currTab, currDetail, currPeriod) = targetState
 
-                    // Возврат с расклада на список — без анимации
-                    if (prevPeriod != null && currPeriod == null) {
-                        EnterTransition.None togetherWith ExitTransition.None
-                    } else {
-                        // Определяем направление слайда по тому, что именно изменилось
-                        val dir: Int = when {
-                            prevTab != currTab -> {
-                                val p = TAB_ORDER.indexOf(prevTab)
-                                val c = TAB_ORDER.indexOf(currTab)
-                                if (c >= p) 1 else -1
-                            }
-                            prevPeriod == null && currPeriod != null ->  1
-                            !prevDetail && currDetail ->  1
-                            prevDetail && !currDetail -> -1
-                            else -> 1
+                    // Определяем направление слайда по тому, что именно изменилось
+                    val dir: Int = when {
+                        prevTab != currTab -> {
+                            val p = TAB_ORDER.indexOf(prevTab)
+                            val c = TAB_ORDER.indexOf(currTab)
+                            if (c >= p) 1 else -1
                         }
-
-                        val slideOffset = 60
-                        slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { dir * slideOffset } +
-                            fadeIn(tween(320)) togetherWith
-                        slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { -dir * slideOffset } +
-                            fadeOut(tween(200))
+                        prevPeriod == null && currPeriod != null ->  1   // вперёд: список → расклад
+                        prevPeriod != null && currPeriod == null -> -1   // назад:  расклад → список
+                        !prevDetail && currDetail ->  1
+                        prevDetail && !currDetail -> -1
+                        else -> 1
                     }
+
+                    val slideOffset = 60
+                    slideInHorizontally(tween(320, easing = FastOutSlowInEasing)) { dir * slideOffset } +
+                        fadeIn(tween(320)) togetherWith
+                    slideOutHorizontally(tween(280, easing = FastOutSlowInEasing)) { -dir * slideOffset } +
+                        fadeOut(tween(200))
                 },
                 label = "tabContent"
-            ) { (tab, detail, _) ->
+            ) { (tab, detail, period) ->
                 when (tab) {
                     BottomTab.HOROSCOPE -> {
                         if (detail) {
@@ -146,12 +147,12 @@ private fun AppContent() {
                         }
                     }
                     BottomTab.TAROT         -> {
-                        if (tarotPeriod == null) {
+                        if (period == null) {
                             TarotListScreen(
                                 vm = tarotVm,
-                                onPeriodSelected = { period ->
-                                    tarotVm.selectPeriod(period)
-                                    tarotPeriod = period
+                                onPeriodSelected = { selectedPeriod ->
+                                    tarotVm.selectPeriod(selectedPeriod)
+                                    tarotPeriod = selectedPeriod
                                 },
                                 modifier = Modifier.fillMaxSize()
                             )

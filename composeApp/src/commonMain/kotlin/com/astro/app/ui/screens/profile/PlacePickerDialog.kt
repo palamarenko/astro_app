@@ -1,4 +1,4 @@
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.profile
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*

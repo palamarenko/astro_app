@@ -1,4 +1,4 @@
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.profile
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*

@@ -1,4 +1,4 @@
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -141,26 +141,49 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
         viewModelScope.launch {
             val st = _state.value
             val key = computeDateKey(st.period, st.selectedDate)
-            val allIds = ALL_SIGNS.map { it.id }.toSet()
-            _state.value = _state.value.copy(isGeneratingAll = true, generatingSignIds = allIds)
+            _state.value = _state.value.copy(
+                isGeneratingAll = true,
+                generatingSignIds = ALL_SIGNS.map { it.id }.toSet()
+            )
             try {
-                val deferreds = ALL_SIGNS.map { sign ->
-                    async {
-                        try {
-                            val response = api.generateAdminHoroscope(sign, st.period, st.lang, key)
-                            val h = _state.value.horoscopes.toMutableMap()
-                            h[sign.id] = response
-                            _state.value = _state.value.copy(
-                                horoscopes = h,
-                                generatingSignIds = _state.value.generatingSignIds - sign.id
-                            )
-                        } catch (e: Exception) {
-                            if (e !is kotlinx.coroutines.CancellationException)
-                                _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds - sign.id)
+                val maxAttempts = 3
+                var remaining = ALL_SIGNS.toList()
+
+                repeat(maxAttempts) { attempt ->
+                    if (remaining.isEmpty()) return@repeat
+
+                    val deferreds = remaining.map { sign ->
+                        async {
+                            try {
+                                val response = api.generateAdminHoroscope(sign, st.period, st.lang, key)
+                                val h = _state.value.horoscopes.toMutableMap()
+                                h[sign.id] = response
+                                _state.value = _state.value.copy(
+                                    horoscopes = h,
+                                    generatingSignIds = _state.value.generatingSignIds - sign.id
+                                )
+                            } catch (e: Exception) {
+                                if (e !is kotlinx.coroutines.CancellationException)
+                                    _state.value = _state.value.copy(
+                                        generatingSignIds = _state.value.generatingSignIds - sign.id
+                                    )
+                            }
                         }
                     }
+                    deferreds.awaitAll()
+
+                    // Проверяем кто не получил текст — они пойдут на следующую попытку
+                    remaining = ALL_SIGNS.filter { sign ->
+                        _state.value.horoscopes[sign.id]?.text.isNullOrBlank()
+                    }
+
+                    if (remaining.isNotEmpty() && attempt < maxAttempts - 1) {
+                        // Возвращаем недогенерированных в индикатор загрузки
+                        _state.value = _state.value.copy(
+                            generatingSignIds = _state.value.generatingSignIds + remaining.map { it.id }.toSet()
+                        )
+                    }
                 }
-                deferreds.awaitAll()
             } finally {
                 _state.value = _state.value.copy(isGeneratingAll = false, generatingSignIds = emptySet())
             }

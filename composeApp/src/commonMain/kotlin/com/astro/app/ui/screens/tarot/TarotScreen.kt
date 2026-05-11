@@ -1,6 +1,6 @@
 @file:OptIn(org.jetbrains.compose.resources.ExperimentalResourceApi::class)
 
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.tarot
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*

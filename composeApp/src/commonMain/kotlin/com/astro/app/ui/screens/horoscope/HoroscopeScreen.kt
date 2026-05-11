@@ -1,4 +1,4 @@
-package com.astro.app.ui.screens
+package com.astro.app.ui.screens.horoscope
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -32,7 +32,9 @@ import com.astro.app.data.ZodiacSign
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.Image
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.*
 
@@ -579,10 +581,13 @@ private fun WizardCta(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text     = "🧙",
-                fontSize = 28.sp,
-                modifier = Modifier.graphicsLayer { translationY = floatY * density },
+            Image(
+                painter            = painterResource(Res.drawable.w),
+                contentDescription = null,
+                contentScale       = ContentScale.Fit,
+                modifier           = Modifier
+                    .size(44.dp)
+                    .graphicsLayer { translationY = floatY * density },
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -618,12 +623,24 @@ private fun FutureDivider(period: HoroscopePeriod, elementColor: Color) {
         modifier              = Modifier.fillMaxWidth(),
     ) {
         Box(Modifier.weight(1f).height(1.dp).background(AppColors.AccentGold.copy(alpha = 0.2f)))
-        Text(
-            text          = "  🧙 $label  ",
-            fontSize      = 10.sp,
-            color         = AppColors.AccentGold,
-            letterSpacing = TextUnit(0.14f, TextUnitType.Em),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            Image(
+                painter            = painterResource(Res.drawable.w),
+                contentDescription = null,
+                contentScale       = ContentScale.Fit,
+                modifier           = Modifier.size(14.dp),
+            )
+            Text(
+                text          = label,
+                fontSize      = 10.sp,
+                color         = AppColors.AccentGold,
+                letterSpacing = TextUnit(0.14f, TextUnitType.Em),
+            )
+        }
         Box(Modifier.weight(1f).height(1.dp).background(AppColors.AccentGold.copy(alpha = 0.2f)))
     }
 }
@@ -713,10 +730,13 @@ private fun WizardIntro(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text     = "🧙",
-            fontSize = 78.sp,
-            modifier = Modifier.graphicsLayer { translationY = floatY * density },
+        Image(
+            painter            = painterResource(Res.drawable.w),
+            contentDescription = null,
+            contentScale       = ContentScale.Fit,
+            modifier           = Modifier
+                .size(120.dp)
+                .graphicsLayer { translationY = floatY * density },
         )
         Text(
             text      = stringResource(Res.string.wizard_intro_title, periodAcc),
