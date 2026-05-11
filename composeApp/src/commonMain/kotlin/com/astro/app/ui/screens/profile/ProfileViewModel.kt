@@ -3,6 +3,8 @@ package com.astro.app.ui.screens.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
+import com.astro.app.i18n.AppLanguage
+import com.astro.app.i18n.LanguageManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +22,7 @@ data class ProfileUiState(
     val birthPlace: String = "",
     val birthLat: Double = 0.0,
     val birthLng: Double = 0.0,
+    val language: AppLanguage = AppLanguage.EN,
     val isLoading: Boolean = false,
     val showDatePicker: Boolean = false,
     val showTimePicker: Boolean = false,
@@ -58,6 +61,7 @@ private fun UserProfile.toUiState(): ProfileUiState {
         birthPlace = birthPlace,
         birthLat = birthLat,
         birthLng = birthLng,
+        language = AppLanguage.fromCode(language),
         onboardingStep = onboardingStep,
         onboardingFinished = onboardingFinished,
     )
@@ -75,6 +79,7 @@ private fun ProfileUiState.toProfile() = UserProfile(
     birthPlace = birthPlace,
     birthLat = birthLat,
     birthLng = birthLng,
+    language = language.code,
     onboardingStep = onboardingStep,
     onboardingFinished = onboardingFinished,
 )
@@ -135,6 +140,12 @@ class ProfileViewModel(private val api: ClaudeApiClient) : ViewModel() {
     /** Полное завершение/пропуск онбординга — больше не показываем. */
     fun finishOnboarding() {
         update(_state.value.copy(onboardingFinished = true))
+    }
+
+    fun setLanguage(lang: AppLanguage) {
+        LanguageManager.setLanguage(lang) { code ->
+            update(_state.value.copy(language = lang))
+        }
     }
 
     // Compat — больше не используется, оставлено чтобы не сломать App.kt

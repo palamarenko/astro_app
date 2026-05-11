@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
 import com.astro.app.i18n.AppLanguage
-import com.astro.app.i18n.getSystemLanguageCode
+import com.astro.app.i18n.LanguageManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +42,7 @@ class HoroscopeViewModel(
     val state: StateFlow<HoroscopeUiState> = _state.asStateFlow()
 
     private val lang: String
-        get() = when (AppLanguage.fromCode(getSystemLanguageCode())) {
+        get() = when (LanguageManager.current) {
             AppLanguage.UK -> "uk"
             AppLanguage.EN -> "en"
             else           -> "ru"
@@ -69,12 +70,15 @@ class HoroscopeViewModel(
     }
 
     fun unlockAndLoadFuture(period: HoroscopePeriod) {
-        val newUnlocked = _state.value.unlocked.toMutableMap().also { it[period] = true }
-        _state.value = _state.value.copy(
-            showWizard = false,
-            unlocked   = newUnlocked,
-        )
-        _state.value.selectedSign?.let { loadFutureIfNeeded(it, period) }
+       viewModelScope.launch {
+           delay(5000)
+           val newUnlocked = _state.value.unlocked.toMutableMap().also { it[period] = true }
+           _state.value = _state.value.copy(
+               showWizard = false,
+               unlocked   = newUnlocked,
+           )
+           _state.value.selectedSign?.let { loadFutureIfNeeded(it, period) }
+       }
     }
 
     // ── Private loaders ───────────────────────────────────────────────────────

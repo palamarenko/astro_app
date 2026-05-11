@@ -1,33 +1,69 @@
 package com.astro.app.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import astroapp.composeapp.generated.resources.Res
-import astroapp.composeapp.generated.resources.ic_zodiac_wheel_mask
-import org.jetbrains.compose.resources.painterResource
 
 // Все иконки нарисованы в системе координат 22x22, как в исходных SVG.
 // Размер контролируется параметром [size]; цвет — параметром [color].
 
 @Composable
 fun HoroscopeNavIcon(color: Color, size: Dp = 22.dp, modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(Res.drawable.ic_zodiac_wheel_mask),
-        contentDescription = null,
-        modifier = modifier.size(size),
-        colorFilter = ColorFilter.tint(color),
-    )
+    Canvas(modifier = modifier.size(size)) {
+        val s = this.size.minDimension / 22f
+        val cx = this.size.width / 2f
+        val cy = this.size.height / 2f
+
+        // 4-pointed sparkle star (ic_zodiac shape)
+        // Vertical petal: elongated top-bottom points
+        val starPath = Path().apply {
+            // Top point
+            moveTo(cx, cy - 10f * s)
+            // Right side of top petal → right point
+            cubicTo(
+                cx + 1.2f * s, cy - 3.5f * s,
+                cx + 3.5f * s, cy - 1.2f * s,
+                cx + 10f * s, cy
+            )
+            // Right side of right petal → bottom point
+            cubicTo(
+                cx + 3.5f * s, cy + 1.2f * s,
+                cx + 1.2f * s, cy + 3.5f * s,
+                cx, cy + 10f * s
+            )
+            // Left side of bottom petal → left point
+            cubicTo(
+                cx - 1.2f * s, cy + 3.5f * s,
+                cx - 3.5f * s, cy + 1.2f * s,
+                cx - 10f * s, cy
+            )
+            // Left side of left petal → top point
+            cubicTo(
+                cx - 3.5f * s, cy - 1.2f * s,
+                cx - 1.2f * s, cy - 3.5f * s,
+                cx, cy - 10f * s
+            )
+            close()
+        }
+        drawPath(path = starPath, color = color)
+
+        // 4 small dots at diagonal corners
+        val dotR = 0.85f * s
+        val dotOffset = 6.2f * s
+        drawCircle(color = color, radius = dotR, center = Offset(cx - dotOffset, cy - dotOffset))
+        drawCircle(color = color, radius = dotR, center = Offset(cx + dotOffset, cy - dotOffset))
+        drawCircle(color = color, radius = dotR, center = Offset(cx - dotOffset, cy + dotOffset))
+        drawCircle(color = color, radius = dotR, center = Offset(cx + dotOffset, cy + dotOffset))
+    }
 }
 
 @Composable

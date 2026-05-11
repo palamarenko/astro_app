@@ -77,7 +77,7 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                         .clickable { onBack() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("←", fontSize = 18.sp, color = elementColor)
+                    HoroscopeNavIcon(color = elementColor, size = 20.dp)
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -604,7 +604,22 @@ private fun WizardCta(
                     color    = AppColors.TextMuted,
                 )
             }
-            Text("→", fontSize = 18.sp, color = AppColors.AccentGold.copy(alpha = 0.7f))
+            // AD badge
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.55f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 5.dp, vertical = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text       = stringResource(Res.string.tarot_ad_badge),
+                    fontSize   = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = AppColors.AccentGold,
+                    letterSpacing = TextUnit(0.05f, TextUnitType.Em),
+                )
+            }
         }
     }
 }
@@ -723,8 +738,18 @@ private fun WizardIntro(
     onDismiss:    () -> Unit,
 ) {
     val inf    = rememberInfiniteTransition(label = "wizI")
-    val floatY by inf.animateFloat(-5f, 5f,
-        infiniteRepeatable(tween(3000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wY")
+    val floatY by inf.animateFloat(-6f, 6f,
+        infiniteRepeatable(tween(3400, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wY")
+    val witchBreathe by inf.animateFloat(
+        0.97f, 1.03f,
+        infiniteRepeatable(tween(3200, easing = EaseInOutSine), RepeatMode.Reverse),
+        "wB",
+    )
+    val witchGlow by inf.animateFloat(
+        0.55f, 1f,
+        infiniteRepeatable(tween(2600, easing = EaseInOutSine), RepeatMode.Reverse),
+        "wG",
+    )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -732,18 +757,42 @@ private fun WizardIntro(
     ) {
         Box(
             modifier = Modifier
-                .size(200.dp)
+                .size(220.dp)
                 .graphicsLayer { translationY = floatY * density },
             contentAlignment = Alignment.Center,
         ) {
             WizardAura(modifier = Modifier.fillMaxSize())
+            // Soft halo immediately behind the witch silhouette
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val cx = size.width  / 2f
+                val cy = size.height / 2f
+                val r  = minOf(size.width, size.height) * 0.42f
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colorStops = arrayOf(
+                            0.0f to Color(0xFFE1BEE7).copy(alpha = 0.10f * witchGlow),
+                            0.35f to Color(0xFF7B4BFF).copy(alpha = 0.07f * witchGlow),
+                            0.75f to Color.Transparent,
+                        ),
+                        center = Offset(cx, cy),
+                        radius = r,
+                    ),
+                    radius = r,
+                    center = Offset(cx, cy),
+                    blendMode = BlendMode.Plus,
+                )
+            }
             Image(
                 painter            = painterResource(Res.drawable.w),
                 contentDescription = null,
                 contentScale       = ContentScale.Fit,
                 modifier           = Modifier
                     .fillMaxSize()
-                    .padding(28.dp),
+                    .padding(30.dp)
+                    .graphicsLayer {
+                        scaleX = witchBreathe
+                        scaleY = witchBreathe
+                    },
             )
         }
         Text(
@@ -839,20 +888,36 @@ private fun WizardIntro(
 @Composable
 private fun WizardAura(modifier: Modifier = Modifier) {
     val inf = rememberInfiniteTransition(label = "aura")
+
+    // Slow primary rotation — outer cyan swirl
     val rotation by inf.animateFloat(
         0f, 360f,
-        infiniteRepeatable(tween(12000, easing = LinearEasing)),
+        infiniteRepeatable(tween(14000, easing = LinearEasing)),
         "auraRot",
     )
+    // Independent slow rotation for the radiating light rays
+    val rayRot by inf.animateFloat(
+        0f, 360f,
+        infiniteRepeatable(tween(32000, easing = LinearEasing)),
+        "rayRot",
+    )
+    // Pulse for opacity of glow layers
     val pulse by inf.animateFloat(
-        0.55f, 1f,
-        infiniteRepeatable(tween(2400, easing = EaseInOutSine), RepeatMode.Reverse),
+        0.50f, 1f,
+        infiniteRepeatable(tween(2800, easing = EaseInOutSine), RepeatMode.Reverse),
         "auraPulse",
     )
-    val starA by inf.animateFloat(
-        0.25f, 0.9f,
-        infiniteRepeatable(tween(1600, easing = EaseInOutSine), RepeatMode.Reverse),
-        "auraStar",
+    // Breathing scale of the outer halo
+    val breathe by inf.animateFloat(
+        0.88f, 1.12f,
+        infiniteRepeatable(tween(3600, easing = EaseInOutSine), RepeatMode.Reverse),
+        "auraBreathe",
+    )
+    // Continuous phase used for orbital particles & star twinkle
+    val drift by inf.animateFloat(
+        0f, (2f * PI).toFloat(),
+        infiniteRepeatable(tween(8000, easing = LinearEasing)),
+        "auraDrift",
     )
 
     Canvas(modifier = modifier) {
@@ -860,31 +925,77 @@ private fun WizardAura(modifier: Modifier = Modifier) {
         val cy = size.height / 2f
         val r  = minOf(size.width, size.height) * 0.48f
 
-        // Dark nebula background
+        // ── Layer 1 — Deep nebula background (very faint) ─────────────────
         drawCircle(
             brush = Brush.radialGradient(
                 colorStops = arrayOf(
-                    0.0f to Color(0xFF1A1040).copy(alpha = 0.92f),
-                    0.6f to Color(0xFF0D0822).copy(alpha = 0.75f),
+                    0.0f to Color(0xFF2A1860).copy(alpha = 0.22f),
+                    0.35f to Color(0xFF18103E).copy(alpha = 0.18f),
+                    0.70f to Color(0xFF0B0820).copy(alpha = 0.10f),
                     1.0f to Color.Transparent,
                 ),
                 center = Offset(cx, cy),
-                radius = r * 1.1f,
+                radius = r * 1.18f,
             ),
-            radius = r * 1.1f,
+            radius = r * 1.18f,
             center = Offset(cx, cy),
         )
 
-        // Arc 1 — cyan swirl (forward rotation)
+        // ── Layer 2 — Outer breathing halo (violet → cyan glow) ───────────
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.0f to Color.Transparent,
+                    0.55f to Color(0xFF7B4BFF).copy(alpha = 0f),
+                    0.78f to Color(0xFF7B4BFF).copy(alpha = 0.07f * pulse),
+                    0.92f to Color(0xFF4FC3F7).copy(alpha = 0.05f * pulse),
+                    1.0f to Color.Transparent,
+                ),
+                center = Offset(cx, cy),
+                radius = r * 1.18f * breathe,
+            ),
+            radius = r * 1.18f * breathe,
+            center = Offset(cx, cy),
+            blendMode = BlendMode.Plus,
+        )
+
+        // ── Layer 3 — Radiating light rays ────────────────────────────────
+        rotate(rayRot, Offset(cx, cy)) {
+            val rays = 14
+            val rayWidth = 10.dp.toPx()
+            val rayInner = r * 0.30f
+            val rayOuter = r * 1.05f
+            for (i in 0 until rays) {
+                val angle = (i.toFloat() / rays) * 360f
+                rotate(angle, Offset(cx, cy)) {
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color(0xFFB388FF).copy(alpha = 0.02f + 0.04f * pulse),
+                                Color.Transparent,
+                            ),
+                            startY = cy - rayOuter,
+                            endY   = cy - rayInner,
+                        ),
+                        topLeft = Offset(cx - rayWidth / 2f, cy - rayOuter),
+                        size    = androidx.compose.ui.geometry.Size(rayWidth, rayOuter - rayInner),
+                        blendMode = BlendMode.Plus,
+                    )
+                }
+            }
+        }
+
+        // ── Layer 4 — Outer cyan swirl arc ────────────────────────────────
         rotate(rotation, Offset(cx, cy)) {
             drawArc(
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color(0xFF00E5FF).copy(alpha = 0.15f),
-                        Color(0xFF4FC3F7).copy(alpha = 0.45f * pulse),
-                        Color(0xFF00BCD4).copy(alpha = 0.60f * pulse),
-                        Color(0xFF4FC3F7).copy(alpha = 0.25f),
+                        Color(0xFF00E5FF).copy(alpha = 0.06f),
+                        Color(0xFF4FC3F7).copy(alpha = 0.18f * pulse),
+                        Color(0xFF00BCD4).copy(alpha = 0.24f * pulse),
+                        Color(0xFF4FC3F7).copy(alpha = 0.10f),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -898,15 +1009,15 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             )
         }
 
-        // Arc 2 — purple swirl (counter-rotation, tighter)
+        // ── Layer 5 — Mid purple swirl arc (counter-rotation) ─────────────
         rotate(-rotation * 0.65f, Offset(cx, cy)) {
             drawArc(
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color(0xFFAB47BC).copy(alpha = 0.20f),
-                        Color(0xFF9C27B0).copy(alpha = 0.55f * pulse),
-                        Color(0xFFCE93D8).copy(alpha = 0.35f * pulse),
+                        Color(0xFFAB47BC).copy(alpha = 0.07f),
+                        Color(0xFF9C27B0).copy(alpha = 0.22f * pulse),
+                        Color(0xFFE1BEE7).copy(alpha = 0.16f * pulse),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -920,15 +1031,38 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             )
         }
 
-        // Arc 3 — thin gold ring (very slow counter-rotation)
+        // ── Layer 6 — Magenta accent arc (fast spin, additive) ────────────
+        rotate(rotation * 1.4f + 60f, Offset(cx, cy)) {
+            drawArc(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color(0xFFFF4081).copy(alpha = 0f),
+                        Color(0xFFFF4081).copy(alpha = 0.18f * pulse),
+                        Color(0xFFFFB6C1).copy(alpha = 0.12f * pulse),
+                        Color.Transparent,
+                    ),
+                    center = Offset(cx, cy),
+                ),
+                startAngle = 50f,
+                sweepAngle = 110f,
+                useCenter  = false,
+                topLeft    = Offset(cx - r * 0.92f, cy - r * 0.92f),
+                size       = androidx.compose.ui.geometry.Size(r * 1.84f, r * 1.84f),
+                style      = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
+                blendMode  = BlendMode.Plus,
+            )
+        }
+
+        // ── Layer 7 — Thin gold ring (slow counter-rotation) ──────────────
         rotate(-rotation * 0.25f, Offset(cx, cy)) {
             drawArc(
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        AppColors.AccentGold.copy(alpha = 0.10f),
-                        AppColors.AccentGold.copy(alpha = 0.40f * pulse),
-                        AppColors.AccentGold.copy(alpha = 0.10f),
+                        AppColors.AccentGold.copy(alpha = 0.05f),
+                        AppColors.AccentGold.copy(alpha = 0.20f * pulse),
+                        AppColors.AccentGold.copy(alpha = 0.05f),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -942,25 +1076,90 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             )
         }
 
-        // Star particles — alternating twinkle phases
-        data class Star(val ox: Float, val oy: Float, val dp: Float, val col: Color, val inv: Boolean)
+        // ── Layer 8 — Inner mystical core halo (behind witch) ─────────────
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.0f to Color(0xFFB388FF).copy(alpha = 0.12f * pulse),
+                    0.40f to Color(0xFF7B4BFF).copy(alpha = 0.07f * pulse),
+                    0.85f to Color.Transparent,
+                ),
+                center = Offset(cx, cy),
+                radius = r * 0.85f,
+            ),
+            radius = r * 0.85f,
+            center = Offset(cx, cy),
+            blendMode = BlendMode.Plus,
+        )
+
+        // ── Layer 9 — Orbital particles (drifting around the witch) ───────
+        val orbitR     = r * 0.86f
+        val orbitCount = 6
+        for (i in 0 until orbitCount) {
+            val phase = drift + (i.toFloat() / orbitCount) * (2f * PI).toFloat()
+            val px = cx + cos(phase) * orbitR
+            val py = cy + sin(phase) * orbitR * 0.95f
+            val col = when (i % 3) {
+                0 -> Color(0xFF80DEEA)
+                1 -> Color(0xFFCE93D8)
+                else -> Color(0xFFFFD54F)
+            }
+            // soft glow halo
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(col.copy(alpha = 0.20f), Color.Transparent),
+                    center = Offset(px, py),
+                    radius = 14.dp.toPx(),
+                ),
+                radius = 14.dp.toPx(),
+                center = Offset(px, py),
+                blendMode = BlendMode.Plus,
+            )
+            // bright core
+            drawCircle(
+                color  = col.copy(alpha = 0.40f),
+                radius = 2.2f.dp.toPx(),
+                center = Offset(px, py),
+            )
+        }
+
+        // ── Layer 10 — Twinkling stars with soft glow halos ───────────────
+        data class Star(val ox: Float, val oy: Float, val dp: Float, val col: Color, val phase: Float)
         listOf(
-            Star(-0.72f, -0.42f, 2.8f, Color(0xFFFFD54F), false),
-            Star( 0.65f, -0.55f, 2.2f, Color(0xFF80DEEA), true),
-            Star(-0.48f,  0.50f, 1.8f, Color(0xFFCE93D8), false),
-            Star( 0.78f,  0.28f, 2.5f, Color(0xFF80DEEA), true),
-            Star( 0.25f, -0.82f, 1.5f, Color(0xFFFFD54F), false),
-            Star(-0.82f,  0.15f, 2.0f, Color(0xFFCE93D8), true),
-            Star( 0.55f,  0.72f, 1.8f, Color(0xFF80DEEA), false),
-            Star(-0.35f,  0.78f, 2.2f, Color(0xFFFFD54F), true),
-            Star(-0.60f, -0.70f, 1.4f, Color(0xFF80DEEA), false),
-            Star( 0.42f, -0.65f, 2.8f, Color(0xFFCE93D8), true),
+            Star(-0.72f, -0.42f, 2.8f, Color(0xFFFFD54F), 0.0f),
+            Star( 0.65f, -0.55f, 2.2f, Color(0xFF80DEEA), 0.7f),
+            Star(-0.48f,  0.50f, 1.8f, Color(0xFFCE93D8), 1.4f),
+            Star( 0.78f,  0.28f, 2.5f, Color(0xFF80DEEA), 2.1f),
+            Star( 0.25f, -0.82f, 1.5f, Color(0xFFFFD54F), 2.8f),
+            Star(-0.82f,  0.15f, 2.0f, Color(0xFFCE93D8), 3.5f),
+            Star( 0.55f,  0.72f, 1.8f, Color(0xFF80DEEA), 4.2f),
+            Star(-0.35f,  0.78f, 2.2f, Color(0xFFFFD54F), 4.9f),
+            Star(-0.60f, -0.70f, 1.4f, Color(0xFF80DEEA), 0.3f),
+            Star( 0.42f, -0.65f, 2.8f, Color(0xFFCE93D8), 1.0f),
+            Star(-0.18f, -0.95f, 1.3f, Color(0xFFFFFFFF), 1.7f),
+            Star( 0.95f, -0.08f, 1.6f, Color(0xFFFFFFFF), 2.4f),
+            Star(-0.95f, -0.18f, 1.5f, Color(0xFFFFFFFF), 3.1f),
+            Star( 0.08f,  0.95f, 1.4f, Color(0xFFFFFFFF), 3.8f),
         ).forEach { s ->
-            val a = (if (s.inv) 1f - starA + 0.25f else starA).coerceIn(0f, 1f) * 0.85f
+            val a = ((sin(drift * 1.5f + s.phase) + 1f) / 2f).coerceIn(0f, 1f) * 0.35f
+            val sx = cx + s.ox * r
+            val sy = cy + s.oy * r
+            // soft glow halo
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(s.col.copy(alpha = a * 0.50f), Color.Transparent),
+                    center = Offset(sx, sy),
+                    radius = s.dp.dp.toPx() * 3.2f,
+                ),
+                radius = s.dp.dp.toPx() * 3.2f,
+                center = Offset(sx, sy),
+                blendMode = BlendMode.Plus,
+            )
+            // bright star core
             drawCircle(
                 color  = s.col.copy(alpha = a),
                 radius = s.dp.dp.toPx(),
-                center = Offset(cx + s.ox * r, cy + s.oy * r),
+                center = Offset(sx, sy),
             )
         }
     }

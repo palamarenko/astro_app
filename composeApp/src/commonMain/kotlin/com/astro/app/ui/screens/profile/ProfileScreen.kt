@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -232,6 +233,14 @@ fun ProfileScreen(
                         onClick = { vm.showPlacePicker() }
                     )
                 }
+
+                // Язык
+                ProfileCard(label = stringResource(Res.string.profile_field_language_label)) {
+                    LanguageDropdown(
+                        selected  = state.language,
+                        onSelect  = { vm.setLanguage(it) }
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -251,8 +260,10 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(Spacing.xl))
-            TextButton(onClick = onNavigateToAdmin) {
-                Text("Admin Panel", color = AppColors.AccentGold.copy(alpha = 0.45f), fontSize = 12.sp)
+            if (state.name == "Admin_Iruna_864--33") {
+                TextButton(onClick = onNavigateToAdmin) {
+                    Text("Admin Panel", color = AppColors.AccentGold.copy(alpha = 0.45f), fontSize = 12.sp)
+                }
             }
             Spacer(Modifier.height(100.dp))
         }
@@ -360,6 +371,115 @@ private fun GenderButton(
         contentAlignment = Alignment.Center
     ) {
         Text(label, fontSize = 14.sp, color = textColor, fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal)
+    }
+}
+
+// ── Language dropdown ─────────────────────────────────────────────────────────
+
+@Composable
+private fun LanguageDropdown(
+    selected: AppLanguage,
+    onSelect:  (AppLanguage) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    val arrowAngle by animateFloatAsState(
+        targetValue   = if (expanded) 180f else 0f,
+        animationSpec = tween(200),
+        label         = "langArrow"
+    )
+
+    val triggerShape = if (expanded)
+        RoundedCornerShape(topStart = Radius.s, topEnd = Radius.s)
+    else
+        RoundedCornerShape(Radius.s)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+
+        // ── Trigger ───────────────────────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(triggerShape)
+                .background(AppColors.CardDark)
+                .border(1.dp, AppColors.AccentGold.copy(alpha = 0.35f), triggerShape)
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("🌐", fontSize = 16.sp)
+            Text(
+                text     = selected.nativeName,
+                fontSize = 14.sp,
+                color    = AppColors.TextPrimary,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text     = "▼",
+                fontSize = 10.sp,
+                color    = AppColors.AccentGold.copy(alpha = 0.7f),
+                modifier = Modifier.graphicsLayer { rotationZ = arrowAngle }
+            )
+        }
+
+        // ── Options list ──────────────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = expanded,
+            enter   = fadeIn(tween(150)) + expandVertically(tween(200), expandFrom = Alignment.Top),
+            exit    = fadeOut(tween(100)) + shrinkVertically(tween(150))
+        ) {
+            val listShape = RoundedCornerShape(bottomStart = Radius.s, bottomEnd = Radius.s)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(listShape)
+                    .background(AppColors.Surface)
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.18f), listShape)
+            ) {
+                AppLanguage.entries.forEachIndexed { index, lang ->
+                    val isSelected = lang == selected
+
+                    if (index > 0) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .padding(horizontal = 14.dp)
+                                .background(AppColors.Border)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (isSelected) AppColors.AccentGold.copy(alpha = 0.07f)
+                                else Color.Transparent
+                            )
+                            .clickable {
+                                expanded = false
+                                onSelect(lang)
+                            }
+                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Галочка для выбранного
+                        Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+                            if (isSelected) Text("✓", fontSize = 12.sp, color = AppColors.AccentGold)
+                        }
+                        Text(
+                            text       = lang.nativeName,
+                            fontSize   = 15.sp,
+                            color      = if (isSelected) AppColors.AccentGold else AppColors.TextPrimary,
+                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                            modifier   = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

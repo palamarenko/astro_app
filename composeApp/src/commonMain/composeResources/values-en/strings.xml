@@ -38,11 +38,14 @@
     <string name="tarot_position_past">Past</string>
     <string name="tarot_position_present">Present</string>
     <string name="tarot_position_future">Future</string>
+    <string name="tarot_cta_title">Reveal Cards · %1$s</string>
+    <string name="tarot_cta_desc">The Star Wizard will read the spread…</string>
     <string name="tarot_btn_loading">The stars are speaking…</string>
     <string name="tarot_btn_open">✦  Reveal the Cards  ✦</string>
     <string name="tarot_ad_badge">AD</string>
     <string name="tarot_ad_not_ready">Ad is still loading, please try again in a moment</string>
     <string name="tarot_btn_already_drawn">Cards already drawn today</string>
+    <string name="tarot_loading_hint">The cards are reading your fate</string>
     <string name="tarot_already_drawn_hint">Come back tomorrow — the cards reveal themselves once a day</string>
     <string name="tarot_summary_label">✦ OVERALL READING ✦</string>
     <string name="tarot_reversed">REVERSED</string>
@@ -73,6 +76,7 @@
     <string name="profile_field_time_pick">Choose time →</string>
     <string name="profile_field_place_label">Place of birth</string>
     <string name="profile_field_place_pick">Choose place →</string>
+    <string name="profile_field_language_label">Language</string>
     <string name="profile_dialog_cancel">Cancel</string>
     <string name="profile_dialog_confirm">Done</string>
     <string name="profile_dialog_date_title">Date of birth</string>

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
 import com.astro.app.i18n.AppLanguage
-import com.astro.app.i18n.getSystemLanguageCode
+import com.astro.app.i18n.LanguageManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +23,7 @@ class CompatibilityViewModel(private val api: ClaudeApiClient) : ViewModel() {
     val state: StateFlow<CompatibilityUiState> = _state.asStateFlow()
 
     private val lang: String
-        get() = when (AppLanguage.fromCode(getSystemLanguageCode())) {
+        get() = when (LanguageManager.current) {
             AppLanguage.UK -> "uk"
             AppLanguage.EN -> "en"
             else           -> "ru"

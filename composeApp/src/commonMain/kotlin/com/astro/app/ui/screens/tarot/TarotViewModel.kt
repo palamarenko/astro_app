@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
 import com.astro.app.i18n.AppLanguage
-import com.astro.app.i18n.getSystemLanguageCode
+import com.astro.app.i18n.LanguageManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,24 +27,66 @@ data class TarotUiState(
     val periodSnapshots: Map<String, TarotPersistState> = emptyMap(),
 )
 
-private val MOCK_READINGS = listOf(
-    TarotReadingResponse(
-        past    = "В прошлом вы прошли сквозь испытания, которые закалили ваш дух. Трудности не сломили — они выковали характер и научили ценить то, что действительно важно.",
-        present = "Сейчас вы стоите на перекрёстке. Перед вами открывается новая страница — но её нужно перевернуть самостоятельно. Ваша интуиция особенно сильна в эти дни.",
-        future  = "Впереди вас ждёт период трансформации и обновления. То, что казалось недостижимым, начнёт проявляться в вашей жизни. Доверьтесь потоку перемен.",
-        summary = "Карты складываются в историю возрождения. Вы прошли долгий путь и теперь готовы к следующей главе. Звёзды благоволят вашим начинаниям — действуйте смело, но с мудростью."
+private val MOCK_READINGS = mapOf(
+    "ru" to listOf(
+        TarotReadingResponse(
+            past    = "В прошлом вы прошли сквозь испытания, которые закалили ваш дух. Трудности не сломили — они выковали характер и научили ценить то, что действительно важно.",
+            present = "Сейчас вы стоите на перекрёстке. Перед вами открывается новая страница — но её нужно перевернуть самостоятельно. Ваша интуиция особенно сильна в эти дни.",
+            future  = "Впереди вас ждёт период трансформации и обновления. То, что казалось недостижимым, начнёт проявляться в вашей жизни. Доверьтесь потоку перемен.",
+            summary = "Карты складываются в историю возрождения. Вы прошли долгий путь и теперь готовы к следующей главе. Звёзды благоволят вашим начинаниям — действуйте смело, но с мудростью."
+        ),
+        TarotReadingResponse(
+            past    = "Прошлое хранит в себе незакрытые истории и невысказанные слова. Но именно этот груз помог вам стать тем, кем вы являетесь сегодня — сильным и мудрым.",
+            present = "Сейчас вы находитесь в процессе глубокой внутренней работы. Старое уходит, освобождая место для нового. Не цепляйтесь за то, что уже отслужило своё.",
+            future  = "Новый цикл несёт с собой свет и вдохновение. Ваши мечты имеют все шансы воплотиться в реальность — главное, не останавливаться и не сомневаться в себе.",
+            summary = "Три карты образуют мощный архетип перерождения. Прошлое было вашим учителем, настоящее — вашей возможностью, а будущее — вашей наградой."
+        ),
+        TarotReadingResponse(
+            past    = "В прошлом вы отдавали больше, чем получали, и это истощило ваши ресурсы. Но каждая отданная капля энергии была посеяна в почву — скоро она даст ростки.",
+            present = "Пришло время заботиться о себе. Расставьте приоритеты и не бойтесь сказать «нет» тому, что вам не служит. Ваша энергия — ваш главный ресурс.",
+            future  = "Впереди вас ждёт период изобилия и гармонии. Отношения углубятся, проекты наберут силу, а внутренний покой станет вашим постоянным спутником.",
+            summary = "Расклад указывает на цикл отдачи и получения, который наконец возвращается к балансу. Вселенная не забывает тех, кто действует с открытым сердцем."
+        ),
     ),
-    TarotReadingResponse(
-        past    = "Прошлое хранит в себе незакрытые истории и невысказанные слова. Но именно этот груз помог вам стать тем, кем вы являетесь сегодня — сильным и мудрым.",
-        present = "Сейчас вы находитесь в процессе глубокой внутренней работы. Старое уходит, освобождая место для нового. Не цепляйтесь за то, что уже отслужило своё.",
-        future  = "Новый цикл несёт с собой свет и вдохновение. Ваши мечты имеют все шансы воплотиться в реальность — главное, не останавливаться и не сомневаться в себе.",
-        summary = "Три карты образуют мощный архетип перерождения. Прошлое было вашим учителем, настоящее — вашей возможностью, а будущее — вашей наградой."
+    "uk" to listOf(
+        TarotReadingResponse(
+            past    = "У минулому ви пройшли крізь випробування, які загартували ваш дух. Труднощі не зламали — вони викували характер і навчили цінувати те, що справді важливо.",
+            present = "Зараз ви стоїте на роздоріжжі. Перед вами відкривається нова сторінка — але її треба перегорнути самостійно. Ваша інтуїція особливо сильна в ці дні.",
+            future  = "Попереду на вас чекає період трансформації та оновлення. Те, що здавалося недосяжним, почне проявлятися у вашому житті. Довіртеся потоку змін.",
+            summary = "Карти складаються в історію відродження. Ви пройшли довгий шлях і тепер готові до наступного розділу. Зірки сприяють вашим починанням — дійте сміливо, але з мудрістю."
+        ),
+        TarotReadingResponse(
+            past    = "Минуле зберігає в собі незакриті історії та невимовлені слова. Але саме цей тягар допоміг вам стати тим, ким ви є сьогодні — сильним і мудрим.",
+            present = "Зараз ви перебуваєте в процесі глибокої внутрішньої роботи. Старе іде, звільняючи місце для нового. Не чіпляйтеся за те, що вже відслужило своє.",
+            future  = "Новий цикл несе з собою світло та натхнення. Ваші мрії мають усі шанси втілитися в реальність — головне, не зупинятися й не сумніватися в собі.",
+            summary = "Три карти утворюють потужний архетип переродження. Минуле було вашим учителем, сьогодення — вашою можливістю, а майбутнє — вашою нагородою."
+        ),
+        TarotReadingResponse(
+            past    = "У минулому ви віддавали більше, ніж отримували, і це виснажило ваші ресурси. Але кожна віддана крапля енергії була посіяна в ґрунт — незабаром вона дасть паростки.",
+            present = "Прийшов час дбати про себе. Розставте пріоритети і не бійтеся сказати «ні» тому, що вам не служить. Ваша енергія — ваш головний ресурс.",
+            future  = "Попереду вас чекає період достатку та гармонії. Стосунки поглибляться, проєкти наберуть силу, а внутрішній спокій стане вашим постійним супутником.",
+            summary = "Розклад вказує на цикл віддачі та отримання, який нарешті повертається до балансу. Всесвіт не забуває тих, хто діє з відкритим серцем."
+        ),
     ),
-    TarotReadingResponse(
-        past    = "В прошлом вы отдавали больше, чем получали, и это истощило ваши ресурсы. Но каждая отданная капля энергии была посеяна в почву — скоро она даст ростки.",
-        present = "Пришло время заботиться о себе. Расставьте приоритеты и не бойтесь сказать «нет» тому, что вам не служит. Ваша энергия — ваш главный ресурс.",
-        future  = "Впереди вас ждёт период изобилия и гармонии. Отношения углубятся, проекты наберут силу, а внутренний покой станет вашим постоянным спутником.",
-        summary = "Расклад указывает на цикл отдачи и получения, который наконец возвращается к балансу. Вселенная не забывает тех, кто действует с открытым сердцем."
+    "en" to listOf(
+        TarotReadingResponse(
+            past    = "In the past, you endured trials that forged your spirit. Hardships didn't break you — they shaped your character and taught you to cherish what truly matters.",
+            present = "You stand at a crossroads. A new chapter unfolds before you — but you must turn the page yourself. Your intuition is especially powerful in these days.",
+            future  = "A period of transformation and renewal awaits. What once seemed out of reach will begin to manifest in your life. Trust the current of change.",
+            summary = "The cards weave a story of rebirth. You have walked a long path and are now ready for the next chapter. The stars favor your endeavors — act boldly, yet with wisdom."
+        ),
+        TarotReadingResponse(
+            past    = "The past holds unfinished stories and unspoken words. Yet that very weight helped you become who you are today — strong and wise.",
+            present = "You are in the midst of deep inner work. The old is departing, making room for the new. Release what has already served its purpose.",
+            future  = "A new cycle brings light and inspiration. Your dreams have every chance of becoming reality — the key is to keep moving and believe in yourself.",
+            summary = "Three cards form a powerful archetype of renewal. The past was your teacher, the present is your opportunity, and the future is your reward."
+        ),
+        TarotReadingResponse(
+            past    = "In the past you gave more than you received, and it drained your resources. Yet every drop of energy offered was a seed planted in the soil — soon it will sprout.",
+            present = "The time has come to care for yourself. Set your priorities and don't be afraid to say 'no' to what doesn't serve you. Your energy is your greatest resource.",
+            future  = "A period of abundance and harmony lies ahead. Relationships will deepen, projects will gain momentum, and inner peace will become your constant companion.",
+            summary = "The spread points to a cycle of giving and receiving that is finally returning to balance. The universe does not forget those who act with an open heart."
+        ),
     ),
 )
 
@@ -89,7 +131,7 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
     val state: StateFlow<TarotUiState> = _state.asStateFlow()
 
     private val lang: String
-        get() = when (AppLanguage.fromCode(getSystemLanguageCode())) {
+        get() = when (LanguageManager.current) {
             AppLanguage.UK -> "uk"
             AppLanguage.RU -> "ru"
             else           -> "en"
@@ -160,7 +202,7 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
             kotlinx.coroutines.delay(1800L)
 
             val reading = try {
-                val mock = MOCK_READINGS.random()
+                val mock = (MOCK_READINGS[lang] ?: MOCK_READINGS["en"]!!).random()
                 val allCards = firebase.getAllTarotCards(lang)
                 val pastText    = allCards?.get(picked[0].resourceKey)?.past    ?: mock.past
                 val presentText = allCards?.get(picked[1].resourceKey)?.present ?: mock.present
@@ -181,7 +223,7 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
                     summary = summary,
                 )
             } catch (e: Exception) {
-                MOCK_READINGS.random()
+                (MOCK_READINGS[lang] ?: MOCK_READINGS["en"]!!).random()
             }
 
             // Сохраняем расклад в хранилище для текущего периода

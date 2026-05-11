@@ -38,11 +38,14 @@
     <string name="tarot_position_past">Прошлое</string>
     <string name="tarot_position_present">Настоящее</string>
     <string name="tarot_position_future">Будущее</string>
+    <string name="tarot_cta_title">Открыть карты · %1$s</string>
+    <string name="tarot_cta_desc">Магистр Звёзд прочитает расклад…</string>
     <string name="tarot_btn_loading">Звёзды говорят…</string>
     <string name="tarot_btn_open">✦  Открыть карты  ✦</string>
     <string name="tarot_ad_badge">AD</string>
     <string name="tarot_ad_not_ready">Реклама ещё загружается, попробуйте через несколько секунд</string>
     <string name="tarot_btn_already_drawn">Карты уже открыты сегодня</string>
+    <string name="tarot_loading_hint">Карты читают судьбу</string>
     <string name="tarot_already_drawn_hint">Возвращайтесь завтра — карты раскрываются раз в день</string>
     <string name="tarot_summary_label">✦ ОБЩИЙ ВЫВОД ✦</string>
     <string name="tarot_reversed">ПЕРЕВЁРН.</string>
@@ -73,6 +76,7 @@
     <string name="profile_field_time_pick">Выбрать время →</string>
     <string name="profile_field_place_label">Место рождения</string>
     <string name="profile_field_place_pick">Выбрать место →</string>
+    <string name="profile_field_language_label">Язык</string>
     <string name="profile_dialog_cancel">Отмена</string>
     <string name="profile_dialog_confirm">Готово</string>
     <string name="profile_dialog_date_title">Дата рождения</string>
@@ -189,7 +193,7 @@
     <string name="wizard_divider_week">✦ СЛЕДУЮЩАЯ НЕДЕЛЯ ✦</string>
     <string name="wizard_divider_month">✦ СЛЕДУЮЩИЙ МЕСЯЦ ✦</string>
     <string name="wizard_intro_title">Магистр Звёзд предлагает заглянуть в %1$s</string>
-    <string name="wizard_intro_subtitle">Посмотрите короткое послание спонсора — и получите прогноз для %1$s на %2$s</string>
+    <string name="wizard_intro_subtitle">Посмотрите короткое послание спонсора — и получите прогноз на %2$s для знака %1$s</string>
     <string name="wizard_btn_watch">СМОТРЕТЬ И УЗНАТЬ  ✦</string>
     <string name="wizard_btn_not_now">не сейчас</string>
     <string name="wizard_ad_title">РЕКЛАМА · %1$dс</string>

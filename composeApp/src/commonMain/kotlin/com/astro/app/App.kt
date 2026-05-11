@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.*
 import com.astro.app.i18n.*
+import com.astro.app.ui.components.AppBackHandler
 import com.astro.app.ui.components.CompatibilityNavIcon
 import com.astro.app.ui.components.HoroscopeNavIcon
 import com.astro.app.ui.components.StarfieldBackground
@@ -43,11 +44,27 @@ private val TAB_ORDER = listOf(
 
 @Composable
 fun App() {
-    AppContent()
+    // Инициализация языка — один раз при старте приложения
+    remember {
+        val saved = UserStorage.load()?.language
+        LanguageManager.init(saved)
+    }
+
+    val lang by LanguageManager.language.collectAsState()
+
+    // ProvideLocale оборачивает дерево контекстом нужной локали (синхронно на Android).
+    // key(lang) внутри заставляет Compose полностью пересоздать AppContent(),
+    // очищая все remember-кэши stringResource() — оба шага необходимы.
+    ProvideLocale(lang) {
+        key(lang) {
+            AppContent()
+        }
+    }
 }
 
 @Composable
 private fun AppContent() {
+
     val api = remember { ClaudeApiClient(anthropicApiKey) }
 
     val horoscopeVm = remember { HoroscopeViewModel() }
@@ -64,6 +81,34 @@ private fun AppContent() {
     var showAdminTarot  by remember { mutableStateOf(false) }
     // Таро: выбранный период (null = список)
     var tarotPeriod     by remember { mutableStateOf<HoroscopePeriod?>(null) }
+
+    // ── Системная кнопка «Назад» ──────────────────────────────────────────────
+    // • Таро-расклад           → список таро
+    // • Любой другой экран     → гороскоп
+    // • Гороскоп (главный)     → не перехватываем (приложение закрывается)
+    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot
+    AppBackHandler(enabled = !onHoroscope) {
+        when {
+            // Таро-расклад → список
+            activeTab == BottomTab.TAROT && tarotPeriod != null -> {
+                tarotVm.clearPeriod()
+                tarotPeriod = null
+            }
+            // Админ-панель таро → назад
+            showAdminTarot -> { showAdminTarot = false }
+            // Главная админ-панель → назад
+            showAdmin -> { showAdmin = false }
+            // Все остальные экраны → гороскоп
+            else -> {
+                activeTab = BottomTab.HOROSCOPE
+                showDetail = true
+                showAdmin = false
+                showAdminTarot = false
+                tarotPeriod = null
+                tarotVm.clearPeriod()
+            }
+        }
+    }
 
     // Текущий выбранный знак (источник истины — ProfileViewModel)
     val profileState by profileVm.state.collectAsState()

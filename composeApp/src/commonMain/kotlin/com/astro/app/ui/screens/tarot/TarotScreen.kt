@@ -27,6 +27,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import com.astro.app.ads.rememberAdManager
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.TarotCard
@@ -65,14 +70,50 @@ fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifie
         ) {
             Spacer(Modifier.height(Spacing.xxl))
 
-            // Кнопка назад
-            Text(
-                text = "← ${stringResource(Res.string.tarot_title1)}",
-                fontSize = AppType.caption,
-                color = AppColors.TextMuted,
-                modifier = Modifier.clickable { onBack() }
-            )
-            Spacer(Modifier.height(Spacing.s))
+            // ── Header: кнопка назад слева, заголовок по центру ───────────────
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Заголовок по центру
+                Text(
+                    text       = stringResource(Res.string.tarot_title1),
+                    fontSize   = 17.sp,
+                    fontWeight = FontWeight.Medium,
+                    color      = AppColors.TextPrimary,
+                )
+                // Кнопка назад — прибита к левому краю
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(AppColors.Card)
+                        .border(1.dp, AppColors.Border, CircleShape)
+                        .clickable { onBack() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Canvas(modifier = Modifier.size(18.dp)) {
+                        val w = size.width
+                        val h = size.height
+                        val path = Path().apply {
+                            moveTo(w * 0.65f, h * 0.18f)
+                            lineTo(w * 0.30f, h * 0.50f)
+                            lineTo(w * 0.65f, h * 0.82f)
+                        }
+                        drawPath(
+                            path   = path,
+                            color  = AppColors.TextPrimary,
+                            style  = Stroke(
+                                width     = 2.2f * density,
+                                cap       = StrokeCap.Round,
+                                join      = StrokeJoin.Round
+                            )
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(Spacing.m))
 
             SectionLabel(stringResource(Res.string.tarot_label))
             Spacer(Modifier.height(Spacing.m))
@@ -123,23 +164,26 @@ fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifie
             }
 
             Spacer(Modifier.height(Spacing.xl))
-            TarotDrawButton(
-                canWatchAd   = state.canWatchAd,
-                isLoading    = state.isLoading,
-                loadingText  = stringResource(Res.string.tarot_btn_loading),
-                freeText     = stringResource(Res.string.tarot_btn_open),
-                adBadgeLabel = stringResource(Res.string.tarot_ad_badge),
-                onClick = {
-                    if (state.canWatchAd) {
+            when {
+                state.isLoading -> TarotWizardCta(
+                    period    = state.currentPeriod,
+                    isLoading = true,
+                )
+                state.canWatchAd -> TarotWizardCta(
+                    period      = state.currentPeriod,
+                    showAdBadge = true,
+                    onClick     = {
                         adManager.showRewardedAd(
                             onRewarded = { vm.onAdRewarded() },
                             onFailed   = { vm.onAdFailed(adNotReadyMsg) }
                         )
-                    } else {
-                        vm.drawCards()
                     }
-                }
-            )
+                )
+                else -> TarotWizardCta(
+                    period  = state.currentPeriod,
+                    onClick = { vm.drawCards() }
+                )
+            }
             // Сообщение о статусе рекламы
             AnimatedVisibility(visible = state.adMessage != null) {
                 state.adMessage?.let { msg ->
@@ -166,6 +210,117 @@ fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifie
                 }
             }
             Spacer(Modifier.height(100.dp))
+        }
+    }
+}
+
+// ── Wizard-style CTA — используется для всех трёх состояний таро ─────────────
+// isLoading=true  → ведьма с анимацией дыхания, не кликабельна
+// showAdBadge=true → значок AD
+// иначе            → свободный расклад, кликабельна
+
+@Composable
+private fun TarotWizardCta(
+    period:      HoroscopePeriod?,
+    isLoading:   Boolean = false,
+    showAdBadge: Boolean = false,
+    onClick:     () -> Unit = {},
+) {
+    val periodTitle = when (period) {
+        HoroscopePeriod.DAILY   -> stringResource(Res.string.tarot_period_day_title)
+        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.tarot_period_week_title)
+        HoroscopePeriod.MONTHLY -> stringResource(Res.string.tarot_period_month_title)
+        null                    -> stringResource(Res.string.tarot_period_day_title)
+    }
+
+    val inf = rememberInfiniteTransition(label = "tarotCta")
+
+    // Плавное покачивание — быстрее и интенсивнее при загрузке
+    val floatY by inf.animateFloat(
+        initialValue  = -2f,
+        targetValue   = if (isLoading) 4f else 2f,
+        animationSpec = infiniteRepeatable(
+            tween(if (isLoading) 1200 else 3000, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
+        label = "tCtaY"
+    )
+    val glowA by inf.animateFloat(0.4f, 0.8f,
+        infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "tCtaG")
+
+    // При загрузке — тонкое масштабирование «дыхание»
+    val breathe by inf.animateFloat(
+        initialValue  = 1f,
+        targetValue   = if (isLoading) 1.06f else 1f,
+        animationSpec = infiniteRepeatable(
+            tween(900, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
+        label = "tCtaBreathe"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(
+                listOf(AppColors.AccentGold.copy(alpha = 0.07f), Color(0xFF101019))
+            ))
+            .border(1.dp, AppColors.AccentGold.copy(alpha = glowA * 0.4f), RoundedCornerShape(16.dp))
+            .then(if (!isLoading) Modifier.clickable { onClick() } else Modifier)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Image(
+                painter            = painterResource(Res.drawable.w),
+                contentDescription = null,
+                contentScale       = ContentScale.Fit,
+                modifier           = Modifier
+                    .size(44.dp)
+                    .graphicsLayer {
+                        translationY = floatY * density
+                        scaleX = breathe
+                        scaleY = breathe
+                    },
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text       = if (isLoading)
+                                     stringResource(Res.string.tarot_btn_loading)
+                                 else
+                                     stringResource(Res.string.tarot_cta_title, periodTitle),
+                    fontSize   = 15.sp,
+                    fontStyle  = FontStyle.Italic,
+                    color      = if (isLoading) AppColors.TextMuted else AppColors.AccentGold,
+                    fontWeight = FontWeight.Normal,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text     = stringResource(Res.string.tarot_cta_desc),
+                    fontSize = 12.sp,
+                    color    = AppColors.TextDim,
+                )
+            }
+            if (showAdBadge) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.55f), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 5.dp, vertical = 3.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text          = stringResource(Res.string.tarot_ad_badge),
+                        fontSize      = 9.sp,
+                        fontWeight    = FontWeight.Bold,
+                        color         = AppColors.AccentGold,
+                        letterSpacing = TextUnit(0.05f, TextUnitType.Em),
+                    )
+                }
+            }
         }
     }
 }
@@ -674,10 +829,10 @@ private fun TarotLoadingHint() {
             }
         }
 
-        // "Карты читают судьбу" + animated dots
+        // Loading hint + animated dots
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
             Text(
-                text = "Карты читают судьбу",
+                text = stringResource(Res.string.tarot_loading_hint),
                 fontSize = TextUnit(11f, TextUnitType.Sp),
                 color = AppColors.TextDim,
                 fontStyle = FontStyle.Italic,
@@ -699,13 +854,19 @@ private fun TarotLoadingHint() {
 
 @Composable
 private fun ReadingSummaryCard(reading: TarotReadingResponse, cards: List<TarotCard> = emptyList()) {
-    // Collect all card names (Russian name + localized name) to match against summary text
-    val cardNames = remember(cards) {
-        cards.flatMap { card ->
+    // Collect card names for bold highlighting in summary text.
+    // Include both the Russian original and the localized name so matching
+    // works regardless of the language the AI responded in.
+    val localizedNames = cards.map { it.localizedName() }
+    val cardNames = remember(cards, localizedNames) {
+        cards.flatMapIndexed { idx, card ->
             buildList {
                 add(card.name)                          // Russian original, e.g. "Луна"
-                // Also try common short forms for robustness
+                add(localizedNames[idx])                // Localized name for current language
+                // Short form for multi-word names (e.g. "Верховная жрица" → "жрица")
                 if (card.name.contains(" ")) add(card.name.substringAfterLast(" "))
+                val loc = localizedNames[idx]
+                if (loc.contains(" ")) add(loc.substringAfterLast(" "))
             }
         }.filter { it.length >= 3 }.distinct()
     }

@@ -1,6 +1,9 @@
 package com.astro.app.ads
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -16,9 +19,19 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 /** Ad Unit ID берётся из local.properties → BuildConfig.ADMOB_REWARDED_AD_UNIT_ID */
 private val REWARDED_AD_UNIT_ID get() = BuildConfig.ADMOB_REWARDED_AD_UNIT_ID
 
+/** Разворачивает цепочку ContextWrapper, пока не найдёт Activity. */
+private fun Context.findActivity(): Activity {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    error("No Activity found in context chain: $this")
+}
+
 @Composable
 actual fun rememberAdManager(): AdManager {
-    val activity = LocalContext.current as Activity
+    val activity = LocalContext.current.findActivity()
     val manager = remember(activity) { AndroidAdManager(activity) }
     LaunchedEffect(manager) { manager.preloadAd() }
     return manager
