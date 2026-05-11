@@ -730,14 +730,22 @@ private fun WizardIntro(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Image(
-            painter            = painterResource(Res.drawable.w),
-            contentDescription = null,
-            contentScale       = ContentScale.Fit,
-            modifier           = Modifier
-                .size(120.dp)
+        Box(
+            modifier = Modifier
+                .size(200.dp)
                 .graphicsLayer { translationY = floatY * density },
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            WizardAura(modifier = Modifier.fillMaxSize())
+            Image(
+                painter            = painterResource(Res.drawable.w),
+                contentDescription = null,
+                contentScale       = ContentScale.Fit,
+                modifier           = Modifier
+                    .fillMaxSize()
+                    .padding(28.dp),
+            )
+        }
         Text(
             text      = stringResource(Res.string.wizard_intro_title, periodAcc),
             fontSize  = 22.sp,
@@ -825,6 +833,138 @@ private fun WizardIntro(
     }
 }
 
+
+// ── Wizard cosmic aura ────────────────────────────────────────────────────────
+
+@Composable
+private fun WizardAura(modifier: Modifier = Modifier) {
+    val inf = rememberInfiniteTransition(label = "aura")
+    val rotation by inf.animateFloat(
+        0f, 360f,
+        infiniteRepeatable(tween(12000, easing = LinearEasing)),
+        "auraRot",
+    )
+    val pulse by inf.animateFloat(
+        0.55f, 1f,
+        infiniteRepeatable(tween(2400, easing = EaseInOutSine), RepeatMode.Reverse),
+        "auraPulse",
+    )
+    val starA by inf.animateFloat(
+        0.25f, 0.9f,
+        infiniteRepeatable(tween(1600, easing = EaseInOutSine), RepeatMode.Reverse),
+        "auraStar",
+    )
+
+    Canvas(modifier = modifier) {
+        val cx = size.width  / 2f
+        val cy = size.height / 2f
+        val r  = minOf(size.width, size.height) * 0.48f
+
+        // Dark nebula background
+        drawCircle(
+            brush = Brush.radialGradient(
+                colorStops = arrayOf(
+                    0.0f to Color(0xFF1A1040).copy(alpha = 0.92f),
+                    0.6f to Color(0xFF0D0822).copy(alpha = 0.75f),
+                    1.0f to Color.Transparent,
+                ),
+                center = Offset(cx, cy),
+                radius = r * 1.1f,
+            ),
+            radius = r * 1.1f,
+            center = Offset(cx, cy),
+        )
+
+        // Arc 1 — cyan swirl (forward rotation)
+        rotate(rotation, Offset(cx, cy)) {
+            drawArc(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color(0xFF00E5FF).copy(alpha = 0.15f),
+                        Color(0xFF4FC3F7).copy(alpha = 0.45f * pulse),
+                        Color(0xFF00BCD4).copy(alpha = 0.60f * pulse),
+                        Color(0xFF4FC3F7).copy(alpha = 0.25f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(cx, cy),
+                ),
+                startAngle = 0f,
+                sweepAngle = 220f,
+                useCenter  = false,
+                topLeft    = Offset(cx - r, cy - r),
+                size       = androidx.compose.ui.geometry.Size(r * 2, r * 2),
+                style      = Stroke(width = 22.dp.toPx(), cap = StrokeCap.Round),
+            )
+        }
+
+        // Arc 2 — purple swirl (counter-rotation, tighter)
+        rotate(-rotation * 0.65f, Offset(cx, cy)) {
+            drawArc(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color(0xFFAB47BC).copy(alpha = 0.20f),
+                        Color(0xFF9C27B0).copy(alpha = 0.55f * pulse),
+                        Color(0xFFCE93D8).copy(alpha = 0.35f * pulse),
+                        Color.Transparent,
+                    ),
+                    center = Offset(cx, cy),
+                ),
+                startAngle = 140f,
+                sweepAngle = 190f,
+                useCenter  = false,
+                topLeft    = Offset(cx - r * 0.82f, cy - r * 0.82f),
+                size       = androidx.compose.ui.geometry.Size(r * 1.64f, r * 1.64f),
+                style      = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round),
+            )
+        }
+
+        // Arc 3 — thin gold ring (very slow counter-rotation)
+        rotate(-rotation * 0.25f, Offset(cx, cy)) {
+            drawArc(
+                brush = Brush.sweepGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        AppColors.AccentGold.copy(alpha = 0.10f),
+                        AppColors.AccentGold.copy(alpha = 0.40f * pulse),
+                        AppColors.AccentGold.copy(alpha = 0.10f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(cx, cy),
+                ),
+                startAngle = 200f,
+                sweepAngle = 140f,
+                useCenter  = false,
+                topLeft    = Offset(cx - r * 0.65f, cy - r * 0.65f),
+                size       = androidx.compose.ui.geometry.Size(r * 1.3f, r * 1.3f),
+                style      = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+            )
+        }
+
+        // Star particles — alternating twinkle phases
+        data class Star(val ox: Float, val oy: Float, val dp: Float, val col: Color, val inv: Boolean)
+        listOf(
+            Star(-0.72f, -0.42f, 2.8f, Color(0xFFFFD54F), false),
+            Star( 0.65f, -0.55f, 2.2f, Color(0xFF80DEEA), true),
+            Star(-0.48f,  0.50f, 1.8f, Color(0xFFCE93D8), false),
+            Star( 0.78f,  0.28f, 2.5f, Color(0xFF80DEEA), true),
+            Star( 0.25f, -0.82f, 1.5f, Color(0xFFFFD54F), false),
+            Star(-0.82f,  0.15f, 2.0f, Color(0xFFCE93D8), true),
+            Star( 0.55f,  0.72f, 1.8f, Color(0xFF80DEEA), false),
+            Star(-0.35f,  0.78f, 2.2f, Color(0xFFFFD54F), true),
+            Star(-0.60f, -0.70f, 1.4f, Color(0xFF80DEEA), false),
+            Star( 0.42f, -0.65f, 2.8f, Color(0xFFCE93D8), true),
+        ).forEach { s ->
+            val a = (if (s.inv) 1f - starA + 0.25f else starA).coerceIn(0f, 1f) * 0.85f
+            drawCircle(
+                color  = s.col.copy(alpha = a),
+                radius = s.dp.dp.toPx(),
+                center = Offset(cx + s.ox * r, cy + s.oy * r),
+            )
+        }
+    }
+}
 
 // ── Previews ──────────────────────────────────────────────────────────────────
 
