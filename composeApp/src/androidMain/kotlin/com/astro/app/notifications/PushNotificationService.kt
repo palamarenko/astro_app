@@ -42,14 +42,36 @@ class PushNotificationService : FirebaseMessagingService() {
     // ── Topic subscription ────────────────────────────────────────────────────
 
     companion object {
+
+        /**
+         * Топик для ручной рассылки "всем прямо сейчас" — без учёта TZ.
+         * Топик для плановой рассылки по расписанию — учитывает TZ устройства.
+         *
+         * Формат timezone-топика: tz_0 / tz_p3 / tz_n5 (p = plus, n = minus).
+         */
+        fun timezoneTopic(): String {
+            val offsetMs = java.util.TimeZone.getDefault()
+                .getOffset(System.currentTimeMillis())
+            val offsetH = offsetMs / 3_600_000  // ms → целые часы
+            return when {
+                offsetH == 0 -> "tz_0"
+                offsetH > 0  -> "tz_p$offsetH"
+                else         -> "tz_n${kotlin.math.abs(offsetH)}"
+            }
+        }
+
         fun subscribeToTopic() {
-            FirebaseMessaging.getInstance()
-                .subscribeToTopic(PushAdminService.TOPIC)
+            val fcm = FirebaseMessaging.getInstance()
+            // Ручная рассылка из admin panel
+            fcm.subscribeToTopic(PushAdminService.TOPIC)
+            // Плановая рассылка — топик своего часового пояса
+            fcm.subscribeToTopic(timezoneTopic())
         }
 
         fun unsubscribeFromTopic() {
-            FirebaseMessaging.getInstance()
-                .unsubscribeFromTopic(PushAdminService.TOPIC)
+            val fcm = FirebaseMessaging.getInstance()
+            fcm.unsubscribeFromTopic(PushAdminService.TOPIC)
+            fcm.unsubscribeFromTopic(timezoneTopic())
         }
     }
 

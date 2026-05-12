@@ -53,6 +53,13 @@ data class AdminUiState(
     val adminSecret: String = "",
     val pushSending: Boolean = false,
     val pushResult: String? = null,   // null = idle, "ok" = успех, иначе текст ошибки
+
+    // ── Schedule ──────────────────────────────────────────────────────────────
+    val scheduleHours: Set<Int> = emptySet(),   // local hours (for display)
+    val scheduleLoading: Boolean = false,
+    val scheduleSaving: Boolean = false,
+    val scheduleSaved: Boolean = false,
+    val scheduleError: String? = null,
 )
 
 class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
@@ -67,12 +74,10 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     init {
         // Восстанавливаем сохранённые admin-настройки
         val saved = UserStorage.load()
-        if (saved != null) {
-            _state.value = _state.value.copy(
-                functionUrl = saved.adminFunctionUrl,
-                adminSecret = saved.adminSecret,
-            )
-        }
+        _state.value = _state.value.copy(
+            functionUrl = saved?.adminFunctionUrl ?: "",
+            adminSecret = saved?.adminSecret ?: "",
+        )
     }
 
     fun setLang(lang: String) {
@@ -274,5 +279,48 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
 
     fun clearPushResult() {
         _state.value = _state.value.copy(pushResult = null)
+    }
+
+    // -- Schedule -------------------------------------------------------------
+
+    fun loadSchedule() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(scheduleLoading = true, scheduleError = null)
+            val result = pushService.getSchedule(functionUrl = url, adminSecret = secret)
+            _state.value = _state.value.copy(
+                scheduleLoading = false,
+                // Сервер хранит локальные часы — показываем как есть
+                scheduleHours   = result.getOrNull() ?: _state.value.scheduleHours,
+                scheduleError   = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+            )
+        }
+    }
+
+    fun toggleScheduleHour(hour: Int) {
+        val current = _state.value.scheduleHours.toMutableSet()
+        if (current.contains(hour)) current.remove(hour) else current.add(hour)
+        _state.value = _state.value.copy(scheduleHours = current, scheduleSaved = false)
+    }
+
+    fun saveSchedule() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(scheduleSaving = true, scheduleError = null, scheduleSaved = false)
+            val result = pushService.setSchedule(
+                functionUrl = url,
+                adminSecret = secret,
+                hours       = _state.value.scheduleHours,
+            )
+            _state.value = _state.value.copy(
+                scheduleSaving = false,
+                scheduleSaved  = result.isSuccess,
+                scheduleError  = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+            )
+        }
     }
 }

@@ -305,6 +305,199 @@ fun AdminNotificationsScreen(
                         }
                     }
                 }
+
+                // ── Schedule ───────────────────────────────────────────────────
+                Spacer(Modifier.height(Spacing.l))
+
+                Text(
+                    text = "DAILY SCHEDULE",
+                    color = AppColors.TextDim,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.8.sp,
+                )
+
+                // Schedule card
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(Radius.m))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF1A1525), Color(0xFF0D0D18))
+                            )
+                        )
+                        .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.m))
+                        .padding(Spacing.l),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.m),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text(
+                                    text = "Время отправки (локальное)",
+                                    color = AppColors.TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF1A3A1A))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                ) {
+                                    Text(
+                                        text = "any TZ",
+                                        color = Color(0xFF6FCF97),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+                            }
+                            Text(
+                                text = if (state.scheduleHours.isEmpty()) "Не выбрано — рассылка отключена"
+                                       else "Выбрано часов: ${state.scheduleHours.size}",
+                                color = AppColors.TextSecondary,
+                                fontSize = 11.sp,
+                            )
+                        }
+                        // Load button
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(Radius.s))
+                                .background(AppColors.Surface)
+                                .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s))
+                                .clickable(enabled = !state.scheduleLoading && state.functionUrl.isNotBlank() && state.adminSecret.isNotBlank()) {
+                                    vm.loadSchedule()
+                                }
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (state.scheduleLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(14.dp),
+                                    color = AppColors.AccentGold,
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Text("↓ Load", color = AppColors.AccentGold, fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    // 24-hour grid: 4 rows × 6 cols
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (row in 0..3) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                for (col in 0..5) {
+                                    val hour = row * 6 + col
+                                    val active = hour in state.scheduleHours
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                if (active) AppColors.AccentGold
+                                                else AppColors.Surface
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (active) AppColors.AccentGold
+                                                else AppColors.Border,
+                                                RoundedCornerShape(6.dp),
+                                            )
+                                            .clickable { vm.toggleScheduleHour(hour) }
+                                            .padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = hour.toString().padStart(2, '0'),
+                                            color = if (active) Color(0xFF0A0A0F) else AppColors.TextSecondary,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Save button
+                    val canSave = !state.scheduleSaving &&
+                                  state.functionUrl.isNotBlank() &&
+                                  state.adminSecret.isNotBlank()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(Radius.m))
+                            .background(
+                                if (canSave) AppColors.AccentGold.copy(alpha = 0.15f) else AppColors.Surface
+                            )
+                            .border(
+                                1.dp,
+                                if (canSave) AppColors.AccentGold.copy(alpha = 0.5f) else AppColors.Border,
+                                RoundedCornerShape(Radius.m),
+                            )
+                            .clickable(enabled = canSave) { vm.saveSchedule() }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (state.scheduleSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = AppColors.AccentGold,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text(
+                                text = "💾  Save schedule",
+                                color = if (canSave) AppColors.AccentGold else AppColors.TextDim,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+
+                    // Schedule status badge
+                    AnimatedVisibility(
+                        visible = state.scheduleSaved || state.scheduleError != null,
+                        enter = fadeIn(tween(250)) + expandVertically(tween(250)),
+                        exit  = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+                    ) {
+                        val (badgeText, badgeColor) = if (state.scheduleSaved) {
+                            "✓  Schedule saved" to Color(0xFF6FCF97)
+                        } else {
+                            "✗  ${state.scheduleError}" to Color(0xFFEB5757)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(Radius.s))
+                                .background(badgeColor.copy(alpha = 0.08f))
+                                .border(1.dp, badgeColor.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
+                                .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                badgeText,
+                                color = badgeColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(100.dp))

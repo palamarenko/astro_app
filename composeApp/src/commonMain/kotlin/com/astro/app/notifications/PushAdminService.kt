@@ -4,50 +4,84 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.serialization.json.*
 
 /**
- * Отправка push-уведомлений через Firebase Cloud Function.
+ * Клиент для adminApi Cloud Function.
  *
- * Cloud Function (functions/index.js) сама авторизуется через Firebase Admin SDK
- * и отправляет сообщение на топик "horoscope_daily".
- *
- * В приложении достаточно знать:
- *   - functionUrl  — URL задеплоенной функции
- *   - adminSecret  — статичный секрет (задаётся через `firebase functions:secrets:set ADMIN_SECRET`)
- *
- * URL функции после деплоя выглядит так:
- *   https://senddailyhoroscope-<hash>-uc.a.run.app
- * или (Gen 1 / region):
- *   https://us-central1-<project-id>.cloudfunctions.net/sendDailyHoroscope
+ * Все вызовы: POST <functionUrl>
+ *   Header: x-admin-secret: <adminSecret>
+ *   Body:   { "action": "...", ...params }
  */
 class PushAdminService(private val client: HttpClient) {
 
     companion object {
+        /** Топик для ручной рассылки "всем сразу" (без учёта TZ). */
         const val TOPIC = "horoscope_daily"
     }
 
-    /**
-     * Отправляет data-сообщение на топик через Cloud Function.
-     *
-     * @param functionUrl  URL задеплоенной Firebase Cloud Function
-     * @param adminSecret  значение секрета ADMIN_SECRET
-     * @param type         тип сообщения (data payload)
-     */
+    private val json = Json { ignoreUnknownKeys = true }
+
+    /** Отправляет пуш на топик horoscope_daily прямо сейчас (ручная рассылка). */
     suspend fun sendToAll(
         functionUrl: String,
         adminSecret: String,
         type: String = "daily_horoscope",
-    ): Result<Unit> {
-        return runCatching {
-            val response = client.post(functionUrl) {
-                header("x-admin-secret", adminSecret)
-                contentType(ContentType.Application.Json)
-                setBody("""{"type":"$type"}""")
-            }
-            if (!response.status.isSuccess()) {
-                val body = response.bodyAsText()
-                error("Function error ${response.status.value}: $body")
-            }
+    ): Result<Unit> = runCatching {
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"sendPush","type":"$type"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+    }
+
+    /**
+     * Загружает текущее расписание из Firestore.
+     * Возвращает множество локальных часов (например {9, 18}).
+     * Cloud Function сама конвертирует их в UTC-топики при рассылке.
+     */
+    suspend fun getSchedule(
+        functionUrl: String,
+        adminSecret: String,
+    ): Result<Set<Int>> = runCatching {
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"getSchedule"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        body["localHours"]
+            ?.jsonArray
+            ?.map { it.jsonPrimitive.int }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    /**
+     * Сохраняет расписание в Firestore.
+     * [hours] — локальные часы (например {9, 18}).
+     * Сервер разошлёт пуши в нужный TZ-топик, когда у их пользователей
+     * наступит указанный час.
+     */
+    suspend fun setSchedule(
+        functionUrl: String,
+        adminSecret: String,
+        hours: Set<Int>,
+    ): Result<Unit> = runCatching {
+        val hoursJson = hours.sorted().joinToString(",")
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"setSchedule","localHours":[$hoursJson]}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
         }
     }
 }
