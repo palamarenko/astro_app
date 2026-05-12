@@ -199,8 +199,6 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
         )
 
         viewModelScope.launch {
-            kotlinx.coroutines.delay(1800L)
-
             val reading = try {
                 val mock = (MOCK_READINGS[lang] ?: MOCK_READINGS["en"]!!).random()
                 val allCards = firebase.getAllTarotCards(lang)

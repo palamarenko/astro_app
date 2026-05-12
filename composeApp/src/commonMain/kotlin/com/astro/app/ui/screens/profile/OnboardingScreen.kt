@@ -25,9 +25,10 @@ import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import astroapp.composeapp.generated.resources.*
 import com.astro.app.i18n.iconPainter
+import com.astro.app.i18n.str
 import com.astro.app.ui.components.StarfieldBackground
 import com.astro.app.ui.theme.*
-import org.jetbrains.compose.resources.stringResource
+
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -45,18 +46,18 @@ private const val ONBOARDING_TOTAL_STEPS = 7
 
 @Composable
 private fun monthNames(): List<String> = listOf(
-    stringResource(Res.string.onb_month_jan),
-    stringResource(Res.string.onb_month_feb),
-    stringResource(Res.string.onb_month_mar),
-    stringResource(Res.string.onb_month_apr),
-    stringResource(Res.string.onb_month_may),
-    stringResource(Res.string.onb_month_jun),
-    stringResource(Res.string.onb_month_jul),
-    stringResource(Res.string.onb_month_aug),
-    stringResource(Res.string.onb_month_sep),
-    stringResource(Res.string.onb_month_oct),
-    stringResource(Res.string.onb_month_nov),
-    stringResource(Res.string.onb_month_dec),
+    str.onb_month_jan,
+    str.onb_month_feb,
+    str.onb_month_mar,
+    str.onb_month_apr,
+    str.onb_month_may,
+    str.onb_month_jun,
+    str.onb_month_jul,
+    str.onb_month_aug,
+    str.onb_month_sep,
+    str.onb_month_oct,
+    str.onb_month_nov,
+    str.onb_month_dec,
 )
 
 private fun daysInMonthOnb(month: Int, year: Int): Int = when (month) {
@@ -174,7 +175,7 @@ fun OnboardingScreen(
                 if (step < ONBOARDING_TOTAL_STEPS - 1) {
                     TextButton(onClick = { finishAll() }) {
                         Text(
-                            text = stringResource(Res.string.onb_btn_skip_all),
+                            text = str.onb_btn_skip_all,
                             fontSize = 12.sp,
                             color = AppColors.TextDim,
                             fontWeight = FontWeight.Normal
@@ -280,9 +281,9 @@ private fun BottomActions(
     val isLast = step == ONBOARDING_TOTAL_STEPS - 1
     val isWelcome = step == 0
 
-    val startLabel = stringResource(Res.string.onb_btn_start)
-    val nextLabel  = stringResource(Res.string.onb_btn_next)
-    val doneLabel  = stringResource(Res.string.onb_btn_done)
+    val startLabel = str.onb_btn_start
+    val nextLabel  = str.onb_btn_next
+    val doneLabel  = str.onb_btn_done
 
     // Метка кнопки и условие активности
     val (label, isFilled) = when (step) {
@@ -315,7 +316,7 @@ private fun BottomActions(
             ) {
                 TextButton(onClick = onSkip) {
                     Text(
-                        text = stringResource(Res.string.onb_btn_skip_step),
+                        text = str.onb_btn_skip_step,
                         fontSize = 12.sp,
                         color = AppColors.TextMuted,
                     )
@@ -418,7 +419,7 @@ private fun WelcomeStep() {
         Spacer(Modifier.height(Spacing.xxl))
 
         Text(
-            text = stringResource(Res.string.onb_welcome_title),
+            text = str.onb_welcome_title,
             fontSize = AppType.h1,
             fontWeight = FontWeight.Light,
             color = AppColors.TextPrimary,
@@ -428,7 +429,7 @@ private fun WelcomeStep() {
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = stringResource(Res.string.onb_welcome_subtitle),
+            text = str.onb_welcome_subtitle,
             fontSize = AppType.title,
             fontWeight = FontWeight.Light,
             color = AppColors.AccentGold,
@@ -438,7 +439,7 @@ private fun WelcomeStep() {
         Spacer(Modifier.height(Spacing.xl))
 
         Text(
-            text = stringResource(Res.string.onb_welcome_desc),
+            text = str.onb_welcome_desc,
             fontSize = AppType.body,
             color = AppColors.TextMuted,
             textAlign = TextAlign.Center,
@@ -453,14 +454,14 @@ private fun WelcomeStep() {
 private fun NameStep(name: String, onNameChange: (String) -> Unit) {
     StepContainer(
         emoji = "✦",
-        title = stringResource(Res.string.onb_name_title),
-        subtitle = stringResource(Res.string.onb_name_subtitle)
+        title = str.onb_name_title,
+        subtitle = str.onb_name_subtitle
     ) {
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(Res.string.onb_name_placeholder), color = AppColors.TextDim, fontSize = 15.sp) },
+            placeholder = { Text(str.onb_name_placeholder, color = AppColors.TextDim, fontSize = 15.sp) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
@@ -485,8 +486,8 @@ private fun NameStep(name: String, onNameChange: (String) -> Unit) {
 private fun GenderStep(gender: String, onGenderChange: (String) -> Unit) {
     StepContainer(
         emoji = "☯",
-        title = stringResource(Res.string.onb_gender_title),
-        subtitle = stringResource(Res.string.onb_gender_subtitle)
+        title = str.onb_gender_title,
+        subtitle = str.onb_gender_subtitle
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -494,14 +495,14 @@ private fun GenderStep(gender: String, onGenderChange: (String) -> Unit) {
         ) {
             BigGenderCard(
                 emoji = "♂",
-                label = stringResource(Res.string.onb_gender_male),
+                label = str.onb_gender_male,
                 selected = gender == "male",
                 onClick = { onGenderChange(if (gender == "male") "" else "male") },
                 modifier = Modifier.weight(1f)
             )
             BigGenderCard(
                 emoji = "♀",
-                label = stringResource(Res.string.onb_gender_female),
+                label = str.onb_gender_female,
                 selected = gender == "female",
                 onClick = { onGenderChange(if (gender == "female") "" else "female") },
                 modifier = Modifier.weight(1f)
@@ -580,8 +581,8 @@ private fun DateStep(
 
     StepContainer(
         emoji = "☽",
-        title = stringResource(Res.string.onb_date_title),
-        subtitle = stringResource(Res.string.onb_date_subtitle)
+        title = str.onb_date_title,
+        subtitle = str.onb_date_subtitle
     ) {
         val months = monthNames()
         val days  = remember(month, year) { (1..daysInMonthOnb(month, year)).map { it.toString() } }
@@ -631,8 +632,8 @@ private fun TimeStep(
 
     StepContainer(
         emoji = "⊙",
-        title = stringResource(Res.string.onb_time_title),
-        subtitle = stringResource(Res.string.onb_time_subtitle)
+        title = str.onb_time_title,
+        subtitle = str.onb_time_subtitle
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
@@ -668,10 +669,10 @@ private fun PlaceStep(vm: ProfileViewModel) {
 
     StepContainer(
         emoji = "⊕",
-        title = stringResource(Res.string.onb_place_title),
-        subtitle = stringResource(Res.string.onb_place_subtitle)
+        title = str.onb_place_title,
+        subtitle = str.onb_place_subtitle
     ) {
-        val placeholderText = stringResource(Res.string.onb_place_placeholder)
+        val placeholderText = str.onb_place_placeholder
         // Карточка-кнопка для открытия пикера
         Box(
             modifier = Modifier
@@ -733,16 +734,16 @@ private fun FinalStep(state: ProfileUiState) {
         label = "fglowA"
     )
 
-    val finalTitle      = stringResource(Res.string.onb_final_title)
-    val finalSignName   = stringResource(Res.string.onb_final_sign_with_name, state.name)
-    val finalSign       = stringResource(Res.string.onb_final_sign)
-    val summaryName     = stringResource(Res.string.onb_summary_name)
-    val summaryGender   = stringResource(Res.string.onb_summary_gender)
-    val genderMale      = stringResource(Res.string.onb_gender_male)
-    val genderFemale    = stringResource(Res.string.onb_gender_female)
-    val summaryDate     = stringResource(Res.string.onb_summary_birth_date)
-    val summaryTime     = stringResource(Res.string.onb_summary_birth_time)
-    val summaryPlace    = stringResource(Res.string.onb_summary_place)
+    val finalTitle      = str.onb_final_title
+    val finalSignName   = str.onb_final_sign_with_name.format(state.name)
+    val finalSign       = str.onb_final_sign
+    val summaryName     = str.onb_summary_name
+    val summaryGender   = str.onb_summary_gender
+    val genderMale      = str.onb_gender_male
+    val genderFemale    = str.onb_gender_female
+    val summaryDate     = str.onb_summary_birth_date
+    val summaryTime     = str.onb_summary_birth_time
+    val summaryPlace    = str.onb_summary_place
     val months          = monthNames()
 
     Column(

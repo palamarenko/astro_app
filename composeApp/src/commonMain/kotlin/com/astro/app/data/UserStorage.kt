@@ -29,6 +29,12 @@ data class UserProfile(
     val onboardingStep: Int = 0,
     /** true — онбординг завершён (или явно пропущен). Больше не показываем. */
     val onboardingFinished: Boolean = false,
+
+    // ── Push Notifications ────────────────────────────────────────────────────
+    /** true — уже показывали диалог с запросом разрешения. */
+    val pushNotificationsAsked: Boolean = false,
+    /** true — пользователь разрешил уведомления. */
+    val pushNotificationsEnabled: Boolean = false,
 )
 
 /**

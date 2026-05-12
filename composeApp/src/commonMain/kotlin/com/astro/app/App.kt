@@ -32,7 +32,7 @@ import com.astro.app.ui.screens.compatibility.*
 import com.astro.app.ui.screens.profile.*
 import com.astro.app.ui.screens.admin.*
 import com.astro.app.ui.theme.*
-import org.jetbrains.compose.resources.stringResource
+
 
 // Порядок табов для определения направления слайда
 private val TAB_ORDER = listOf(
@@ -52,13 +52,10 @@ fun App() {
 
     val lang by LanguageManager.language.collectAsState()
 
-    // ProvideLocale оборачивает дерево контекстом нужной локали (синхронно на Android).
-    // key(lang) внутри заставляет Compose полностью пересоздать AppContent(),
-    // очищая все remember-кэши stringResource() — оба шага необходимы.
-    ProvideLocale(lang) {
-        key(lang) {
-            AppContent()
-        }
+    // key(lang) заставляет Compose полностью пересоздать AppContent() при смене языка,
+    // чтобы все str.xxx вызовы вернули строки нового языка.
+    key(lang) {
+        AppContent()
     }
 }
 
@@ -265,10 +262,10 @@ private fun BottomNav(
     modifier: Modifier = Modifier,
 ) {
     val navItems = listOf(
-        NavItem(BottomTab.HOROSCOPE,     stringResource(Res.string.nav_horoscope))     { c -> HoroscopeNavIcon(color = c) },
-        NavItem(BottomTab.TAROT,         stringResource(Res.string.nav_tarot))         { c -> TarotNavIcon(color = c) },
-        NavItem(BottomTab.COMPATIBILITY, stringResource(Res.string.nav_compatibility)) { c -> CompatibilityNavIcon(color = c) },
-        NavItem(BottomTab.PROFILE,       stringResource(Res.string.nav_profile))       { _ ->
+        NavItem(BottomTab.HOROSCOPE,     str.nav_horoscope)     { c -> HoroscopeNavIcon(color = c) },
+        NavItem(BottomTab.TAROT,         str.nav_tarot)         { c -> TarotNavIcon(color = c) },
+        NavItem(BottomTab.COMPATIBILITY, str.nav_compatibility) { c -> CompatibilityNavIcon(color = c) },
+        NavItem(BottomTab.PROFILE,       str.nav_profile)       { _ ->
             // Профайл — иконка выбранного знака
             Image(
                 painter = selectedSign.iconPainter(),

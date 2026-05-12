@@ -17,13 +17,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import astroapp.composeapp.generated.resources.*
+
 import com.astro.app.data.ALL_SIGNS
 import com.astro.app.data.ZodiacSign
 import com.astro.app.i18n.*
 import com.astro.app.ui.components.SectionLabel
 import com.astro.app.ui.theme.*
-import org.jetbrains.compose.resources.stringResource
+
 
 @Composable
 fun SignPickerScreen(
@@ -38,12 +38,12 @@ fun SignPickerScreen(
                 .padding(horizontal = Spacing.xl, vertical = Spacing.xxl)
         ) {
             Spacer(Modifier.height(16.dp))
-            SectionLabel(stringResource(Res.string.sign_picker_label))
+            SectionLabel(str.sign_picker_label)
             Spacer(Modifier.height(Spacing.m))
-            Text(text = stringResource(Res.string.sign_picker_title1), fontSize = AppType.h1, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
-            Text(text = stringResource(Res.string.sign_picker_title2), fontSize = AppType.h1, fontWeight = FontWeight.Light, fontStyle = FontStyle.Italic, color = AppColors.TextPrimary)
+            Text(text = str.sign_picker_title1, fontSize = AppType.h1, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
+            Text(text = str.sign_picker_title2, fontSize = AppType.h1, fontWeight = FontWeight.Light, fontStyle = FontStyle.Italic, color = AppColors.TextPrimary)
             Spacer(Modifier.height(Spacing.s))
-            Text(text = stringResource(Res.string.sign_picker_subtitle), fontSize = AppType.caption, color = AppColors.TextDim)
+            Text(text = str.sign_picker_subtitle, fontSize = AppType.caption, color = AppColors.TextDim)
             Spacer(Modifier.height(Spacing.xxl))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),

@@ -22,10 +22,11 @@ import astroapp.composeapp.generated.resources.*
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.TarotCard
 import com.astro.app.data.ALL_TAROT
+import com.astro.app.i18n.str
 import com.astro.app.ui.components.SectionLabel
 import com.astro.app.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.stringResource
+
 
 // ── Маппинг resourceKey → DrawableResource (те же PNG что в CardFront) ────────
 
@@ -74,16 +75,16 @@ fun TarotListScreen(
             .padding(horizontal = Spacing.xl)
     ) {
         Spacer(Modifier.height(Spacing.xxl))
-        SectionLabel(stringResource(Res.string.tarot_label))
+        SectionLabel(str.tarot_label)
         Spacer(Modifier.height(Spacing.m))
         Text(
-            text = stringResource(Res.string.tarot_title1),
+            text = str.tarot_title1,
             fontSize = AppType.h1,
             fontWeight = FontWeight.Light,
             color = AppColors.TextPrimary,
         )
         Text(
-            text = stringResource(Res.string.tarot_title2),
+            text = str.tarot_title2,
             fontSize = AppType.h1,
             fontWeight = FontWeight.Light,
             fontStyle = FontStyle.Italic,
@@ -91,16 +92,16 @@ fun TarotListScreen(
         )
         Spacer(Modifier.height(Spacing.s))
         Text(
-            text = stringResource(Res.string.tarot_select_period),
+            text = str.tarot_select_period,
             fontSize = AppType.caption,
             color = AppColors.TextMuted,
         )
         Spacer(Modifier.height(Spacing.xl))
 
         val periods = listOf(
-            Triple(HoroscopePeriod.DAILY,   stringResource(Res.string.tarot_period_day_title),   stringResource(Res.string.tarot_period_day_desc)),
-            Triple(HoroscopePeriod.WEEKLY,  stringResource(Res.string.tarot_period_week_title),  stringResource(Res.string.tarot_period_week_desc)),
-            Triple(HoroscopePeriod.MONTHLY, stringResource(Res.string.tarot_period_month_title), stringResource(Res.string.tarot_period_month_desc)),
+            Triple(HoroscopePeriod.DAILY,   str.tarot_period_day_title,   str.tarot_period_day_desc),
+            Triple(HoroscopePeriod.WEEKLY,  str.tarot_period_week_title,  str.tarot_period_week_desc),
+            Triple(HoroscopePeriod.MONTHLY, str.tarot_period_month_title, str.tarot_period_month_desc),
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {

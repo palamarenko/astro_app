@@ -6,7 +6,6 @@ import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.TarotCard
 import com.astro.app.data.ZodiacSign
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.stringResource
 
 // ── ZodiacSign extensions ─────────────────────────────────────────────────────
 
@@ -26,128 +25,120 @@ fun ZodiacSign.iconPainter() = painterResource(when (this.id) {
     else          -> Res.drawable.zodiac_pisces
 })
 
-@Composable
-fun ZodiacSign.localizedName(): String = stringResource(when (this.id) {
-    "aries"       -> Res.string.sign_aries
-    "taurus"      -> Res.string.sign_taurus
-    "gemini"      -> Res.string.sign_gemini
-    "cancer"      -> Res.string.sign_cancer
-    "leo"         -> Res.string.sign_leo
-    "virgo"       -> Res.string.sign_virgo
-    "libra"       -> Res.string.sign_libra
-    "scorpio"     -> Res.string.sign_scorpio
-    "sagittarius" -> Res.string.sign_sagittarius
-    "capricorn"   -> Res.string.sign_capricorn
-    "aquarius"    -> Res.string.sign_aquarius
-    else          -> Res.string.sign_pisces
-})
+fun ZodiacSign.localizedName(): String = when (this.id) {
+    "aries"       -> str.sign_aries
+    "taurus"      -> str.sign_taurus
+    "gemini"      -> str.sign_gemini
+    "cancer"      -> str.sign_cancer
+    "leo"         -> str.sign_leo
+    "virgo"       -> str.sign_virgo
+    "libra"       -> str.sign_libra
+    "scorpio"     -> str.sign_scorpio
+    "sagittarius" -> str.sign_sagittarius
+    "capricorn"   -> str.sign_capricorn
+    "aquarius"    -> str.sign_aquarius
+    else          -> str.sign_pisces
+}
 
-@Composable
-fun ZodiacSign.localizedElement(): String = stringResource(when (this.id) {
-    "aries", "leo", "sagittarius"  -> Res.string.element_fire
-    "taurus", "virgo", "capricorn" -> Res.string.element_earth
-    "gemini", "libra", "aquarius"  -> Res.string.element_air
-    else                           -> Res.string.element_water
-})
+fun ZodiacSign.localizedElement(): String = when (this.id) {
+    "aries", "leo", "sagittarius"  -> str.element_fire
+    "taurus", "virgo", "capricorn" -> str.element_earth
+    "gemini", "libra", "aquarius"  -> str.element_air
+    else                           -> str.element_water
+}
 
-@Composable
-fun ZodiacSign.localizedPlanet(): String = stringResource(when (this.id) {
-    "aries"       -> Res.string.planet_mars
-    "taurus"      -> Res.string.planet_venus
-    "gemini"      -> Res.string.planet_mercury
-    "cancer"      -> Res.string.planet_moon
-    "leo"         -> Res.string.planet_sun
-    "virgo"       -> Res.string.planet_mercury
-    "libra"       -> Res.string.planet_venus
-    "scorpio"     -> Res.string.planet_pluto
-    "sagittarius" -> Res.string.planet_jupiter
-    "capricorn"   -> Res.string.planet_saturn
-    "aquarius"    -> Res.string.planet_uranus
-    else          -> Res.string.planet_neptune
-})
+fun ZodiacSign.localizedPlanet(): String = when (this.id) {
+    "aries"       -> str.planet_mars
+    "taurus"      -> str.planet_venus
+    "gemini"      -> str.planet_mercury
+    "cancer"      -> str.planet_moon
+    "leo"         -> str.planet_sun
+    "virgo"       -> str.planet_mercury
+    "libra"       -> str.planet_venus
+    "scorpio"     -> str.planet_pluto
+    "sagittarius" -> str.planet_jupiter
+    "capricorn"   -> str.planet_saturn
+    "aquarius"    -> str.planet_uranus
+    else          -> str.planet_neptune
+}
 
-@Composable
-fun ZodiacSign.localizedDates(): String = stringResource(when (this.id) {
-    "aries"       -> Res.string.dates_aries
-    "taurus"      -> Res.string.dates_taurus
-    "gemini"      -> Res.string.dates_gemini
-    "cancer"      -> Res.string.dates_cancer
-    "leo"         -> Res.string.dates_leo
-    "virgo"       -> Res.string.dates_virgo
-    "libra"       -> Res.string.dates_libra
-    "scorpio"     -> Res.string.dates_scorpio
-    "sagittarius" -> Res.string.dates_sagittarius
-    "capricorn"   -> Res.string.dates_capricorn
-    "aquarius"    -> Res.string.dates_aquarius
-    else          -> Res.string.dates_pisces
-})
+fun ZodiacSign.localizedDates(): String = when (this.id) {
+    "aries"       -> str.dates_aries
+    "taurus"      -> str.dates_taurus
+    "gemini"      -> str.dates_gemini
+    "cancer"      -> str.dates_cancer
+    "leo"         -> str.dates_leo
+    "virgo"       -> str.dates_virgo
+    "libra"       -> str.dates_libra
+    "scorpio"     -> str.dates_scorpio
+    "sagittarius" -> str.dates_sagittarius
+    "capricorn"   -> str.dates_capricorn
+    "aquarius"    -> str.dates_aquarius
+    else          -> str.dates_pisces
+}
 
 // ── TarotCard extensions ──────────────────────────────────────────────────────
 
-@Composable
-fun TarotCard.localizedName(): String = stringResource(when (this.resourceKey) {
-    "fool"             -> Res.string.tarot_fool
-    "magician"         -> Res.string.tarot_magician
-    "high_priestess"   -> Res.string.tarot_high_priestess
-    "empress"          -> Res.string.tarot_empress
-    "emperor"          -> Res.string.tarot_emperor
-    "hierophant"       -> Res.string.tarot_hierophant
-    "lovers"           -> Res.string.tarot_lovers
-    "chariot"          -> Res.string.tarot_chariot
-    "strength"         -> Res.string.tarot_strength
-    "hermit"           -> Res.string.tarot_hermit
-    "wheel_of_fortune" -> Res.string.tarot_wheel
-    "justice"          -> Res.string.tarot_justice
-    "hanged_man"       -> Res.string.tarot_hanged
-    "death"            -> Res.string.tarot_death
-    "temperance"       -> Res.string.tarot_temperance
-    "devil"            -> Res.string.tarot_devil
-    "tower"            -> Res.string.tarot_tower
-    "star"             -> Res.string.tarot_star
-    "moon"             -> Res.string.tarot_moon
-    "sun"              -> Res.string.tarot_sun
-    "judgment"         -> Res.string.tarot_judgement
-    else               -> Res.string.tarot_world
-})
+fun TarotCard.localizedName(): String = when (this.resourceKey) {
+    "fool"             -> str.tarot_fool
+    "magician"         -> str.tarot_magician
+    "high_priestess"   -> str.tarot_high_priestess
+    "empress"          -> str.tarot_empress
+    "emperor"          -> str.tarot_emperor
+    "hierophant"       -> str.tarot_hierophant
+    "lovers"           -> str.tarot_lovers
+    "chariot"          -> str.tarot_chariot
+    "strength"         -> str.tarot_strength
+    "hermit"           -> str.tarot_hermit
+    "wheel_of_fortune" -> str.tarot_wheel
+    "justice"          -> str.tarot_justice
+    "hanged_man"       -> str.tarot_hanged
+    "death"            -> str.tarot_death
+    "temperance"       -> str.tarot_temperance
+    "devil"            -> str.tarot_devil
+    "tower"            -> str.tarot_tower
+    "star"             -> str.tarot_star
+    "moon"             -> str.tarot_moon
+    "sun"              -> str.tarot_sun
+    "judgment"         -> str.tarot_judgement
+    else               -> str.tarot_world
+}
 
-@Composable
-fun TarotCard.localizedKeywords(): String = stringResource(when (this.resourceKey) {
-    "fool"             -> Res.string.tarot_kw_fool
-    "magician"         -> Res.string.tarot_kw_magician
-    "high_priestess"   -> Res.string.tarot_kw_high_priestess
-    "empress"          -> Res.string.tarot_kw_empress
-    "emperor"          -> Res.string.tarot_kw_emperor
-    "hierophant"       -> Res.string.tarot_kw_hierophant
-    "lovers"           -> Res.string.tarot_kw_lovers
-    "chariot"          -> Res.string.tarot_kw_chariot
-    "strength"         -> Res.string.tarot_kw_strength
-    "hermit"           -> Res.string.tarot_kw_hermit
-    "wheel_of_fortune" -> Res.string.tarot_kw_wheel
-    "justice"          -> Res.string.tarot_kw_justice
-    "hanged_man"       -> Res.string.tarot_kw_hanged
-    "death"            -> Res.string.tarot_kw_death
-    "temperance"       -> Res.string.tarot_kw_temperance
-    "devil"            -> Res.string.tarot_kw_devil
-    "tower"            -> Res.string.tarot_kw_tower
-    "star"             -> Res.string.tarot_kw_star
-    "moon"             -> Res.string.tarot_kw_moon
-    "sun"              -> Res.string.tarot_kw_sun
-    "judgment"         -> Res.string.tarot_kw_judgement
-    else               -> Res.string.tarot_kw_world
-})
+fun TarotCard.localizedKeywords(): String = when (this.resourceKey) {
+    "fool"             -> str.tarot_kw_fool
+    "magician"         -> str.tarot_kw_magician
+    "high_priestess"   -> str.tarot_kw_high_priestess
+    "empress"          -> str.tarot_kw_empress
+    "emperor"          -> str.tarot_kw_emperor
+    "hierophant"       -> str.tarot_kw_hierophant
+    "lovers"           -> str.tarot_kw_lovers
+    "chariot"          -> str.tarot_kw_chariot
+    "strength"         -> str.tarot_kw_strength
+    "hermit"           -> str.tarot_kw_hermit
+    "wheel_of_fortune" -> str.tarot_kw_wheel
+    "justice"          -> str.tarot_kw_justice
+    "hanged_man"       -> str.tarot_kw_hanged
+    "death"            -> str.tarot_kw_death
+    "temperance"       -> str.tarot_kw_temperance
+    "devil"            -> str.tarot_kw_devil
+    "tower"            -> str.tarot_kw_tower
+    "star"             -> str.tarot_kw_star
+    "moon"             -> str.tarot_kw_moon
+    "sun"              -> str.tarot_kw_sun
+    "judgment"         -> str.tarot_kw_judgement
+    else               -> str.tarot_kw_world
+}
 
 // ── HoroscopePeriod extensions ────────────────────────────────────────────────
 
-@Composable
-fun HoroscopePeriod.localizedLabel(): String = stringResource(when (this) {
-    HoroscopePeriod.DAILY   -> Res.string.horoscope_tab_today
-    HoroscopePeriod.WEEKLY  -> Res.string.horoscope_tab_week
-    HoroscopePeriod.MONTHLY -> Res.string.horoscope_tab_month
-})
+fun HoroscopePeriod.localizedLabel(): String = when (this) {
+    HoroscopePeriod.DAILY   -> str.horoscope_tab_today
+    HoroscopePeriod.WEEKLY  -> str.horoscope_tab_week
+    HoroscopePeriod.MONTHLY -> str.horoscope_tab_month
+}
 
-@Composable
-fun HoroscopePeriod.localizedPrompt(): String = stringResource(when (this) {
-    HoroscopePeriod.DAILY   -> Res.string.period_today_prompt
-    HoroscopePeriod.WEEKLY  -> Res.string.period_week_prompt
-    HoroscopePeriod.MONTHLY -> Res.string.period_month_prompt
-})
+fun HoroscopePeriod.localizedPrompt(): String = when (this) {
+    HoroscopePeriod.DAILY   -> str.period_today_prompt
+    HoroscopePeriod.WEEKLY  -> str.period_week_prompt
+    HoroscopePeriod.MONTHLY -> str.period_month_prompt
+}

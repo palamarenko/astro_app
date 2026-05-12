@@ -1,5 +1,7 @@
 [versions]
 agp = "8.2.2"
+firebase-bom = "33.1.0"
+google-services = "4.4.2"
 kotlin = "1.9.23"
 coil = "3.0.4"
 composeMultiplatform = "1.6.2"
@@ -41,9 +43,14 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.6.1
 # Google Mobile Ads (AdMob)
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version = "23.6.0" }
 
+# Firebase
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging-ktx" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }

@@ -16,10 +16,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
-import astroapp.composeapp.generated.resources.*
+import com.astro.app.i18n.str
+
 import com.astro.app.ui.components.SectionLabel
 import com.astro.app.ui.theme.*
-import org.jetbrains.compose.resources.stringResource
+
 
 @Composable
 fun ComingSoonScreen(modifier: Modifier = Modifier) {
@@ -80,19 +81,19 @@ fun ComingSoonScreen(modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(Spacing.xl))
 
-            SectionLabel(stringResource(Res.string.compat_label))
+            SectionLabel(str.compat_label)
 
             Spacer(Modifier.height(Spacing.m))
 
             Text(
-                text = stringResource(Res.string.compat_title1),
+                text = str.compat_title1,
                 fontSize = AppType.h1,
                 fontWeight = FontWeight.Light,
                 color = AppColors.TextPrimary,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = stringResource(Res.string.compat_title2),
+                text = str.compat_title2,
                 fontSize = AppType.h1,
                 fontWeight = FontWeight.Light,
                 fontStyle = FontStyle.Italic,
@@ -103,7 +104,7 @@ fun ComingSoonScreen(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(Spacing.xxl))
 
             Text(
-                text = stringResource(Res.string.compat_coming_soon),
+                text = str.compat_coming_soon,
                 fontSize = TextUnit(28f, TextUnitType.Sp),
                 fontWeight = FontWeight.Light,
                 fontStyle = FontStyle.Italic,
@@ -114,7 +115,7 @@ fun ComingSoonScreen(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(Spacing.m))
 
             Text(
-                text = stringResource(Res.string.compat_coming_soon_desc),
+                text = str.compat_coming_soon_desc,
                 fontSize = TextUnit(13f, TextUnitType.Sp),
                 fontWeight = FontWeight.Light,
                 fontStyle = FontStyle.Italic,

@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -122,4 +123,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
+
+// Firebase BOM подключается вне KMP kotlin{} блока — platform() там не работает
+dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }

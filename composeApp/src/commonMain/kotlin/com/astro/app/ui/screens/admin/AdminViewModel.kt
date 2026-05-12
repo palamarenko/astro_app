@@ -3,6 +3,11 @@ package com.astro.app.ui.screens.admin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
+import com.astro.app.notifications.PushAdminService
+import com.astro.app.notifications.sendLocalTestPush
+import io.ktor.client.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -42,10 +47,17 @@ data class AdminUiState(
     val isLoaded: Boolean = false,
     val generatingSignIds: Set<String> = emptySet(),
     val isGeneratingAll: Boolean = false,
+    // ── Push notifications ────────────────────────────────────────────────────
+    val fcmServerKey: String = "",
+    val pushSending: Boolean = false,
+    val pushResult: String? = null,   // null = idle, "ok" = успех, иначе текст ошибки
 )
 
 class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
-    private val firebase = FirebaseService()
+    private val firebase    = FirebaseService()
+    private val pushService = PushAdminService(
+        HttpClient { install(ContentNegotiation) { json() } }
+    )
     private val _state = MutableStateFlow(AdminUiState())
     val state: StateFlow<AdminUiState> = _state.asStateFlow()
     private var loadJob: Job? = null
@@ -193,6 +205,7 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     fun saveAll() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, savedCount = -1, saveError = null)
+            _state.value = _state.value.copy(isSaving = true, savedCount = -1, saveError = null)
             try {
                 val key = computeDateKey(_state.value.period, _state.value.selectedDate)
                 var count = 0
@@ -207,5 +220,39 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
                 _state.value = _state.value.copy(isSaving = false, saveError = e.message ?: "Save error")
             }
         }
+    }
+
+    // -- Push Notifications ---------------------------------------------------
+
+    fun setFcmServerKey(key: String) {
+        _state.value = _state.value.copy(fcmServerKey = key, pushResult = null)
+    }
+
+    fun sendPushToSelf() {
+        val profile  = UserStorage.load()
+        val signId   = profile?.signId ?: "leo"
+        val signName = ALL_SIGNS.find { it.id == signId }?.name ?: signId
+        sendLocalTestPush(signName)
+        _state.value = _state.value.copy(pushResult = "ok_self")
+    }
+
+    fun sendPushToAll() {
+        val key = _state.value.fcmServerKey.trim()
+        if (key.isEmpty()) {
+            _state.value = _state.value.copy(pushResult = "Enter FCM Server Key first")
+            return
+        }
+        viewModelScope.launch {
+            _state.value = _state.value.copy(pushSending = true, pushResult = null)
+            val result = pushService.sendToAll(serverKey = key)
+            _state.value = _state.value.copy(
+                pushSending = false,
+                pushResult  = if (result.isSuccess) "ok_all" else (result.exceptionOrNull()?.message ?: "Error"),
+            )
+        }
+    }
+
+    fun clearPushResult() {
+        _state.value = _state.value.copy(pushResult = null)
     }
 }

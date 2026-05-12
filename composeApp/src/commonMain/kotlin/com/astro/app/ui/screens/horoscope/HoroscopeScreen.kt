@@ -25,6 +25,7 @@ import androidx.compose.ui.window.DialogProperties
 import astroapp.composeapp.generated.resources.*
 import com.astro.app.ads.AdManager
 import com.astro.app.ads.rememberAdManager
+import com.astro.app.notifications.rememberPushPermissionLauncher
 import com.astro.app.data.ALL_SIGNS
 import com.astro.app.data.HoroscopePeriod
 import com.astro.app.data.HoroscopeResponse
@@ -33,7 +34,7 @@ import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.stringResource
+
 import androidx.compose.foundation.Image
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.*
@@ -192,6 +193,14 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                 adManager    = adManager,
                 onDismiss    = { vm.dismissWizard() },
                 onComplete   = { vm.unlockAndLoadFuture(state.period) },
+            )
+        }
+
+        // ── Push Notifications Prompt ─────────────────────────────────────────
+        if (state.showPushPrompt) {
+            PushPromptDialog(
+                onAllow = { vm.onPushPromptResult(enabled = true) },
+                onDeny  = { vm.onPushPromptResult(enabled = false) },
             )
         }
     }
@@ -479,10 +488,10 @@ private fun ScoreGaugesRow(forecast: HoroscopeResponse) {
         modifier            = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        ScoreGauge(value = forecast.love,    label = stringResource(Res.string.horoscope_score_love),    icon = "♡", color = ScoreLove)
-        ScoreGauge(value = forecast.career,  label = stringResource(Res.string.horoscope_score_career),  icon = "✦", color = ScoreCareer)
-        ScoreGauge(value = forecast.health,  label = stringResource(Res.string.horoscope_score_health),  icon = "◎", color = ScoreHealth)
-        ScoreGauge(value = forecast.energy,  label = stringResource(Res.string.horoscope_score_energy),  icon = "⊕", color = ScoreEnergy)
+        ScoreGauge(value = forecast.love,    label = str.horoscope_score_love,    icon = "♡", color = ScoreLove)
+        ScoreGauge(value = forecast.career,  label = str.horoscope_score_career,  icon = "✦", color = ScoreCareer)
+        ScoreGauge(value = forecast.health,  label = str.horoscope_score_health,  icon = "◎", color = ScoreHealth)
+        ScoreGauge(value = forecast.energy,  label = str.horoscope_score_energy,  icon = "⊕", color = ScoreEnergy)
     }
 }
 
@@ -556,9 +565,9 @@ private fun WizardCta(
     elementColor: Color,
 ) {
     val periodAcc = when (period) {
-        HoroscopePeriod.DAILY   -> stringResource(Res.string.wizard_period_acc_daily)
-        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.wizard_period_acc_week)
-        HoroscopePeriod.MONTHLY -> stringResource(Res.string.wizard_period_acc_month)
+        HoroscopePeriod.DAILY   -> str.wizard_period_acc_daily
+        HoroscopePeriod.WEEKLY  -> str.wizard_period_acc_week
+        HoroscopePeriod.MONTHLY -> str.wizard_period_acc_month
     }
     val inf    = rememberInfiniteTransition(label = "ctaWiz")
     val floatY by inf.animateFloat(-2f, 2f,
@@ -591,7 +600,7 @@ private fun WizardCta(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = stringResource(Res.string.wizard_cta_title, periodAcc),
+                    text       = str.wizard_cta_title.format(periodAcc),
                     fontSize   = 15.sp,
                     fontStyle  = FontStyle.Italic,
                     color      = AppColors.AccentGold,
@@ -599,7 +608,7 @@ private fun WizardCta(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text     = stringResource(Res.string.wizard_cta_desc),
+                    text     = str.wizard_cta_desc,
                     fontSize = 12.sp,
                     color    = AppColors.TextMuted,
                 )
@@ -613,7 +622,7 @@ private fun WizardCta(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text       = stringResource(Res.string.tarot_ad_badge),
+                    text       = str.tarot_ad_badge,
                     fontSize   = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color      = AppColors.AccentGold,
@@ -629,9 +638,9 @@ private fun WizardCta(
 @Composable
 private fun FutureDivider(period: HoroscopePeriod, elementColor: Color) {
     val label = when (period) {
-        HoroscopePeriod.DAILY   -> stringResource(Res.string.wizard_divider_daily)
-        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.wizard_divider_week)
-        HoroscopePeriod.MONTHLY -> stringResource(Res.string.wizard_divider_month)
+        HoroscopePeriod.DAILY   -> str.wizard_divider_daily
+        HoroscopePeriod.WEEKLY  -> str.wizard_divider_week
+        HoroscopePeriod.MONTHLY -> str.wizard_divider_month
     }
     Row(
         verticalAlignment     = Alignment.CenterVertically,
@@ -682,9 +691,9 @@ private fun WizardModal(
     onComplete:   () -> Unit,
 ) {
     val periodAcc = when (period) {
-        HoroscopePeriod.DAILY   -> stringResource(Res.string.wizard_period_acc_daily)
-        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.wizard_period_acc_week)
-        HoroscopePeriod.MONTHLY -> stringResource(Res.string.wizard_period_acc_month)
+        HoroscopePeriod.DAILY   -> str.wizard_period_acc_daily
+        HoroscopePeriod.WEEKLY  -> str.wizard_period_acc_week
+        HoroscopePeriod.MONTHLY -> str.wizard_period_acc_month
     }
 
     Dialog(
@@ -796,7 +805,7 @@ private fun WizardIntro(
             )
         }
         Text(
-            text      = stringResource(Res.string.wizard_intro_title, periodAcc),
+            text      = str.wizard_intro_title.format(periodAcc),
             fontSize  = 22.sp,
             fontStyle = FontStyle.Italic,
             color     = AppColors.TextPrimary,
@@ -804,7 +813,7 @@ private fun WizardIntro(
             lineHeight = 30.sp,
         )
         Text(
-            text      = stringResource(Res.string.wizard_intro_subtitle, signName, periodAcc),
+            text      = str.wizard_intro_subtitle.format(signName, periodAcc),
             fontSize  = 13.sp,
             color     = AppColors.TextMuted,
             textAlign = TextAlign.Center,
@@ -847,7 +856,7 @@ private fun WizardIntro(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text          = stringResource(Res.string.wizard_btn_watch),
+                    text          = str.wizard_btn_watch,
                     fontSize      = 13.sp,
                     fontWeight    = FontWeight.Medium,
                     color         = AppColors.AccentGold,
@@ -862,7 +871,7 @@ private fun WizardIntro(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text       = stringResource(Res.string.tarot_ad_badge),
+                        text       = str.tarot_ad_badge,
                         fontSize   = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color      = AppColors.AccentGold,
@@ -873,7 +882,7 @@ private fun WizardIntro(
         }
         // Not now
         Text(
-            text      = stringResource(Res.string.wizard_btn_not_now),
+            text      = str.wizard_btn_not_now,
             fontSize  = 12.sp,
             color     = Color(0xFF666666),
             modifier  = Modifier.clickable { onDismiss() }.padding(8.dp),
@@ -1254,36 +1263,91 @@ fun PreviewWizardIntroPhase() {
 }
 
 
-@Preview
+
+
+// -- Push Notifications Prompt Dialog -----------------------------------------
+
 @Composable
-fun PreviewHoroscopeMain() {
-    Box(Modifier.background(AppColors.Background)) {
-        val elementColor = AppColors.elementColor(PreviewSign.element)
-        Column(
+private fun PushPromptDialog(
+    onAllow: () -> Unit,
+    onDeny:  () -> Unit,
+) {
+    val requestPermission = rememberPushPermissionLauncher(onResult = { granted ->
+        if (granted) onAllow() else onDeny()
+    })
+
+    Dialog(
+        onDismissRequest = onDeny,
+        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true),
+    ) {
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(AppColors.Background)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+                .padding(horizontal = 24.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Spacer(Modifier.height(16.dp))
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CosmicHero(sign = PreviewSign, elementColor = elementColor)
-            }
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(PreviewSign.name, fontSize = 36.sp, fontWeight = FontWeight.Light, color = AppColors.TextPrimary)
-                Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ElementPill(PreviewSign.element, elementColor)
-                    ElementPill(PreviewSign.planet, AppColors.AccentGold)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF1A1525), Color(0xFF0D0D18))))
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Image(
+                    painter            = painterResource(Res.drawable.w),
+                    contentDescription = null,
+                    modifier           = Modifier.size(96.dp),
+                    contentScale       = ContentScale.Fit,
+                )
+                Text(
+                    text       = str.push_prompt_title,
+                    fontSize   = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = AppColors.TextPrimary,
+                    textAlign  = TextAlign.Center,
+                )
+                Text(
+                    text      = str.push_prompt_body,
+                    fontSize  = 14.sp,
+                    color     = AppColors.TextSecondary,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(4.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AppColors.AccentGold)
+                        .clickable { requestPermission() }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text       = str.push_prompt_allow,
+                        fontSize   = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color      = Color.Black,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, AppColors.TextSecondary.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
+                        .clickable { onDeny() }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text     = str.push_prompt_deny,
+                        fontSize = 14.sp,
+                        color    = AppColors.TextSecondary,
+                    )
                 }
             }
-            PeriodTabsNew(selected = HoroscopePeriod.DAILY, onSelect = {}, elementColor = elementColor)
-            ForecastCard(forecast = PreviewForecast, elementColor = elementColor)
-            ScoreGaugesRow(forecast = PreviewForecast)
-            WizardCta(period = HoroscopePeriod.DAILY, onClick = {}, elementColor = elementColor)
-            Spacer(Modifier.height(16.dp))
         }
     }
 }

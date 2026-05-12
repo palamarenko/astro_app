@@ -41,7 +41,7 @@ import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
 import astroapp.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.stringResource
+
 import kotlin.math.*
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
@@ -50,15 +50,15 @@ import kotlin.math.*
 fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsState()
     val adManager = rememberAdManager()
-    val adNotReadyMsg = stringResource(Res.string.tarot_ad_not_ready)
-    val positions = listOf(stringResource(Res.string.tarot_position_past), stringResource(Res.string.tarot_position_present), stringResource(Res.string.tarot_position_future))
+    val adNotReadyMsg = str.tarot_ad_not_ready
+    val positions = listOf(str.tarot_position_past, str.tarot_position_present, str.tarot_position_future)
     val cardTexts = listOf(state.reading?.past, state.reading?.present, state.reading?.future)
 
     val periodTitle = when (state.currentPeriod) {
-        HoroscopePeriod.DAILY   -> stringResource(Res.string.tarot_period_day_title)
-        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.tarot_period_week_title)
-        HoroscopePeriod.MONTHLY -> stringResource(Res.string.tarot_period_month_title)
-        null                    -> stringResource(Res.string.tarot_title2)
+        HoroscopePeriod.DAILY   -> str.tarot_period_day_title
+        HoroscopePeriod.WEEKLY  -> str.tarot_period_week_title
+        HoroscopePeriod.MONTHLY -> str.tarot_period_month_title
+        null                    -> str.tarot_title2
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -77,7 +77,7 @@ fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifie
             ) {
                 // Заголовок по центру
                 Text(
-                    text       = stringResource(Res.string.tarot_title1),
+                    text       = str.tarot_title1,
                     fontSize   = 17.sp,
                     fontWeight = FontWeight.Medium,
                     color      = AppColors.TextPrimary,
@@ -115,10 +115,10 @@ fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifie
             }
             Spacer(Modifier.height(Spacing.m))
 
-            SectionLabel(stringResource(Res.string.tarot_label))
+            SectionLabel(str.tarot_label)
             Spacer(Modifier.height(Spacing.m))
             Text(
-                text = stringResource(Res.string.tarot_title1),
+                text = str.tarot_title1,
                 fontSize = AppType.h1,
                 fontWeight = FontWeight.Light,
                 color = AppColors.TextPrimary,
@@ -227,10 +227,10 @@ private fun TarotWizardCta(
     onClick:     () -> Unit = {},
 ) {
     val periodTitle = when (period) {
-        HoroscopePeriod.DAILY   -> stringResource(Res.string.tarot_period_day_title)
-        HoroscopePeriod.WEEKLY  -> stringResource(Res.string.tarot_period_week_title)
-        HoroscopePeriod.MONTHLY -> stringResource(Res.string.tarot_period_month_title)
-        null                    -> stringResource(Res.string.tarot_period_day_title)
+        HoroscopePeriod.DAILY   -> str.tarot_period_day_title
+        HoroscopePeriod.WEEKLY  -> str.tarot_period_week_title
+        HoroscopePeriod.MONTHLY -> str.tarot_period_month_title
+        null                    -> str.tarot_period_day_title
     }
 
     val inf = rememberInfiniteTransition(label = "tarotCta")
@@ -289,9 +289,9 @@ private fun TarotWizardCta(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text       = if (isLoading)
-                                     stringResource(Res.string.tarot_btn_loading)
+                                     str.tarot_btn_loading
                                  else
-                                     stringResource(Res.string.tarot_cta_title, periodTitle),
+                                     str.tarot_cta_title.format(periodTitle),
                     fontSize   = 15.sp,
                     fontStyle  = FontStyle.Italic,
                     color      = if (isLoading) AppColors.TextMuted else AppColors.AccentGold,
@@ -299,7 +299,7 @@ private fun TarotWizardCta(
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text     = stringResource(Res.string.tarot_cta_desc),
+                    text     = str.tarot_cta_desc,
                     fontSize = 12.sp,
                     color    = AppColors.TextDim,
                 )
@@ -313,7 +313,7 @@ private fun TarotWizardCta(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text          = stringResource(Res.string.tarot_ad_badge),
+                        text          = str.tarot_ad_badge,
                         fontSize      = 9.sp,
                         fontWeight    = FontWeight.Bold,
                         color         = AppColors.AccentGold,
@@ -832,7 +832,7 @@ private fun TarotLoadingHint() {
         // Loading hint + animated dots
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
             Text(
-                text = stringResource(Res.string.tarot_loading_hint),
+                text = str.tarot_loading_hint,
                 fontSize = TextUnit(11f, TextUnitType.Sp),
                 color = AppColors.TextDim,
                 fontStyle = FontStyle.Italic,
@@ -923,7 +923,7 @@ private fun ReadingSummaryCard(reading: TarotReadingResponse, cards: List<TarotC
             .padding(18.dp)
     ) {
         Column {
-            SectionLabel(stringResource(Res.string.tarot_summary_label))
+            SectionLabel(str.tarot_summary_label)
             Spacer(Modifier.height(Spacing.s))
             Text(
                 text = annotated,

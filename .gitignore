@@ -7,6 +7,9 @@ out/
 .gradle/
 gradle/wrapper/gradle-wrapper.jar
 
+# ── Kotlin Multiplatform cache (auto-generated, не комітити) ──────────────────
+.kotlin/
+
 # ── Android local config ───────────────────────────────────────────────────────
 local.properties
 *.keystore

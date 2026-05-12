@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
 import com.astro.app.i18n.AppLanguage
 import com.astro.app.i18n.LanguageManager
+import com.astro.app.i18n.str
+import com.astro.app.notifications.subscribeToPushTopic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +28,8 @@ data class HoroscopeUiState(
     val loadingFuture:  Boolean = false,
     val error: String? = null,
     val showWizard: Boolean = false,
+    // Push notifications prompt — показываем один раз при первом заходе
+    val showPushPrompt: Boolean = false,
 ) {
     val currentForecast: HoroscopeResponse? get() = current[period]
     val futureForecast:  HoroscopeResponse? get() = future[period]
@@ -48,13 +52,37 @@ class HoroscopeViewModel(
             else           -> "ru"
         }
 
+    init {
+        // Проверяем нужно ли показать push-промпт при первом заходе
+        val profile = UserStorage.load()
+        if (profile != null && !profile.pushNotificationsAsked) {
+            _state.value = _state.value.copy(showPushPrompt = true)
+        }
+    }
+
     // ── Public API ────────────────────────────────────────────────────────────
 
     fun selectSign(sign: ZodiacSign) {
-        // Reset all caches when sign changes
-        _state.value = HoroscopeUiState(selectedSign = sign)
+        // Reset all caches when sign changes, keep push prompt state
+        val pushPrompt = _state.value.showPushPrompt
+        _state.value = HoroscopeUiState(selectedSign = sign, showPushPrompt = pushPrompt)
         loadCurrentIfNeeded(sign, HoroscopePeriod.DAILY)
     }
+
+    /** Вызывается после того, как пользователь ответил на push-промпт. */
+    fun onPushPromptResult(enabled: Boolean) {
+        val profile = UserStorage.load() ?: UserProfile()
+        UserStorage.save(profile.copy(
+            pushNotificationsAsked   = true,
+            pushNotificationsEnabled = enabled,
+        ))
+        _state.value = _state.value.copy(showPushPrompt = false)
+        // Подписываемся на FCM-топик, чтобы можно было слать всем сразу
+        if (enabled) subscribeToFcmTopic()
+    }
+
+    /** expect/actual — на Android вызывает FirebaseMessaging.subscribeToTopic() */
+    private fun subscribeToFcmTopic() = subscribeToPushTopic()
 
     fun setPeriod(period: HoroscopePeriod) {
         _state.value = _state.value.copy(period = period)

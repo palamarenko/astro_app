@@ -32,18 +32,18 @@ import com.astro.app.i18n.*
 import com.astro.app.ui.components.*
 import com.astro.app.ui.theme.*
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.stringResource
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 @Composable
 private fun localizedMonths() = listOf(
-    stringResource(Res.string.onb_month_jan), stringResource(Res.string.onb_month_feb),
-    stringResource(Res.string.onb_month_mar), stringResource(Res.string.onb_month_apr),
-    stringResource(Res.string.onb_month_may), stringResource(Res.string.onb_month_jun),
-    stringResource(Res.string.onb_month_jul), stringResource(Res.string.onb_month_aug),
-    stringResource(Res.string.onb_month_sep), stringResource(Res.string.onb_month_oct),
-    stringResource(Res.string.onb_month_nov), stringResource(Res.string.onb_month_dec),
+    str.onb_month_jan, str.onb_month_feb,
+    str.onb_month_mar, str.onb_month_apr,
+    str.onb_month_may, str.onb_month_jun,
+    str.onb_month_jul, str.onb_month_aug,
+    str.onb_month_sep, str.onb_month_oct,
+    str.onb_month_nov, str.onb_month_dec,
 )
 
 private fun daysInMonth(month: Int, year: Int): Int = when (month) {
@@ -135,12 +135,12 @@ fun ProfileScreen(
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
 
                 // Имя
-                ProfileCard(label = stringResource(Res.string.profile_field_name_label)) {
+                ProfileCard(label = str.profile_field_name_label) {
                     OutlinedTextField(
                         value = state.name,
                         onValueChange = { vm.setName(it) },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(Res.string.profile_field_name_placeholder), color = AppColors.TextDim, fontSize = 14.sp) },
+                        placeholder = { Text(str.profile_field_name_placeholder, color = AppColors.TextDim, fontSize = 14.sp) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
@@ -159,19 +159,19 @@ fun ProfileScreen(
                 }
 
                 // Пол
-                ProfileCard(label = stringResource(Res.string.profile_field_gender_label)) {
+                ProfileCard(label = str.profile_field_gender_label) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         GenderButton(
-                            label    = stringResource(Res.string.profile_field_gender_male),
+                            label    = str.profile_field_gender_male,
                             selected = state.gender == "male",
                             onClick  = { vm.setGender(if (state.gender == "male") "" else "male") },
                             modifier = Modifier.weight(1f)
                         )
                         GenderButton(
-                            label    = stringResource(Res.string.profile_field_gender_female),
+                            label    = str.profile_field_gender_female,
                             selected = state.gender == "female",
                             onClick  = { vm.setGender(if (state.gender == "female") "" else "female") },
                             modifier = Modifier.weight(1f)
@@ -180,11 +180,11 @@ fun ProfileScreen(
                 }
 
                 // Дата рождения
-                ProfileCard(label = stringResource(Res.string.profile_field_date_label)) {
+                ProfileCard(label = str.profile_field_date_label) {
                     PickerRow(
                         value  = if (state.birthDay > 0)
                             "${state.birthDay} ${months[state.birthMonth - 1]} ${state.birthYear}"
-                        else stringResource(Res.string.profile_field_date_pick),
+                        else str.profile_field_date_pick,
                         icon   = "📅",
                         filled = state.birthDay > 0,
                         onClick = { vm.showDatePicker() }
@@ -213,11 +213,11 @@ fun ProfileScreen(
                 }
 
                 // Время рождения
-                ProfileCard(label = stringResource(Res.string.profile_field_time_label)) {
+                ProfileCard(label = str.profile_field_time_label) {
                     PickerRow(
                         value  = if (state.birthHour >= 0)
                             "${state.birthHour.toString().padStart(2, '0')}:${state.birthMinute.toString().padStart(2, '0')}"
-                        else stringResource(Res.string.profile_field_time_pick),
+                        else str.profile_field_time_pick,
                         icon   = "🕐",
                         filled = state.birthHour >= 0,
                         onClick = { vm.showTimePicker() }
@@ -225,9 +225,9 @@ fun ProfileScreen(
                 }
 
                 // Место рождения
-                ProfileCard(label = stringResource(Res.string.profile_field_place_label)) {
+                ProfileCard(label = str.profile_field_place_label) {
                     PickerRow(
-                        value  = state.birthPlace.ifBlank { stringResource(Res.string.profile_field_place_pick) },
+                        value  = state.birthPlace.ifBlank { str.profile_field_place_pick },
                         icon   = "📍",
                         filled = state.birthPlace.isNotBlank(),
                         onClick = { vm.showPlacePicker() }
@@ -235,7 +235,7 @@ fun ProfileScreen(
                 }
 
                 // Язык
-                ProfileCard(label = stringResource(Res.string.profile_field_language_label)) {
+                ProfileCard(label = str.profile_field_language_label) {
                     LanguageDropdown(
                         selected  = state.language,
                         onSelect  = { vm.setLanguage(it) }
@@ -252,11 +252,11 @@ fun ProfileScreen(
                     .background(AppColors.Card),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(stringResource(Res.string.profile_stat_element), sign.localizedElement(), elementColor)
+                StatItem(str.profile_stat_element, sign.localizedElement(), elementColor)
                 Box(Modifier.width(1.dp).height(48.dp).background(AppColors.Border).align(Alignment.CenterVertically))
-                StatItem(stringResource(Res.string.profile_stat_planet), sign.localizedPlanet(), AppColors.AccentGold)
+                StatItem(str.profile_stat_planet, sign.localizedPlanet(), AppColors.AccentGold)
                 Box(Modifier.width(1.dp).height(48.dp).background(AppColors.Border).align(Alignment.CenterVertically))
-                StatItem(stringResource(Res.string.profile_stat_period), sign.localizedDates().split("–").first().trim(), AppColors.TextMuted)
+                StatItem(str.profile_stat_period, sign.localizedDates().split("–").first().trim(), AppColors.TextMuted)
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -611,12 +611,12 @@ private fun PickerDialogShell(
                         .background(AppColors.Card).border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s))
                         .clickable(onClick = onDismiss).padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
-                ) { Text(stringResource(Res.string.profile_dialog_cancel), color = AppColors.TextMuted, fontSize = 14.sp) }
+                ) { Text(str.profile_dialog_cancel, color = AppColors.TextMuted, fontSize = 14.sp) }
                 Box(
                     modifier = Modifier.weight(1f).clip(RoundedCornerShape(Radius.s))
                         .background(AppColors.AccentGold).clickable(onClick = onConfirm).padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center
-                ) { Text(stringResource(Res.string.profile_dialog_confirm), color = Color(0xFF0A0A0F), fontSize = 14.sp, fontWeight = FontWeight.Medium) }
+                ) { Text(str.profile_dialog_confirm, color = Color(0xFF0A0A0F), fontSize = 14.sp, fontWeight = FontWeight.Medium) }
             }
         }
     }

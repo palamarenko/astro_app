@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
  *   - [setLanguage] — изменить язык (сохраняет в UserStorage через колбэк).
  *   - [current]     — синхронный геттер для ViewModel.
  *
- * Для добавления нового языка — только правка [AppLanguage] enum + strings.xml.
+ * Для добавления нового языка — только правка [AppLanguage] enum и трёх объектов Strings*.
  */
 object LanguageManager {
 
@@ -22,6 +22,14 @@ object LanguageManager {
 
     /** Текущий язык (синхронный доступ для ViewModel). */
     val current: AppLanguage get() = _language.value
+
+    /** Текущий набор строк на основе выбранного языка. */
+    val strings: AppStrings
+        get() = when (current) {
+            AppLanguage.RU -> StringsRu
+            AppLanguage.UK -> StringsUk
+            AppLanguage.EN -> StringsEn
+        }
 
     /**
      * Инициализация. Вызывать после UserStorage.load().
