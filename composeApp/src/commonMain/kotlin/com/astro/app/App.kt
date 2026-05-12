@@ -52,30 +52,47 @@ fun App() {
 
     val lang by LanguageManager.language.collectAsState()
 
+    // ViewModel-ы создаются один раз и живут вне key(lang),
+    // чтобы смена языка не пересоздавала их (иначе init-блоки
+    // срабатывают повторно и показывают, например, попап уведомлений).
+    val api          = remember { ClaudeApiClient(anthropicApiKey) }
+    val horoscopeVm  = remember { HoroscopeViewModel() }
+    val tarotVm      = remember { TarotViewModel(api) }
+    val compatVm     = remember { CompatibilityViewModel(api) }
+    val profileVm    = remember { ProfileViewModel(api) }
+    val adminVm      = remember { AdminViewModel(api) }
+    val adminTarotVm = remember { AdminTarotViewModel(api) }
+
     // key(lang) заставляет Compose полностью пересоздать AppContent() при смене языка,
     // чтобы все str.xxx вызовы вернули строки нового языка.
     key(lang) {
-        AppContent()
+        AppContent(
+            horoscopeVm  = horoscopeVm,
+            tarotVm      = tarotVm,
+            compatVm     = compatVm,
+            profileVm    = profileVm,
+            adminVm      = adminVm,
+            adminTarotVm = adminTarotVm,
+        )
     }
 }
 
 @Composable
-private fun AppContent() {
-
-    val api = remember { ClaudeApiClient(anthropicApiKey) }
-
-    val horoscopeVm = remember { HoroscopeViewModel() }
-    val tarotVm     = remember { TarotViewModel(api) }
-    val compatVm    = remember { CompatibilityViewModel(api) }
-    val profileVm   = remember { ProfileViewModel(api) }
-    val adminVm      = remember { AdminViewModel(api) }
-    val adminTarotVm = remember { AdminTarotViewModel(api) }
+private fun AppContent(
+    horoscopeVm:  HoroscopeViewModel,
+    tarotVm:      TarotViewModel,
+    compatVm:     CompatibilityViewModel,
+    profileVm:    ProfileViewModel,
+    adminVm:      AdminViewModel,
+    adminTarotVm: AdminTarotViewModel,
+) {
 
     var activeTab    by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     // На главной сразу открыт детальный гороскоп выбранного знака
     var showDetail      by remember { mutableStateOf(true) }
-    var showAdmin       by remember { mutableStateOf(false) }
-    var showAdminTarot  by remember { mutableStateOf(false) }
+    var showAdmin         by remember { mutableStateOf(false) }
+    var showAdminTarot    by remember { mutableStateOf(false) }
+    var showAdminNotifications by remember { mutableStateOf(false) }
     // Таро: выбранный период (null = список)
     var tarotPeriod     by remember { mutableStateOf<HoroscopePeriod?>(null) }
 
@@ -83,7 +100,7 @@ private fun AppContent() {
     // • Таро-расклад           → список таро
     // • Любой другой экран     → гороскоп
     // • Гороскоп (главный)     → не перехватываем (приложение закрывается)
-    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot
+    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot && !showAdminNotifications
     AppBackHandler(enabled = !onHoroscope) {
         when {
             // Таро-расклад → список
@@ -91,6 +108,8 @@ private fun AppContent() {
                 tarotVm.clearPeriod()
                 tarotPeriod = null
             }
+            // Админ-панель уведомлений → назад
+            showAdminNotifications -> { showAdminNotifications = false }
             // Админ-панель таро → назад
             showAdminTarot -> { showAdminTarot = false }
             // Главная админ-панель → назад
@@ -101,6 +120,7 @@ private fun AppContent() {
                 showDetail = true
                 showAdmin = false
                 showAdminTarot = false
+                showAdminNotifications = false
                 tarotPeriod = null
                 tarotVm.clearPeriod()
             }
@@ -210,8 +230,15 @@ private fun AppContent() {
                         }
                     }
                     BottomTab.COMPATIBILITY -> ComingSoonScreen(modifier = Modifier.fillMaxSize())
+
                     BottomTab.PROFILE       -> {
                         when {
+                            showAdminNotifications -> AdminNotificationsScreen(
+                                vm = adminVm,
+                                onNavigateBack = { showAdminNotifications = false },
+                                onNavigateToHoroscopes = { showAdminNotifications = false; showAdmin = true },
+                                onNavigateToTarot = { showAdminNotifications = false; showAdminTarot = true },
+                            )
                             showAdminTarot -> AdminTarotScreen(
                                 vm = adminTarotVm,
                                 onNavigateBack = { showAdminTarot = false },
@@ -220,15 +247,18 @@ private fun AppContent() {
                             showAdmin -> AdminScreen(
                                 vm = adminVm,
                                 onNavigateBack = { showAdmin = false },
-                                onNavigateToTarot = { showAdmin = false; showAdminTarot = true }
+                                onNavigateToTarot = { showAdmin = false; showAdminTarot = true },
+                                onNavigateToNotifications = { showAdmin = false; showAdminNotifications = true },
                             )
                             else -> ProfileScreen(
                                 vm = profileVm,
                                 modifier = Modifier.fillMaxSize(),
-                                onNavigateToAdmin = { showAdmin = true }
+                                onNavigateToAdmin = { showAdmin = true },
                             )
                         }
                     }
+
+                    else -> {}
                 }
             }
         }
@@ -238,7 +268,7 @@ private fun AppContent() {
             selectedSign = selectedSign,
             onTabSelected = { tab ->
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
-                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false }
+                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false; showAdminNotifications = false }
                 if (tab != BottomTab.TAROT) { tarotPeriod = null; tarotVm.clearPeriod() }
                 activeTab = tab
             },
@@ -262,11 +292,10 @@ private fun BottomNav(
     modifier: Modifier = Modifier,
 ) {
     val navItems = listOf(
-        NavItem(BottomTab.HOROSCOPE,     str.nav_horoscope)     { c -> HoroscopeNavIcon(color = c) },
-        NavItem(BottomTab.TAROT,         str.nav_tarot)         { c -> TarotNavIcon(color = c) },
-        NavItem(BottomTab.COMPATIBILITY, str.nav_compatibility) { c -> CompatibilityNavIcon(color = c) },
-        NavItem(BottomTab.PROFILE,       str.nav_profile)       { _ ->
-            // Профайл — иконка выбранного знака
+        NavItem(BottomTab.HOROSCOPE,      str.nav_horoscope)      { c -> HoroscopeNavIcon(color = c) },
+        NavItem(BottomTab.TAROT,          str.nav_tarot)          { c -> TarotNavIcon(color = c) },
+        NavItem(BottomTab.COMPATIBILITY,  str.nav_compatibility)  { c -> CompatibilityNavIcon(color = c) },
+        NavItem(BottomTab.PROFILE,        str.nav_profile)        { _ ->
             Image(
                 painter = selectedSign.iconPainter(),
                 contentDescription = null,
@@ -308,11 +337,11 @@ private fun BottomNav(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .fillMaxHeight()
                         .clickable { onTabSelected(item.tab) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Иконка с bounce-масштабом
                     Box(modifier = Modifier.scale(scale)) {
                         item.icon(color)
                     }

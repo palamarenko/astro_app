@@ -1,10 +1,11 @@
 package com.astro.app.notifications
 
 import com.astro.app.data.UserStorage
+import com.astro.app.i18n.LanguageManager
 import com.astro.app.i18n.str
-import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingService
 
 /**
  * Получает data-сообщения от Firebase и показывает локальное уведомление.

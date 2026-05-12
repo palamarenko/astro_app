@@ -35,6 +35,10 @@ data class UserProfile(
     val pushNotificationsAsked: Boolean = false,
     /** true — пользователь разрешил уведомления. */
     val pushNotificationsEnabled: Boolean = false,
+
+    // ── Admin settings ────────────────────────────────────────────────────────
+    val adminFunctionUrl: String = "",
+    val adminSecret: String = "",
 )
 
 /**

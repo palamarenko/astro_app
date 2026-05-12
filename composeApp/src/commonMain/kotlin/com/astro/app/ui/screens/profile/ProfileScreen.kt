@@ -58,7 +58,7 @@ private fun daysInMonth(month: Int, year: Int): Int = when (month) {
 fun ProfileScreen(
     vm: ProfileViewModel,
     modifier: Modifier = Modifier,
-    onNavigateToAdmin: () -> Unit = {}
+    onNavigateToAdmin: () -> Unit = {},
 ) {
     val state  by vm.state.collectAsState()
     val sign   = state.sign

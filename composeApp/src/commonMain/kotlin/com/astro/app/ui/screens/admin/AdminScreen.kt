@@ -25,7 +25,12 @@ import com.astro.app.ui.theme.*
 import androidx.compose.ui.text.input.KeyboardType
 
 @Composable
-fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTarot: () -> Unit = {}) {
+fun AdminScreen(
+    vm: AdminViewModel,
+    onNavigateBack: () -> Unit,
+    onNavigateToTarot: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+) {
     val state by vm.state.collectAsState()
 
     // Автозагрузка при открытии экрана
@@ -93,6 +98,14 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                         .clickable { onNavigateToTarot() }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) { Text("🃏 Tarot", color = AppColors.AccentGold, fontSize = 12.sp) }
+                // Navigate to Notifications
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(Radius.s))
+                        .background(AppColors.Surface)
+                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
+                        .clickable { onNavigateToNotifications() }
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) { Text("🔔 Push", color = AppColors.AccentGold, fontSize = 12.sp) }
             }
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
 
@@ -258,13 +271,6 @@ fun AdminScreen(vm: AdminViewModel, onNavigateBack: () -> Unit, onNavigateToTaro
                     }
                 }
             }
-
-            // ── Push Notifications ────────────────────────────────────────────
-            Spacer(Modifier.height(Spacing.l))
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
-            PushNotificationsSection(state = state, vm = vm)
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
-            Spacer(Modifier.height(Spacing.m))
 
             // ── Sign cards ────────────────────────────────────────────────────
             Column(
@@ -575,127 +581,6 @@ internal fun SaveBar(
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp
             )
-        }
-    }
-}
-
-// -- Push Notifications Section -----------------------------------------------
-
-@Composable
-private fun PushNotificationsSection(state: AdminUiState, vm: AdminViewModel) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.xl)
-            .padding(top = Spacing.l, bottom = Spacing.l),
-        verticalArrangement = Arrangement.spacedBy(Spacing.s)
-    ) {
-        ControlLabel("PUSH NOTIFICATIONS")
-        Spacer(Modifier.height(4.dp))
-
-        // -- FCM Server Key field ----
-        OutlinedTextField(
-            value       = state.fcmServerKey,
-            onValueChange = { vm.setFcmServerKey(it) },
-            modifier    = Modifier.fillMaxWidth(),
-            singleLine  = true,
-            placeholder = {
-                Text(
-                    "FCM Server Key (Firebase Console > Cloud Messaging)",
-                    color    = AppColors.TextDim,
-                    fontSize = 11.sp,
-                )
-            },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            textStyle = LocalTextStyle.current.copy(
-                color    = AppColors.TextSecondary,
-                fontSize = 12.sp,
-            ),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor      = AppColors.AccentGold,
-                unfocusedBorderColor    = AppColors.Border,
-                cursorColor             = AppColors.AccentGold,
-                focusedContainerColor   = AppColors.CardDark,
-                unfocusedContainerColor = AppColors.CardDark,
-            ),
-            shape = RoundedCornerShape(Radius.s),
-        )
-
-        Spacer(Modifier.height(4.dp))
-
-        // -- Buttons row ----
-        Row(
-            modifier            = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.s),
-        ) {
-            // Send to self
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(Radius.s))
-                    .background(AppColors.AccentGold.copy(alpha = 0.12f))
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.45f), RoundedCornerShape(Radius.s))
-                    .clickable(enabled = !state.pushSending) { vm.sendPushToSelf() }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text       = "🔔 Send to self",
-                    color      = AppColors.AccentGold,
-                    fontSize   = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-
-            // Send to all
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(Radius.s))
-                    .background(if (!state.pushSending) AppColors.AccentGold.copy(alpha = 0.18f) else AppColors.Surface)
-                    .border(
-                        1.dp,
-                        AppColors.AccentGold.copy(alpha = if (!state.pushSending) 0.55f else 0.2f),
-                        RoundedCornerShape(Radius.s)
-                    )
-                    .clickable(enabled = !state.pushSending && state.fcmServerKey.isNotBlank()) {
-                        vm.sendPushToAll()
-                    }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text  = if (state.pushSending) "Sending..." else "📡 Send to all",
-                    color = if (!state.pushSending && state.fcmServerKey.isNotBlank())
-                        AppColors.AccentGold else AppColors.TextDim,
-                    fontSize   = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
-
-        // -- Result badge ----
-        val result = state.pushResult
-        if (result != null) {
-            val (text, color) = when (result) {
-                "ok_self" -> "Local notification sent" to Color(0xFF6FCF97)
-                "ok_all"  -> "Sent to all subscribers via FCM" to Color(0xFF6FCF97)
-                else      -> result to Color(0xFFEB5757)
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable { vm.clearPushResult() }
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text("x", color = AppColors.TextDim, fontSize = 11.sp)
-                }
-            }
         }
     }
 }

@@ -299,4 +299,4 @@ val str: AppStrings
     get() = LanguageManager.strings
 
 // ── (appended) push notification strings — used outside Compose context too
-// Access via: AppStrings instance from LanguageManager.strings
+// Access via: AppStrings inst

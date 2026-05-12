@@ -3,6 +3,7 @@ package com.astro.app.ui.screens.admin
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.astro.app.data.*
+import com.astro.app.data.UserStorage
 import com.astro.app.notifications.PushAdminService
 import com.astro.app.notifications.sendLocalTestPush
 import io.ktor.client.*
@@ -48,7 +49,8 @@ data class AdminUiState(
     val generatingSignIds: Set<String> = emptySet(),
     val isGeneratingAll: Boolean = false,
     // ── Push notifications ────────────────────────────────────────────────────
-    val fcmServerKey: String = "",
+    val functionUrl: String = "",
+    val adminSecret: String = "",
     val pushSending: Boolean = false,
     val pushResult: String? = null,   // null = idle, "ok" = успех, иначе текст ошибки
 )
@@ -61,6 +63,17 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     private val _state = MutableStateFlow(AdminUiState())
     val state: StateFlow<AdminUiState> = _state.asStateFlow()
     private var loadJob: Job? = null
+
+    init {
+        // Восстанавливаем сохранённые admin-настройки
+        val saved = UserStorage.load()
+        if (saved != null) {
+            _state.value = _state.value.copy(
+                functionUrl = saved.adminFunctionUrl,
+                adminSecret = saved.adminSecret,
+            )
+        }
+    }
 
     fun setLang(lang: String) {
         _state.value = _state.value.copy(lang = lang, isLoaded = false, savedCount = -1, saveError = null)
@@ -224,8 +237,14 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
 
     // -- Push Notifications ---------------------------------------------------
 
-    fun setFcmServerKey(key: String) {
-        _state.value = _state.value.copy(fcmServerKey = key, pushResult = null)
+    fun setFunctionUrl(url: String) {
+        _state.value = _state.value.copy(functionUrl = url, pushResult = null)
+        UserStorage.load()?.let { UserStorage.save(it.copy(adminFunctionUrl = url)) }
+    }
+
+    fun setAdminSecret(secret: String) {
+        _state.value = _state.value.copy(adminSecret = secret, pushResult = null)
+        UserStorage.load()?.let { UserStorage.save(it.copy(adminSecret = secret)) }
     }
 
     fun sendPushToSelf() {
@@ -237,14 +256,15 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     }
 
     fun sendPushToAll() {
-        val key = _state.value.fcmServerKey.trim()
-        if (key.isEmpty()) {
-            _state.value = _state.value.copy(pushResult = "Enter FCM Server Key first")
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) {
+            _state.value = _state.value.copy(pushResult = "Enter Function URL and Admin Secret first")
             return
         }
         viewModelScope.launch {
             _state.value = _state.value.copy(pushSending = true, pushResult = null)
-            val result = pushService.sendToAll(serverKey = key)
+            val result = pushService.sendToAll(functionUrl = url, adminSecret = secret)
             _state.value = _state.value.copy(
                 pushSending = false,
                 pushResult  = if (result.isSuccess) "ok_all" else (result.exceptionOrNull()?.message ?: "Error"),
