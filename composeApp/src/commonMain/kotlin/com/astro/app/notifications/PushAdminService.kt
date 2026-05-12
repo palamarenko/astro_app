@@ -84,4 +84,63 @@ class PushAdminService(private val client: HttpClient) {
             error("Function error ${response.status.value}: ${response.bodyAsText()}")
         }
     }
+
+    /**
+     * Запускает генерацию гороскопов через Cloud Function для указанной даты.
+     * Генерирует все 12 знаков × 3 языка (ru, uk, en).
+     * Возвращает Pair(success, failed).
+     */
+    suspend fun generateHoroscopes(
+        functionUrl: String,
+        adminSecret: String,
+        date: String,
+        period: String = "daily",
+    ): Result<Pair<Int, Int>> = runCatching {
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"generateHoroscopes","date":"$date","period":"$period"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        val success = body["success"]?.jsonPrimitive?.int ?: 0
+        val failed  = body["failed"]?.jsonPrimitive?.int  ?: 0
+        Pair(success, failed)
+    }
+
+    /** Загружает текущий промпт из Firestore (или дефолтный если не задан). */
+    suspend fun getPrompt(
+        functionUrl: String,
+        adminSecret: String,
+    ): Result<String> = runCatching {
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"getPrompt"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        body["prompt"]?.jsonPrimitive?.content ?: ""
+    }
+
+    /** Сохраняет промпт в Firestore. */
+    suspend fun setPrompt(
+        functionUrl: String,
+        adminSecret: String,
+        prompt: String,
+    ): Result<Unit> = runCatching {
+        val escaped = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"setPrompt","prompt":"$escaped"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+    }
 }

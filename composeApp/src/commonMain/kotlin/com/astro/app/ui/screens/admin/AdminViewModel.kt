@@ -7,6 +7,7 @@ import com.astro.app.data.UserStorage
 import com.astro.app.notifications.PushAdminService
 import com.astro.app.notifications.sendLocalTestPush
 import io.ktor.client.*
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Job
@@ -60,12 +61,29 @@ data class AdminUiState(
     val scheduleSaving: Boolean = false,
     val scheduleSaved: Boolean = false,
     val scheduleError: String? = null,
+
+    // ── Generate All Languages ────────────────────────────────────────────────
+    val genAllLangsLoading: Boolean = false,
+    val genAllLangsResult: String? = null,   // null = idle, "ok:X" = успех, иначе ошибка
+
+    // ── Horoscope Prompt ──────────────────────────────────────────────────────
+    val promptText: String = "",
+    val promptLoading: Boolean = false,
+    val promptSaving: Boolean = false,
+    val promptSaved: Boolean = false,
+    val promptError: String? = null,
 )
 
 class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     private val firebase    = FirebaseService()
     private val pushService = PushAdminService(
-        HttpClient { install(ContentNegotiation) { json() } }
+        HttpClient {
+            install(ContentNegotiation) { json() }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 300_000L  // 5 min — enough for 36 Claude calls
+                connectTimeoutMillis =  15_000L
+            }
+        }
     )
     private val _state = MutableStateFlow(AdminUiState())
     val state: StateFlow<AdminUiState> = _state.asStateFlow()
@@ -106,6 +124,11 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
         }
         _state.value = _state.value.copy(selectedDate = newDate, isLoaded = false, savedCount = -1, saveError = null)
         load()
+    }
+
+    fun loadAll() {
+        load()
+        loadPrompt()
     }
 
     fun load() {
@@ -279,6 +302,85 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
 
     fun clearPushResult() {
         _state.value = _state.value.copy(pushResult = null)
+    }
+
+    // -- Generate All Languages -----------------------------------------------
+
+    fun generateAllLanguages() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) {
+            _state.value = _state.value.copy(genAllLangsResult = "⚠ Enter Function URL and Admin Secret first")
+            return
+        }
+        val period  = _state.value.period
+        val dateKey = computeDateKey(period, _state.value.selectedDate)
+        viewModelScope.launch {
+            _state.value = _state.value.copy(genAllLangsLoading = true, genAllLangsResult = null)
+            val result = pushService.generateHoroscopes(
+                functionUrl = url,
+                adminSecret = secret,
+                date        = dateKey,
+                period      = period.id,
+            )
+            _state.value = _state.value.copy(
+                genAllLangsLoading = false,
+                genAllLangsResult  = if (result.isSuccess) {
+                    val (ok, fail) = result.getOrNull()!!
+                    if (fail == 0) "ok:$ok" else "ok:$ok fail:$fail"
+                } else {
+                    result.exceptionOrNull()?.message ?: "Error"
+                },
+            )
+        }
+    }
+
+    fun clearGenAllLangsResult() {
+        _state.value = _state.value.copy(genAllLangsResult = null)
+    }
+
+    // -- Horoscope Prompt -----------------------------------------------------
+
+    fun loadPrompt() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(promptLoading = true, promptError = null)
+            val result = pushService.getPrompt(functionUrl = url, adminSecret = secret)
+            _state.value = _state.value.copy(
+                promptLoading = false,
+                promptText    = result.getOrNull() ?: _state.value.promptText,
+                promptError   = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+            )
+        }
+    }
+
+    fun setPromptText(text: String) {
+        _state.value = _state.value.copy(promptText = text, promptSaved = false)
+    }
+
+    fun savePrompt() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(promptSaving = true, promptError = null, promptSaved = false)
+            val result = pushService.setPrompt(
+                functionUrl = url,
+                adminSecret = secret,
+                prompt      = _state.value.promptText,
+            )
+            _state.value = _state.value.copy(
+                promptSaving = false,
+                promptSaved  = result.isSuccess,
+                promptError  = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+            )
+        }
+    }
+
+    fun resetPromptToDefault() {
+        _state.value = _state.value.copy(promptText = "", promptSaved = false)
     }
 
     // -- Schedule -------------------------------------------------------------

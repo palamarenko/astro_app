@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,8 +25,11 @@ fun AdminNotificationsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToHoroscopes: () -> Unit = {},
     onNavigateToTarot: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
+
+    LaunchedEffect(Unit) { vm.loadSchedule() }
 
     Box(
         modifier = Modifier
@@ -72,36 +76,16 @@ fun AdminNotificationsScreen(
 
             // ── Section tabs ──────────────────────────────────────────────────
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xl, vertical = Spacing.m),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.xl, vertical = Spacing.m),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
-                // Horoscopes tab
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.Surface)
-                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
-                        .clickable { onNavigateToHoroscopes() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🌙 Horoscopes", color = AppColors.AccentGold, fontSize = 12.sp) }
-
-                // Tarot tab
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.Surface)
-                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
-                        .clickable { onNavigateToTarot() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🃏 Tarot", color = AppColors.AccentGold, fontSize = 12.sp) }
-
-                // Notifications tab — active
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.AccentGold)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🔔 Push", color = Color(0xFF0A0A0F), fontSize = 12.sp, fontWeight = FontWeight.Medium) }
+                AdminTabItem("🌙 Horoscopes", active = false, onClick = onNavigateToHoroscopes)
+                AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
+                AdminTabItem("🔔 Push",       active = true,  onClick = {})
+                AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
             }
 
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
@@ -150,58 +134,6 @@ fun AdminNotificationsScreen(
                         lineHeight = 18.sp,
                     )
                 }
-
-                // Function URL field
-                OutlinedTextField(
-                    value = state.functionUrl,
-                    onValueChange = { vm.setFunctionUrl(it) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = {
-                        Text("Cloud Function URL", color = AppColors.TextDim, fontSize = 11.sp)
-                    },
-                    placeholder = {
-                        Text("https://us-central1-<project>.cloudfunctions.net/sendDailyHoroscope", color = AppColors.TextDim, fontSize = 11.sp)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                    textStyle = LocalTextStyle.current.copy(color = AppColors.TextSecondary, fontSize = 12.sp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AppColors.AccentGold,
-                        unfocusedBorderColor = AppColors.Border,
-                        focusedLabelColor = AppColors.AccentGold,
-                        unfocusedLabelColor = AppColors.TextDim,
-                        cursorColor = AppColors.AccentGold,
-                        focusedContainerColor = AppColors.CardDark,
-                        unfocusedContainerColor = AppColors.CardDark,
-                    ),
-                    shape = RoundedCornerShape(Radius.s),
-                )
-
-                // Admin Secret field
-                OutlinedTextField(
-                    value = state.adminSecret,
-                    onValueChange = { vm.setAdminSecret(it) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = {
-                        Text("Admin Secret", color = AppColors.TextDim, fontSize = 11.sp)
-                    },
-                    placeholder = {
-                        Text("firebase functions:secrets:set ADMIN_SECRET", color = AppColors.TextDim, fontSize = 11.sp)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    textStyle = LocalTextStyle.current.copy(color = AppColors.TextSecondary, fontSize = 12.sp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = AppColors.AccentGold,
-                        unfocusedBorderColor = AppColors.Border,
-                        focusedLabelColor = AppColors.AccentGold,
-                        unfocusedLabelColor = AppColors.TextDim,
-                        cursorColor = AppColors.AccentGold,
-                        focusedContainerColor = AppColors.CardDark,
-                        unfocusedContainerColor = AppColors.CardDark,
-                    ),
-                    shape = RoundedCornerShape(Radius.s),
-                )
 
                 // Deploy hint card
                 Column(

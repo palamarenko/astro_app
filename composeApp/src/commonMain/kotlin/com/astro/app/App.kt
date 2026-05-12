@@ -90,9 +90,10 @@ private fun AppContent(
     var activeTab    by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     // На главной сразу открыт детальный гороскоп выбранного знака
     var showDetail      by remember { mutableStateOf(true) }
-    var showAdmin         by remember { mutableStateOf(false) }
-    var showAdminTarot    by remember { mutableStateOf(false) }
+    var showAdmin              by remember { mutableStateOf(false) }
+    var showAdminTarot         by remember { mutableStateOf(false) }
     var showAdminNotifications by remember { mutableStateOf(false) }
+    var showAdminSettings      by remember { mutableStateOf(false) }
     // Таро: выбранный период (null = список)
     var tarotPeriod     by remember { mutableStateOf<HoroscopePeriod?>(null) }
 
@@ -100,7 +101,7 @@ private fun AppContent(
     // • Таро-расклад           → список таро
     // • Любой другой экран     → гороскоп
     // • Гороскоп (главный)     → не перехватываем (приложение закрывается)
-    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot && !showAdminNotifications
+    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot && !showAdminNotifications && !showAdminSettings
     AppBackHandler(enabled = !onHoroscope) {
         when {
             // Таро-расклад → список
@@ -108,6 +109,8 @@ private fun AppContent(
                 tarotVm.clearPeriod()
                 tarotPeriod = null
             }
+            // Настройки → назад
+            showAdminSettings -> { showAdminSettings = false }
             // Админ-панель уведомлений → назад
             showAdminNotifications -> { showAdminNotifications = false }
             // Админ-панель таро → назад
@@ -121,6 +124,7 @@ private fun AppContent(
                 showAdmin = false
                 showAdminTarot = false
                 showAdminNotifications = false
+                showAdminSettings = false
                 tarotPeriod = null
                 tarotVm.clearPeriod()
             }
@@ -233,22 +237,34 @@ private fun AppContent(
 
                     BottomTab.PROFILE       -> {
                         when {
+                            showAdminSettings -> AdminSettingsScreen(
+                                vm = adminVm,
+                                onNavigateBack = { showAdminSettings = false },
+                                onNavigateToHoroscopes = { showAdminSettings = false; showAdmin = true },
+                                onNavigateToTarot = { showAdminSettings = false; showAdminTarot = true },
+                                onNavigateToNotifications = { showAdminSettings = false; showAdminNotifications = true },
+                            )
                             showAdminNotifications -> AdminNotificationsScreen(
                                 vm = adminVm,
                                 onNavigateBack = { showAdminNotifications = false },
                                 onNavigateToHoroscopes = { showAdminNotifications = false; showAdmin = true },
                                 onNavigateToTarot = { showAdminNotifications = false; showAdminTarot = true },
+                                onNavigateToSettings = { showAdminNotifications = false; showAdminSettings = true },
                             )
                             showAdminTarot -> AdminTarotScreen(
                                 vm = adminTarotVm,
+                                adminVm = adminVm,
                                 onNavigateBack = { showAdminTarot = false },
-                                onNavigateToHoroscopes = { showAdminTarot = false; showAdmin = true }
+                                onNavigateToHoroscopes = { showAdminTarot = false; showAdmin = true },
+                                onNavigateToNotifications = { showAdminTarot = false; showAdminNotifications = true },
+                                onNavigateToSettings = { showAdminTarot = false; showAdminSettings = true },
                             )
                             showAdmin -> AdminScreen(
                                 vm = adminVm,
                                 onNavigateBack = { showAdmin = false },
                                 onNavigateToTarot = { showAdmin = false; showAdminTarot = true },
                                 onNavigateToNotifications = { showAdmin = false; showAdminNotifications = true },
+                                onNavigateToSettings = { showAdmin = false; showAdminSettings = true },
                             )
                             else -> ProfileScreen(
                                 vm = profileVm,
@@ -268,7 +284,7 @@ private fun AppContent(
             selectedSign = selectedSign,
             onTabSelected = { tab ->
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
-                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false; showAdminNotifications = false }
+                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false; showAdminNotifications = false; showAdminSettings = false }
                 if (tab != BottomTab.TAROT) { tarotPeriod = null; tarotVm.clearPeriod() }
                 activeTab = tab
             },

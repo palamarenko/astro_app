@@ -7,7 +7,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,8 +31,11 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun AdminTarotScreen(
     vm: AdminTarotViewModel,
+    adminVm: AdminViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToHoroscopes: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     // Автозагрузка при открытии экрана
     LaunchedEffect(Unit) { vm.load() }
@@ -84,29 +89,14 @@ fun AdminTarotScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = Spacing.xl, vertical = Spacing.m),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
-                // Navigate to Horoscopes
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.Surface)
-                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
-                        .clickable { onNavigateToHoroscopes() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text("🌙 Гороскопы", color = AppColors.AccentGold, fontSize = 12.sp)
-                }
-                // Active tab — Tarot
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.AccentGold)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text("🃏 Таро", color = Color(0xFF0A0A0F), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                }
+                AdminTabItem("🌙 Horoscopes", active = false, onClick = onNavigateToHoroscopes)
+                AdminTabItem("🃏 Tarot",      active = true,  onClick = {})
+                AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
+                AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
             }
 
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))

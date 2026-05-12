@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,11 +31,12 @@ fun AdminScreen(
     onNavigateBack: () -> Unit,
     onNavigateToTarot: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
 
     // Автозагрузка при открытии экрана
-    LaunchedEffect(Unit) { vm.load() }
+    LaunchedEffect(Unit) { vm.loadAll() }
 
     Box(
         modifier = Modifier
@@ -81,31 +83,16 @@ fun AdminScreen(
 
             // ── Section tabs ──────────────────────────────────────────────────
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xl, vertical = Spacing.m),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.xl, vertical = Spacing.m),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.s)
             ) {
-                // Active tab — Horoscopes
-                Box(
-                    modifier = Modifier.clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.AccentGold)
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🌙 Horoscopes", color = Color(0xFF0A0A0F), fontSize = 12.sp, fontWeight = FontWeight.Medium) }
-                // Navigate to Tarot
-                Box(
-                    modifier = Modifier.clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.Surface)
-                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
-                        .clickable { onNavigateToTarot() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🃏 Tarot", color = AppColors.AccentGold, fontSize = 12.sp) }
-                // Navigate to Notifications
-                Box(
-                    modifier = Modifier.clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.Surface)
-                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
-                        .clickable { onNavigateToNotifications() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) { Text("🔔 Push", color = AppColors.AccentGold, fontSize = 12.sp) }
+                AdminTabItem("🌙 Horoscopes", active = true,  onClick = {})
+                AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
+                AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
+                AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
             }
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
 
@@ -185,6 +172,163 @@ fun AdminScreen(
                         )
                     }
                     NavArrow("→") { vm.navigateDate(true) }
+                }
+
+                Spacer(Modifier.height(Spacing.m))
+
+                // ── Generate All Languages ────────────────────────────────────
+                ControlLabel("ALL LANGUAGES (RU + UK + EN)")
+                Spacer(Modifier.height(6.dp))
+                val genLangsEnabled = !state.genAllLangsLoading && !state.isGeneratingAll &&
+                        !state.isLoading && !state.isSaving
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(Radius.s))
+                        .background(
+                            if (genLangsEnabled)
+                                Brush.horizontalGradient(listOf(Color(0xFF1A1030), Color(0xFF0D0D18)))
+                            else
+                                Brush.horizontalGradient(listOf(AppColors.Surface, AppColors.Surface))
+                        )
+                        .border(
+                            1.dp,
+                            if (genLangsEnabled) Color(0xFF9B6DFF).copy(alpha = 0.55f) else AppColors.Border,
+                            RoundedCornerShape(Radius.s)
+                        )
+                        .clickable(enabled = genLangsEnabled) { vm.generateAllLanguages() }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (state.genAllLangsLoading)
+                            "🌍 Generating… (3 langs × 12 signs)"
+                        else
+                            "🌍 Generate all languages",
+                        color = if (genLangsEnabled) Color(0xFFB89EFF) else AppColors.TextDim,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Result badge
+                AnimatedVisibility(
+                    visible = state.genAllLangsResult != null,
+                    enter = fadeIn(tween(250)) + expandVertically(tween(250)),
+                    exit  = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+                ) {
+                    val result = state.genAllLangsResult
+                    if (result != null) {
+                        val isOk   = result.startsWith("ok:")
+                        val isWarn = result.startsWith("⚠")
+                        val color  = when {
+                            isOk   -> Color(0xFF6FCF97)
+                            isWarn -> AppColors.AccentGold
+                            else   -> Color(0xFFEB5757)
+                        }
+                        val display = if (isOk) {
+                            val parts = result.removePrefix("ok:").split(" ")
+                            val ok   = parts.getOrNull(0) ?: ""
+                            val fail = parts.getOrNull(1)
+                            if (fail != null) "✓ Generated $ok  $fail" else "✓ Generated $ok / 36"
+                        } else result
+                        Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(Radius.s))
+                                .background(color.copy(alpha = 0.08f))
+                                .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
+                                .padding(horizontal = Spacing.m, vertical = Spacing.s),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(display, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                                modifier = Modifier.weight(1f))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .clickable { vm.clearGenAllLangsResult() }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text("✕", color = AppColors.TextDim, fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(Spacing.m))
+
+                // ── Horoscope Prompt editor ───────────────────────────────────
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.s)
+                ) {
+                    ControlLabel("PROMPT")
+                    Spacer(Modifier.weight(1f))
+                    if (state.promptLoading) {
+                        Text("Loading…", color = AppColors.TextDim, fontSize = 10.sp)
+                    }
+                    if (state.promptSaved) {
+                        Text("✓ Saved", color = Color(0xFF6FCF97), fontSize = 10.sp)
+                    }
+                    state.promptError?.let {
+                        Text("✗ $it", color = Color(0xFFEB5757), fontSize = 10.sp)
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = state.promptText,
+                    onValueChange = { vm.setPromptText(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 6,
+                    maxLines = 14,
+                    placeholder = {
+                        Text(
+                            "Style instructions only — e.g. tone, sentence count, what scores mean.\n" +
+                            "Signs, date, language and JSON schema are added automatically.",
+                            color = AppColors.TextDim, fontSize = 11.sp, lineHeight = 16.sp
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+                    textStyle = LocalTextStyle.current.copy(
+                        color = AppColors.TextSecondary, fontSize = 11.sp, lineHeight = 17.sp
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor   = Color(0xFF9B6DFF).copy(alpha = 0.7f),
+                        unfocusedBorderColor = AppColors.Border,
+                        cursorColor          = Color(0xFF9B6DFF),
+                        focusedContainerColor   = AppColors.CardDark,
+                        unfocusedContainerColor = AppColors.CardDark,
+                    ),
+                    shape = RoundedCornerShape(Radius.s),
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+                    val canSave = !state.promptSaving && !state.promptLoading && state.promptText.isNotBlank()
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(Radius.s))
+                            .background(if (canSave) Color(0xFF9B6DFF).copy(alpha = 0.18f) else AppColors.Surface)
+                            .border(1.dp, Color(0xFF9B6DFF).copy(alpha = if (canSave) 0.5f else 0.2f), RoundedCornerShape(Radius.s))
+                            .clickable(enabled = canSave) { vm.savePrompt() }
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            if (state.promptSaving) "Saving…" else "Save prompt",
+                            color = if (canSave) Color(0xFFB89EFF) else AppColors.TextDim,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(Radius.s))
+                            .background(AppColors.Surface)
+                            .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s))
+                            .clickable { vm.loadPrompt() }
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("↺ Reload", color = AppColors.TextMuted, fontSize = 12.sp)
+                    }
                 }
 
                 Spacer(Modifier.height(Spacing.l))
@@ -270,6 +414,7 @@ fun AdminScreen(
                         }
                     }
                 }
+
             }
 
             // ── Sign cards ────────────────────────────────────────────────────
