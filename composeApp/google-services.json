@@ -27,6 +27,25 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:54177358378:android:94ef1d4bbae90abf449953",
+        "android_client_info": {
+          "package_name": "com.iruna.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC14h9RcGx5UxwPvSOcPQyM5CchMmkn4G8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:54177358378:android:e4bd40c1cbb27244449953",
         "android_client_info": {
           "package_name": "com.palamarenko.android.zodiac"

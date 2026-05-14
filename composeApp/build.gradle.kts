@@ -76,11 +76,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.astro.app"
+    namespace = "com.iruna.app"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.astro.app"
+        applicationId = "com.iruna.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
