@@ -7,6 +7,9 @@ out/
 .gradle/
 gradle/wrapper/gradle-wrapper.jar
 
+# ── Kotlin Multiplatform cache (auto-generated, не комітити) ──────────────────
+.kotlin/
+
 # ── Android local config ───────────────────────────────────────────────────────
 local.properties
 *.keystore
@@ -59,3 +62,7 @@ fastlane/test_output
 # ── Misc folders at root that shouldn't be tracked ────────────────────────────
 create/
 {composeApp/
+
+# ── Node.js / Firebase Functions ──────────────────────────────────────────────
+node_modules/
+functions/node_modules/

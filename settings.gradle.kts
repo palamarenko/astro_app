@@ -1,4 +1,4 @@
-rootProject.name = "AstroApp"
+rootProject.name = "Iruna"
 include(":composeApp")
 
 pluginManagement {

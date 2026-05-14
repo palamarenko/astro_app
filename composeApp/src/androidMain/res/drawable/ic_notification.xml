@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Іконка push-повідомлення — та сама 4-кутна зірочка-спаркл,
+    що використовується в BottomNav для вкладки «Гороскоп».
+    Координати: viewport 22×22, центр (11,11), як у HoroscopeNavIcon.kt
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="22"
+    android:viewportHeight="22">
+
+    <!-- 4-pointed sparkle star -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M 11,1
+            C 12.2,7.5 14.5,9.8 21,11
+            C 14.5,12.2 12.2,14.5 11,21
+            C 9.8,14.5 7.5,12.2 1,11
+            C 7.5,9.8 9.8,7.5 11,1
+            Z" />
+
+    <!-- 4 small dots at diagonal corners (r = 0.85, offset = 6.2 from center) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="
+            M 3.95,4.8  a 0.85,0.85 0 1,0 1.7,0  a 0.85,0.85 0 1,0 -1.7,0
+            M 16.35,4.8 a 0.85,0.85 0 1,0 1.7,0  a 0.85,0.85 0 1,0 -1.7,0
+            M 3.95,17.2 a 0.85,0.85 0 1,0 1.7,0  a 0.85,0.85 0 1,0 -1.7,0
+            M 16.35,17.2 a 0.85,0.85 0 1,0 1.7,0 a 0.85,0.85 0 1,0 -1.7,0" />
+
+</vector>

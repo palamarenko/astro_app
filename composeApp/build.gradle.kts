@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {
@@ -12,6 +13,9 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
+                freeCompilerArgs += listOf(
+                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi"
+                )
             }
         }
     }
@@ -25,6 +29,13 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+        iosTarget.compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += listOf(
+                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi"
+                )
+            }
+        }
     }
 
     sourceSets {
@@ -32,6 +43,8 @@ kotlin {
             implementation(libs.ktor.client.android)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.appcompat)
+            implementation(libs.play.services.ads)
+            implementation(compose.uiTooling)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -55,16 +68,19 @@ kotlin {
 
             implementation(libs.lifecycle.viewmodel)
             implementation(libs.lifecycle.viewmodel.compose)
+
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor)
         }
     }
 }
 
 android {
-    namespace = "com.astro.app"
+    namespace = "com.iruna.app"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.astro.app"
+        applicationId = "com.iruna.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
@@ -78,6 +94,16 @@ android {
             "String", "ANTHROPIC_API_KEY",
             "\"${localProps["ANTHROPIC_API_KEY"] ?: ""}\""
         )
+        buildConfigField(
+            "String", "GOOGLE_MAPS_API_KEY",
+            "\"${localProps["GOOGLE_MAPS_API_KEY"] ?: ""}\""
+        )
+        buildConfigField(
+            "String", "ADMOB_REWARDED_AD_UNIT_ID",
+            "\"${localProps["ADMOB_REWARDED_AD_UNIT_ID"] ?: ""}\""
+        )
+        manifestPlaceholders["admobAppId"] =
+            localProps["ADMOB_APP_ID"] ?: ""
     }
 
     buildFeatures {
@@ -97,4 +123,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
+
+// Firebase BOM подключается вне KMP kotlin{} блока — platform() там не работает
+dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 }
