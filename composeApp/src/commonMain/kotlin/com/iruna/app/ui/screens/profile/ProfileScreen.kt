@@ -288,7 +288,7 @@ fun ProfileScreen(
         )
     }
 
-    val pickerVm: PlacePickerViewModel = viewModel()
+    val pickerVm = viewModel { PlacePickerViewModel() }
 
     if (state.showPlacePicker) {
         LaunchedEffect(Unit) { pickerVm.initialize(state.birthPlace, state.birthLat, state.birthLng) }
@@ -304,7 +304,7 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileCard(
-    label: String,
+    icon : String,label: String,
     icon: String = "",
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -390,6 +390,7 @@ private fun StatItem(label: String, value: String, color: Color) {
 
 @Composable
 private fun GenderButton(
+    symbol : String,
     label:    String,
     selected: Boolean,
     onClick:  () -> Unit,

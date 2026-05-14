@@ -183,3 +183,28 @@ fun HoroscopePeriod.localizedPrompt(): String = when (this) {
     HoroscopePeriod.WEEKLY  -> str.period_week_prompt
     HoroscopePeriod.MONTHLY -> str.period_month_prompt
 }
+
+/**
+ * Простая реализация format для KMP.
+ * Поддерживает %s, %d и нумерованные аргументы %1$s, %1$d и т.д.
+ */
+fun String.format(vararg args: Any?): String {
+    var result = this
+    args.forEachIndexed { index, arg ->
+        val argStr = arg?.toString() ?: ""
+        val placeholder = "%${index + 1}\$s"
+        val placeholderD = "%${index + 1}\$d"
+        
+        // Сначала пробуем заменить нумерованные %1$s, %1$d
+        if (result.contains(placeholder)) {
+            result = result.replace(placeholder, argStr)
+        } else if (result.contains(placeholderD)) {
+            result = result.replace(placeholderD, argStr)
+        } else {
+            // Если нумерованных нет, заменяем первое вхождение %s или %d
+            val regex = Regex("%[sd]")
+            result = result.replaceFirst(regex, argStr)
+        }
+    }
+    return result
+}
