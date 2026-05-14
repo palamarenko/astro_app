@@ -18,6 +18,18 @@ import iruna.composeapp.generated.resources.zodiac_sagittarius
 import iruna.composeapp.generated.resources.zodiac_scorpio
 import iruna.composeapp.generated.resources.zodiac_taurus
 import iruna.composeapp.generated.resources.zodiac_virgo
+import iruna.composeapp.generated.resources.zodiac_icon_aquarius
+import iruna.composeapp.generated.resources.zodiac_icon_aries
+import iruna.composeapp.generated.resources.zodiac_icon_cancer
+import iruna.composeapp.generated.resources.zodiac_icon_capricorn
+import iruna.composeapp.generated.resources.zodiac_icon_gemini
+import iruna.composeapp.generated.resources.zodiac_icon_leo
+import iruna.composeapp.generated.resources.zodiac_icon_libra
+import iruna.composeapp.generated.resources.zodiac_icon_pisces
+import iruna.composeapp.generated.resources.zodiac_icon_sagittarius
+import iruna.composeapp.generated.resources.zodiac_icon_scorpio
+import iruna.composeapp.generated.resources.zodiac_icon_taurus
+import iruna.composeapp.generated.resources.zodiac_icon_virgo
 import org.jetbrains.compose.resources.painterResource
 
 // ── ZodiacSign extensions ─────────────────────────────────────────────────────
@@ -36,6 +48,22 @@ fun ZodiacSign.iconPainter() = painterResource(when (this.id) {
     "capricorn"   -> Res.drawable.zodiac_capricorn
     "aquarius"    -> Res.drawable.zodiac_aquarius
     else          -> Res.drawable.zodiac_pisces
+})
+
+@Composable
+fun ZodiacSign.iconSmallPainter() = painterResource(when (this.id) {
+    "aries"       -> Res.drawable.zodiac_icon_aries
+    "taurus"      -> Res.drawable.zodiac_icon_taurus
+    "gemini"      -> Res.drawable.zodiac_icon_gemini
+    "cancer"      -> Res.drawable.zodiac_icon_cancer
+    "leo"         -> Res.drawable.zodiac_icon_leo
+    "virgo"       -> Res.drawable.zodiac_icon_virgo
+    "libra"       -> Res.drawable.zodiac_icon_libra
+    "scorpio"     -> Res.drawable.zodiac_icon_scorpio
+    "sagittarius" -> Res.drawable.zodiac_icon_sagittarius
+    "capricorn"   -> Res.drawable.zodiac_icon_capricorn
+    "aquarius"    -> Res.drawable.zodiac_icon_aquarius
+    else          -> Res.drawable.zodiac_icon_pisces
 })
 
 fun ZodiacSign.localizedName(): String = when (this.id) {

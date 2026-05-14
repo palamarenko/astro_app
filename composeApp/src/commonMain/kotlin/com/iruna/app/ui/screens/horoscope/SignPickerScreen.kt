@@ -88,10 +88,10 @@ private fun SignCard(sign: ZodiacSign, index: Int, onClick: () -> Unit) {
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Image(
-                    painter = sign.iconPainter(),
+                    painter = sign.iconSmallPainter(),
                     contentDescription = sign.localizedName(),
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(52.dp)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(text = sign.localizedName(), fontSize = AppType.caption, fontWeight = FontWeight.Normal, color = AppColors.TextSecondary)

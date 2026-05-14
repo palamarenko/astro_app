@@ -4,12 +4,14 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import iruna.composeapp.generated.resources.*
+import kotlinx.coroutines.launch
 import com.iruna.app.ads.AdManager
 import com.iruna.app.ads.rememberAdManager
 import com.iruna.app.notifications.rememberPushPermissionLauncher
@@ -39,20 +42,25 @@ import androidx.compose.foundation.Image
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.*
 
-// ── Score colours matching the spec ──────────────────────────────────────────
-private val ScoreLove    = Color(0xFFE85D8A)
-private val ScoreCareer  = AppColors.AccentGold
-private val ScoreHealth  = Color(0xFF8AAB7A)
-private val ScoreEnergy  = Color(0xFF7EC8E3)
+// ── Score colours — мягкая монохромная палитра ────────────────────────────────
+private val ScoreLove    = Color(0xFFB8915A)   // янтарь
+private val ScoreCareer  = Color(0xFFBE9A4A)   // золото
+private val ScoreHealth  = Color(0xFF8A8A7A)   // тёплый серый
+private val ScoreEnergy  = Color(0xFF7A8A9A)   // стальной
 
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 @Composable
-fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun HoroscopeScreen(
+    vm: HoroscopeViewModel,
+    onSignSelected: (com.iruna.app.data.ZodiacSign) -> Unit = {},
+    onBack: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val state by vm.state.collectAsState()
-    val sign = state.selectedSign ?: return
-    val elementColor = AppColors.elementColor(sign.element)
+    val sign = state.selectedSign
+    val elementColor = if (sign != null) AppColors.elementColor(sign.element) else AppColors.AccentGold
     val adManager = rememberAdManager()
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -60,33 +68,34 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.xl)
         ) {
             Spacer(Modifier.height(Spacing.xxl))
 
-            // ── Header ────────────────────────────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(elementColor.copy(alpha = 0.10f))
-                        .border(1.dp, elementColor.copy(alpha = 0.28f), CircleShape)
-                        .clickable { onBack() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    HoroscopeNavIcon(color = elementColor, size = 20.dp)
-                }
-                Spacer(Modifier.weight(1f))
-                Box(Modifier.width(40.dp))
-            }
+            // ── Title ─────────────────────────────────────────────────────────
+            Text(
+                text = str.nav_horoscope,
+                fontSize = AppType.h2,
+                fontWeight = FontWeight.Normal,
+                color = AppColors.TextPrimary,
+                modifier = Modifier.padding(horizontal = Spacing.xl),
+            )
 
             Spacer(Modifier.height(Spacing.l))
 
-            // ── Cosmic Hero + overlaid name ───────────────────────────────────
+            // ── Sign Carousel ─────────────────────────────────────────────────
+            SignCarousel(
+                selected = sign,
+                onSelect = { s ->
+                    vm.selectSign(s)
+                    onSignSelected(s)
+                },
+            )
+
+            Spacer(Modifier.height(Spacing.m))
+
+            if (sign != null) {
+            // ── Content below carousel ────────────────────────────────────────
+            Column(modifier = Modifier.padding(horizontal = Spacing.xl)) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 CosmicHero(sign = sign, elementColor = elementColor)
 
@@ -192,10 +201,12 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
             }
 
             Spacer(Modifier.height(100.dp))
+            } // end padded content column
+            } // end if (sign != null)
         }
 
         // ── Wizard Modal overlay ──────────────────────────────────────────────
-        if (state.showWizard) {
+        if (state.showWizard && sign != null) {
             WizardModal(
                 period       = state.period,
                 sign         = sign,
@@ -213,6 +224,93 @@ fun HoroscopeScreen(vm: HoroscopeViewModel, onBack: () -> Unit, modifier: Modifi
                 onDeny  = { vm.onPushPromptResult(enabled = false) },
             )
         }
+    }
+}
+
+// ── Sign Carousel ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun SignCarousel(
+    selected: com.iruna.app.data.ZodiacSign?,
+    onSelect: (com.iruna.app.data.ZodiacSign) -> Unit,
+) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val selectedIndex = com.iruna.app.data.ALL_SIGNS.indexOfFirst { it.id == selected?.id }
+
+    LaunchedEffect(selectedIndex) {
+        if (selectedIndex >= 0) {
+            scope.launch {
+                listState.animateScrollToItem(
+                    index = maxOf(0, selectedIndex - 2),
+                )
+            }
+        }
+    }
+
+    LazyRow(
+        state = listState,
+        contentPadding = PaddingValues(horizontal = Spacing.xl),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        itemsIndexed(com.iruna.app.data.ALL_SIGNS) { _, sign ->
+            SignCarouselItem(
+                sign       = sign,
+                isSelected = sign.id == selected?.id,
+                onSelect   = onSelect,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SignCarouselItem(
+    sign:       com.iruna.app.data.ZodiacSign,
+    isSelected: Boolean,
+    onSelect:   (com.iruna.app.data.ZodiacSign) -> Unit,
+) {
+    val elementColor = AppColors.elementColor(sign.element)
+    val bgAlpha   by animateFloatAsState(if (isSelected) 0.14f else 0.0f,  tween(250), label = "bg")
+    val borAlpha  by animateFloatAsState(if (isSelected) 0.70f else 0.20f, tween(250), label = "bor")
+    val imgAlpha  by animateFloatAsState(if (isSelected) 1.00f else 0.40f, tween(250), label = "img")
+    val textColor by animateColorAsState(
+        if (isSelected) AppColors.AccentGold else AppColors.TextMuted, tween(250), label = "txt"
+    )
+    val scale by animateFloatAsState(if (isSelected) 1.08f else 1.0f, tween(200), label = "sc")
+
+    Column(
+        modifier = Modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clickable { onSelect(sign) }
+            .padding(horizontal = 5.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(CircleShape)
+                .background(elementColor.copy(alpha = bgAlpha))
+                .border(
+                    width = if (isSelected) 1.5.dp else 1.dp,
+                    color = (if (isSelected) elementColor else AppColors.Border).copy(alpha = borAlpha),
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter            = sign.iconSmallPainter(),
+                contentDescription = sign.localizedName(),
+                contentScale       = ContentScale.Fit,
+                modifier           = Modifier.size(48.dp).alpha(imgAlpha),
+            )
+        }
+        Spacer(Modifier.height(5.dp))
+        Text(
+            text       = sign.localizedName(),
+            fontSize   = 11.sp,
+            color      = textColor,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+        )
     }
 }
 
@@ -252,12 +350,11 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val cx = size.width / 2f
             val cy = size.height / 2f
 
-            // Aura pulse
+            // Мягкое свечение ауры
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        elementColor.copy(alpha = 0.28f * auraAlpha),
-                        elementColor.copy(alpha = 0.05f),
+                        AppColors.AccentGold.copy(alpha = 0.06f * auraAlpha),
                         Color.Transparent
                     ),
                     center = Offset(cx, cy),
@@ -267,65 +364,96 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
                 center = Offset(cx, cy),
             )
 
-            // Core glow disc
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        AppColors.AccentGold.copy(alpha = 0.10f),
-                        Color.Transparent
-                    ),
-                    center = Offset(cx, cy),
-                    radius = 120.dp.toPx(),
-                ),
-                radius = 120.dp.toPx(),
-                center = Offset(cx, cy),
-            )
+            val gold = AppColors.AccentGold
 
-            val outerR = 148.dp.toPx()
-            val innerR = 112.dp.toPx()
-
-            // Outer ring — dashed circle
-            rotate(outerRot, pivot = Offset(cx, cy)) {
+            // ── Кольцо 1: r=68dp — тонкое сплошное, медленно ПЧ ─────────────
+            val r1 = 68.dp.toPx()
+            rotate(outerRot * 0.35f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = AppColors.AccentGold.copy(alpha = 0.30f),
-                    radius = outerR,
+                    color  = gold.copy(alpha = 0.10f),
+                    radius = r1,
                     center = Offset(cx, cy),
-                    style  = Stroke(
-                        width      = 0.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(
-                            floatArrayOf(2.dp.toPx(), 6.dp.toPx())
-                        )
-                    )
+                    style  = Stroke(width = 0.6.dp.toPx()),
                 )
-                for (i in 0..11) {
-                    val angle    = (i * 30.0) * PI / 180.0
-                    val dotX     = cx + outerR * cos(angle).toFloat()
-                    val dotY     = cy + outerR * sin(angle).toFloat()
-                    val cardinal = i % 3 == 0
+                // 4 маленькие точки по кардинальным направлениям
+                for (i in 0..3) {
+                    val a = (i * 90.0) * PI / 180.0
                     drawCircle(
-                        color  = AppColors.AccentGold.copy(alpha = if (cardinal) 0.85f else 0.35f),
-                        radius = if (cardinal) 2.2.dp.toPx() else 1.2.dp.toPx(),
-                        center = Offset(dotX, dotY),
+                        color  = gold.copy(alpha = 0.18f),
+                        radius = 1.2.dp.toPx(),
+                        center = Offset(cx + r1 * cos(a).toFloat(), cy + r1 * sin(a).toFloat()),
                     )
                 }
             }
 
-            // Inner ring — 3 planets
-            rotate(innerRot, pivot = Offset(cx, cy)) {
+            // ── Кольцо 2: r=88dp — пунктир крупный, ПРТ-ЧС ─────────────────
+            val r2 = 88.dp.toPx()
+            rotate(-innerRot * 0.45f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = AppColors.AccentGold.copy(alpha = 0.15f),
-                    radius = innerR,
+                    color  = gold.copy(alpha = 0.08f),
+                    radius = r2,
                     center = Offset(cx, cy),
-                    style  = Stroke(width = 1.dp.toPx())
+                    style  = Stroke(
+                        width      = 0.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 10.dp.toPx())),
+                    ),
                 )
+            }
+
+            // ── Кольцо 3: r=108dp — пунктир мелкий, ПЧ средне ───────────────
+            val r3 = 108.dp.toPx()
+            rotate(outerRot * 0.6f, pivot = Offset(cx, cy)) {
+                drawCircle(
+                    color  = gold.copy(alpha = 0.12f),
+                    radius = r3,
+                    center = Offset(cx, cy),
+                    style  = Stroke(
+                        width      = 0.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 5.dp.toPx())),
+                    ),
+                )
+                // 3 маркера
                 for (i in 0..2) {
-                    val angle = (i * 120.0) * PI / 180.0
-                    val dotX  = cx + innerR * cos(angle).toFloat()
-                    val dotY  = cy + innerR * sin(angle).toFloat()
+                    val a = (i * 120.0) * PI / 180.0
                     drawCircle(
-                        color  = if (i == 0) elementColor else AppColors.AccentGold,
-                        radius = 3.dp.toPx(),
-                        center = Offset(dotX, dotY),
+                        color  = gold.copy(alpha = 0.22f),
+                        radius = 1.5.dp.toPx(),
+                        center = Offset(cx + r3 * cos(a).toFloat(), cy + r3 * sin(a).toFloat()),
+                    )
+                }
+            }
+
+            // ── Кольцо 4: r=128dp — тонкое сплошное, ПРТ-ЧС медленно ────────
+            val r4 = 128.dp.toPx()
+            rotate(-outerRot * 0.25f, pivot = Offset(cx, cy)) {
+                drawCircle(
+                    color  = gold.copy(alpha = 0.07f),
+                    radius = r4,
+                    center = Offset(cx, cy),
+                    style  = Stroke(width = 0.5.dp.toPx()),
+                )
+            }
+
+            // ── Кольцо 5: r=148dp — пунктир редкий с 12 точками, ПЧ медленно
+            val r5 = 148.dp.toPx()
+            rotate(innerRot * 0.3f, pivot = Offset(cx, cy)) {
+                drawCircle(
+                    color  = gold.copy(alpha = 0.09f),
+                    radius = r5,
+                    center = Offset(cx, cy),
+                    style  = Stroke(
+                        width      = 0.6.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(1.5.dp.toPx(), 8.dp.toPx())),
+                    ),
+                )
+                // 12 меток — тихие, кардинальные чуть крупнее
+                for (i in 0..11) {
+                    val a        = (i * 30.0) * PI / 180.0
+                    val cardinal = i % 3 == 0
+                    drawCircle(
+                        color  = gold.copy(alpha = if (cardinal) 0.20f else 0.08f),
+                        radius = if (cardinal) 1.8.dp.toPx() else 0.9.dp.toPx(),
+                        center = Offset(cx + r5 * cos(a).toFloat(), cy + r5 * sin(a).toFloat()),
                     )
                 }
             }
@@ -360,10 +488,10 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             colorFilter        = ColorFilter.colorMatrix(
                 ColorMatrix(
                     floatArrayOf(
-                        1.15f,  0.10f,  0.00f, 0f,  10f,
-                        0.05f,  1.02f,  0.00f, 0f,   3f,
-                        0.00f, -0.05f,  0.65f, 0f, -25f,
-                        0.00f,  0.00f,  0.00f, 1f,   0f,
+                        1.02f,  0.02f,  0.00f, 0f,  2f,
+                        0.00f,  0.98f,  0.00f, 0f,  0f,
+                        0.00f,  0.00f,  0.88f, 0f, -8f,
+                        0.00f,  0.00f,  0.00f, 1f,  0f,
                     )
                 )
             ),

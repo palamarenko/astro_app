@@ -112,10 +112,10 @@ private fun SignRow(selected: ZodiacSign?, onSelect: (ZodiacSign) -> Unit, enabl
                 .clickable(enabled = enabled) { onSelect(sign) }.padding(4.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Image(
-                        painter = sign.iconPainter(),
+                        painter = sign.iconSmallPainter(),
                         contentDescription = sign.localizedName(),
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(36.dp)
                     )
                     Text(text = sign.localizedName(), fontSize = TextUnit(8f, TextUnitType.Sp),
                         color = if (isSelected) elementColor else AppColors.TextDim)

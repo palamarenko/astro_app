@@ -135,9 +135,14 @@ private fun AppContent(
     val profileState by profileVm.state.collectAsState()
     val selectedSign = profileState.sign
 
-    // Синхронизируем выбранный знак с гороскопом (в т.ч. при первом запуске)
+    // Синхронизируем знак профиля → гороскоп при старте и при смене знака в профиле
     LaunchedEffect(selectedSign) {
-        if (horoscopeVm.state.value.selectedSign != selectedSign) {
+        horoscopeVm.selectSign(selectedSign)
+    }
+
+    // При возврате на вкладку гороскопа сбрасываем карусель на знак профиля
+    LaunchedEffect(activeTab) {
+        if (activeTab == BottomTab.HOROSCOPE) {
             horoscopeVm.selectSign(selectedSign)
         }
     }
@@ -194,23 +199,11 @@ private fun AppContent(
             ) { (tab, detail, period) ->
                 when (tab) {
                     BottomTab.HOROSCOPE -> {
-                        if (detail) {
-                            HoroscopeScreen(
-                                vm = horoscopeVm,
-                                onBack = { showDetail = false },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            SignPickerScreen(
-                                onSignSelected = { sign ->
-                                    // Обновляем знак и в профиле, и в гороскопе
-                                    profileVm.selectSign(sign)
-                                    horoscopeVm.selectSign(sign)
-                                    showDetail = true
-                                },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                        HoroscopeScreen(
+                            vm = horoscopeVm,
+                            onSignSelected = { /* карусель не меняет профиль */ },
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                     BottomTab.TAROT         -> {
                         if (period == null) {
@@ -313,10 +306,10 @@ private fun BottomNav(
         NavItem(BottomTab.COMPATIBILITY,  str.nav_compatibility)  { c -> CompatibilityNavIcon(color = c) },
         NavItem(BottomTab.PROFILE,        str.nav_profile)        { _ ->
             Image(
-                painter = selectedSign.iconPainter(),
+                painter = selectedSign.iconSmallPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(26.dp),
             )
         },
     )

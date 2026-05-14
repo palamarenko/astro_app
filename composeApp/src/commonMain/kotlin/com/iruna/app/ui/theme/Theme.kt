@@ -6,24 +6,25 @@ import androidx.compose.ui.unit.sp
 
 // ── Colors ───────────────────────────────────────────────────────────────────
 object AppColors {
-    val Background    = Color(0xFF0A0A0F)
-    val Card          = Color(0xFF13131F)
-    val CardDark      = Color(0xFF0F0F1A)
-    val Surface       = Color(0xFF1C1C2E)
-    val AccentGold    = Color(0xFFC9A84C)
-    val TextPrimary   = Color(0xFFF0ECE4)
-    val TextSecondary = Color(0xFFD0C8B8)
-    val TextMuted     = Color(0xFF888888)
-    val TextDim       = Color(0xFF555555)
-    val Border        = Color(0xFF2A2A3A)
-    val BorderDark    = Color(0xFF1E1E2E)
-    val NavBackground = Color(0xF20A0A0F) // 95% opacity
+    val Background    = Color(0xFF090910)
+    val Card          = Color(0xFF111119)
+    val CardDark      = Color(0xFF0D0D15)
+    val Surface       = Color(0xFF171724)
+    val AccentGold    = Color(0xFFBE9A4A)
+    val AccentGoldDim = Color(0xFF7A6030)
+    val TextPrimary   = Color(0xFFF2EEE6)
+    val TextSecondary = Color(0xFFB8B0A0)
+    val TextMuted     = Color(0xFF666666)
+    val TextDim       = Color(0xFF3A3A3A)
+    val Border        = Color(0xFF222230)
+    val BorderDark    = Color(0xFF18182A)
+    val NavBackground = Color(0xF2090910)
 
-    // Elements
-    val Fire  = Color(0xFFE07A5F)
-    val Earth = Color(0xFF8AAB7A)
-    val Air   = Color(0xFF7EC8E3)
-    val Water = Color(0xFF7B8DE8)
+    // Elements — все в тёплых золотисто-нейтральных тонах, без ярких цветов
+    val Fire  = Color(0xFFB8915A)   // тёплый янтарь
+    val Earth = Color(0xFF8A7D62)   // тёплый камень
+    val Air   = Color(0xFF7A8FA0)   // приглушённый стальной
+    val Water = Color(0xFF6A7EA8)   // тёмный стальной синий
 
     fun elementColor(element: String): Color = when (element) {
         "Огонь"  -> Fire

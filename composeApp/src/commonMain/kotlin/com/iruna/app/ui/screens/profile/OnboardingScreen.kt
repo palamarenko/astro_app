@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import iruna.composeapp.generated.resources.*
-import com.iruna.app.i18n.iconPainter
+import com.iruna.app.i18n.iconSmallPainter
 import com.iruna.app.i18n.str
 import com.iruna.app.ui.components.StarfieldBackground
 import com.iruna.app.ui.theme.*
@@ -793,10 +793,10 @@ private fun FinalStep(state: ProfileUiState) {
             contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = sign.iconPainter(),
+                painter = sign.iconSmallPainter(),
                 contentDescription = sign.name,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(120.dp)
+                modifier = Modifier.size(152.dp)
             )
         }
 

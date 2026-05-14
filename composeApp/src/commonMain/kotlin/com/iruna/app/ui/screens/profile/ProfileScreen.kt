@@ -82,52 +82,44 @@ fun ProfileScreen(
             Spacer(Modifier.height(Spacing.xxl))
 
             // ── Avatar ────────────────────────────────────────────────────────
-            Box(
-                modifier = Modifier.size(80.dp).clip(CircleShape)
-                    .background(Brush.radialGradient(
-                        listOf(elementColor.copy(alpha = glowAlpha * 0.35f), AppColors.Background)
-                    ))
-                    .border(
-                        1.dp,
-                        Brush.linearGradient(listOf(elementColor.copy(alpha = glowAlpha), elementColor.copy(alpha = glowAlpha * 0.4f))),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(contentAlignment = Alignment.Center) {
+                // Glow halo
+                Box(
+                    modifier = Modifier
+                        .size(130.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    elementColor.copy(alpha = glowAlpha * 0.35f),
+                                    elementColor.copy(alpha = 0.04f),
+                                    Color.Transparent,
+                                )
+                            )
+                        )
+                )
                 Image(
-                    painter = sign.iconPainter(),
+                    painter            = sign.iconSmallPainter(),
                     contentDescription = sign.localizedName(),
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(58.dp)
+                    contentScale       = ContentScale.Fit,
+                    modifier           = Modifier.size(112.dp),
                 )
             }
 
-            Spacer(Modifier.height(Spacing.s))
+            Spacer(Modifier.height(Spacing.m))
 
             Text(
-                text = if (state.name.isNotBlank()) state.name else sign.localizedName(),
-                fontSize = AppType.h2, fontWeight = FontWeight.Light, color = AppColors.TextPrimary
+                text       = if (state.name.isNotBlank()) state.name else sign.localizedName(),
+                fontSize   = AppType.h2,
+                fontWeight = FontWeight.Light,
+                color      = AppColors.TextPrimary,
             )
-
-            if (state.birthDay > 0) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Image(
-                        painter = sign.iconPainter(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = "${sign.localizedName()}  ·  ${state.birthDay} ${months[state.birthMonth - 1]} ${state.birthYear}",
-                        fontSize = AppType.caption, color = AppColors.TextDim, textAlign = TextAlign.Center
-                    )
-                }
-            } else {
-                Text(sign.localizedDates(), fontSize = AppType.caption, color = AppColors.TextDim)
-            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text     = sign.localizedDates(),
+                fontSize = AppType.caption,
+                color    = AppColors.AccentGoldDim,
+            )
 
             Spacer(Modifier.height(Spacing.xl))
 
@@ -135,75 +127,83 @@ fun ProfileScreen(
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
 
                 // Имя
-                ProfileCard(label = str.profile_field_name_label) {
+                ProfileCard(icon = "⊙", label = str.profile_field_name_label) {
                     OutlinedTextField(
-                        value = state.name,
+                        value         = state.name,
                         onValueChange = { vm.setName(it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(str.profile_field_name_placeholder, color = AppColors.TextDim, fontSize = 14.sp) },
-                        singleLine = true,
+                        modifier      = Modifier.fillMaxWidth(),
+                        placeholder   = {
+                            Text(str.profile_field_name_placeholder, color = AppColors.TextMuted, fontSize = 14.sp)
+                        },
+                        trailingIcon  = {
+                            Text("✦", color = AppColors.AccentGold.copy(alpha = 0.45f), fontSize = 13.sp,
+                                modifier = Modifier.padding(end = 4.dp))
+                        },
+                        singleLine    = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
-                            imeAction = ImeAction.Done
+                            imeAction      = ImeAction.Done,
                         ),
                         textStyle = LocalTextStyle.current.copy(color = AppColors.TextPrimary, fontSize = 14.sp),
-                        colors = OutlinedTextFieldDefaults.colors(
+                        colors    = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor      = AppColors.AccentGold,
-                            unfocusedBorderColor    = if (state.name.isNotBlank()) AppColors.AccentGold else AppColors.Border,
+                            unfocusedBorderColor    = if (state.name.isNotBlank()) AppColors.AccentGold.copy(alpha = 0.45f) else AppColors.Border,
                             cursorColor             = AppColors.AccentGold,
                             focusedContainerColor   = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
                         ),
-                        shape = RoundedCornerShape(Radius.s)
+                        shape = RoundedCornerShape(Radius.s),
                     )
                 }
 
                 // Пол
-                ProfileCard(label = str.profile_field_gender_label) {
+                ProfileCard(icon = "⊕", label = str.profile_field_gender_label) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         GenderButton(
+                            symbol   = "♂",
                             label    = str.profile_field_gender_male,
                             selected = state.gender == "male",
                             onClick  = { vm.setGender(if (state.gender == "male") "" else "male") },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         GenderButton(
+                            symbol   = "♀",
                             label    = str.profile_field_gender_female,
                             selected = state.gender == "female",
                             onClick  = { vm.setGender(if (state.gender == "female") "" else "female") },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
 
                 // Дата рождения
-                ProfileCard(label = str.profile_field_date_label) {
+                ProfileCard(icon = "⊟", label = str.profile_field_date_label) {
                     PickerRow(
-                        value  = if (state.birthDay > 0)
+                        value   = if (state.birthDay > 0)
                             "${state.birthDay} ${months[state.birthMonth - 1]} ${state.birthYear}"
                         else str.profile_field_date_pick,
-                        icon   = "📅",
-                        filled = state.birthDay > 0,
-                        onClick = { vm.showDatePicker() }
+                        icon    = "▦",
+                        filled  = state.birthDay > 0,
+                        onClick = { vm.showDatePicker() },
                     )
                     AnimatedVisibility(
                         visible = state.birthDay > 0,
                         enter   = fadeIn(tween(300)) + expandVertically(tween(300)),
-                        exit    = fadeOut(tween(200)) + shrinkVertically(tween(200))
+                        exit    = fadeOut(tween(200)) + shrinkVertically(tween(200)),
                     ) {
                         Row(
                             modifier = Modifier.padding(top = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Image(
-                                painter = sign.iconPainter(),
+                                painter = sign.iconSmallPainter(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp),
                             )
                             Text(sign.localizedName(), fontSize = 12.sp, color = AppColors.AccentGold, fontWeight = FontWeight.Medium)
                             Text("·", color = AppColors.TextDim, fontSize = 12.sp)
@@ -213,32 +213,32 @@ fun ProfileScreen(
                 }
 
                 // Время рождения
-                ProfileCard(label = str.profile_field_time_label) {
+                ProfileCard(icon = "◷", label = str.profile_field_time_label) {
                     PickerRow(
-                        value  = if (state.birthHour >= 0)
+                        value   = if (state.birthHour >= 0)
                             "${state.birthHour.toString().padStart(2, '0')}:${state.birthMinute.toString().padStart(2, '0')}"
                         else str.profile_field_time_pick,
-                        icon   = "🕐",
-                        filled = state.birthHour >= 0,
-                        onClick = { vm.showTimePicker() }
+                        icon    = "◎",
+                        filled  = state.birthHour >= 0,
+                        onClick = { vm.showTimePicker() },
                     )
                 }
 
                 // Место рождения
-                ProfileCard(label = str.profile_field_place_label) {
+                ProfileCard(icon = "◎", label = str.profile_field_place_label) {
                     PickerRow(
-                        value  = state.birthPlace.ifBlank { str.profile_field_place_pick },
-                        icon   = "📍",
-                        filled = state.birthPlace.isNotBlank(),
-                        onClick = { vm.showPlacePicker() }
+                        value   = state.birthPlace.ifBlank { str.profile_field_place_pick },
+                        icon    = "⊛",
+                        filled  = state.birthPlace.isNotBlank(),
+                        onClick = { vm.showPlacePicker() },
                     )
                 }
 
                 // Язык
-                ProfileCard(label = str.profile_field_language_label) {
+                ProfileCard(icon = "⊗", label = str.profile_field_language_label) {
                     LanguageDropdown(
-                        selected  = state.language,
-                        onSelect  = { vm.setLanguage(it) }
+                        selected = state.language,
+                        onSelect = { vm.setLanguage(it) },
                     )
                 }
             }
