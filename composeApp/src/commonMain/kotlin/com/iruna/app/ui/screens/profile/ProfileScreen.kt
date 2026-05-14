@@ -289,7 +289,7 @@ fun ProfileScreen(
         )
     }
 
-    val pickerVm: PlacePickerViewModel = viewModel()
+    val pickerVm = viewModel { PlacePickerViewModel() }
 
     if (state.showPlacePicker) {
         LaunchedEffect(Unit) { pickerVm.initialize(state.birthPlace, state.birthLat, state.birthLng) }
@@ -304,7 +304,7 @@ fun ProfileScreen(
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileCard(label: String, content: @Composable ColumnScope.() -> Unit) {
+private fun ProfileCard(icon : String, label: String, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(Radius.m))
@@ -352,6 +352,7 @@ private fun StatItem(label: String, value: String, color: Color) {
 
 @Composable
 private fun GenderButton(
+    symbol : String,
     label: String,
     selected: Boolean,
     onClick: () -> Unit,

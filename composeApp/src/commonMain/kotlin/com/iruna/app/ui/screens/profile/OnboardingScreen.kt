@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.iruna.app.i18n.format
 import iruna.composeapp.generated.resources.*
 import com.iruna.app.i18n.iconSmallPainter
 import com.iruna.app.i18n.str
@@ -665,7 +666,7 @@ private fun TimeStep(
 @Composable
 private fun PlaceStep(vm: ProfileViewModel) {
     val state by vm.state.collectAsState()
-    val pickerVm: PlacePickerViewModel = viewModel()
+    val pickerVm = viewModel { PlacePickerViewModel() }
 
     StepContainer(
         emoji = "⊕",
