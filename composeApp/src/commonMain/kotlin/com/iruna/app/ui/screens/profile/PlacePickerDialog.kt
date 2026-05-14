@@ -24,6 +24,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.network.ktor2.KtorNetworkFetcherFactory
 import com.iruna.app.googleMapsApiKey
+import com.iruna.app.i18n.str
 import com.iruna.app.ui.theme.*
 
 @Composable
@@ -92,7 +93,7 @@ private fun Header(onDismiss: () -> Unit) {
     ) {
         Text("📍", fontSize = 18.sp)
         Text(
-            "Место рождения",
+            str.place_picker_title,
             fontSize = 15.sp, fontWeight = FontWeight.Medium,
             color = AppColors.TextPrimary, modifier = Modifier.weight(1f)
         )
@@ -121,7 +122,7 @@ private fun SearchField(state: PlacePickerUiState, vm: PlacePickerViewModel) {
             value = state.query,
             onValueChange = vm::setQuery,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Введите город или страну…", color = AppColors.TextDim, fontSize = 13.sp) },
+            placeholder = { Text(str.place_picker_placeholder, color = AppColors.TextDim, fontSize = 13.sp) },
             singleLine = true,
             leadingIcon = {
                 if (state.isLoading) {
@@ -256,8 +257,8 @@ private fun EmptyState(query: String) {
         Text("🌍", fontSize = 40.sp)
         Spacer(Modifier.height(16.dp))
         Text(
-            if (query.length == 1) "Введите ещё символы…"
-            else "Введите город или страну рождения",
+            if (query.length == 1) str.place_picker_hint_short
+            else str.place_picker_hint_empty,
             fontSize = 14.sp,
             color = AppColors.TextDim,
             textAlign = TextAlign.Center
@@ -290,7 +291,7 @@ private fun ConfirmButton(state: PlacePickerUiState, onClick: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                if (state.isFetchingDetails) "Загрузка…" else "Подтвердить",
+                if (state.isFetchingDetails) str.place_picker_loading else str.place_picker_confirm,
                 color = if (state.canConfirm) Color(0xFF0A0A0F) else AppColors.TextDim,
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp

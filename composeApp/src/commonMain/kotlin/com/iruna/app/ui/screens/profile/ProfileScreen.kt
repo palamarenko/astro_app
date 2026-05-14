@@ -163,14 +163,12 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         GenderButton(
-                            symbol   = "♂",
                             label    = str.profile_field_gender_male,
                             selected = state.gender == "male",
                             onClick  = { vm.setGender(if (state.gender == "male") "" else "male") },
                             modifier = Modifier.weight(1f),
                         )
                         GenderButton(
-                            symbol   = "♀",
                             label    = str.profile_field_gender_female,
                             selected = state.gender == "female",
                             onClick  = { vm.setGender(if (state.gender == "female") "" else "female") },
@@ -249,14 +247,15 @@ fun ProfileScreen(
             Row(
                 modifier = Modifier.fillMaxWidth()
                     .clip(RoundedCornerShape(Radius.m))
-                    .background(AppColors.Card),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    .background(AppColors.Card)
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.12f), RoundedCornerShape(Radius.m)),
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 StatItem(str.profile_stat_element, sign.localizedElement(), elementColor)
-                Box(Modifier.width(1.dp).height(48.dp).background(AppColors.Border).align(Alignment.CenterVertically))
+                Box(Modifier.width(1.dp).height(48.dp).background(AppColors.AccentGold.copy(alpha = 0.10f)).align(Alignment.CenterVertically))
                 StatItem(str.profile_stat_planet, sign.localizedPlanet(), AppColors.AccentGold)
-                Box(Modifier.width(1.dp).height(48.dp).background(AppColors.Border).align(Alignment.CenterVertically))
-                StatItem(str.profile_stat_period, sign.localizedDates().split("–").first().trim(), AppColors.TextMuted)
+                Box(Modifier.width(1.dp).height(48.dp).background(AppColors.AccentGold.copy(alpha = 0.10f)).align(Alignment.CenterVertically))
+                StatItem(str.profile_stat_period, sign.localizedDates().split("–").first().trim(), AppColors.TextSecondary)
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -304,16 +303,38 @@ fun ProfileScreen(
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun ProfileCard(label: String, content: @Composable ColumnScope.() -> Unit) {
+private fun ProfileCard(
+    label: String,
+    icon: String = "",
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(Radius.m))
             .background(AppColors.Card)
-            .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.m))
+            .border(1.dp, AppColors.AccentGold.copy(alpha = 0.12f), RoundedCornerShape(Radius.m))
             .padding(horizontal = Spacing.l, vertical = Spacing.m)
     ) {
-        Text(label, color = AppColors.TextDim, fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.7.sp)
-        Spacer(Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (icon.isNotEmpty()) {
+                Text(
+                    text     = icon,
+                    color    = AppColors.AccentGold.copy(alpha = 0.65f),
+                    fontSize = 13.sp,
+                )
+            }
+            Text(
+                text          = label,
+                color         = AppColors.AccentGoldDim,
+                fontSize      = 10.sp,
+                fontWeight    = FontWeight.Medium,
+                letterSpacing = 0.8.sp,
+            )
+        }
+        Spacer(Modifier.height(10.dp))
         content()
     }
 }
@@ -326,15 +347,32 @@ private fun PickerRow(value: String, icon: String, filled: Boolean, onClick: () 
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(Radius.s))
             .background(AppColors.CardDark)
-            .border(1.dp, if (filled) AppColors.AccentGold.copy(alpha = 0.35f) else AppColors.Border, RoundedCornerShape(Radius.s))
+            .border(
+                width = 1.dp,
+                color = if (filled) AppColors.AccentGold.copy(alpha = 0.40f) else AppColors.Border,
+                shape = RoundedCornerShape(Radius.s),
+            )
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(icon, fontSize = 16.sp)
-        Text(value, fontSize = 14.sp, color = if (filled) AppColors.TextPrimary else AppColors.TextDim, modifier = Modifier.weight(1f))
-        if (filled) Text("✎", fontSize = 12.sp, color = AppColors.AccentGold.copy(alpha = 0.6f))
+        Text(
+            text     = icon,
+            fontSize = 20.sp,
+            color    = AppColors.AccentGold.copy(alpha = 0.70f),
+        )
+        Text(
+            text     = value,
+            fontSize = 14.sp,
+            color    = if (filled) AppColors.TextPrimary else AppColors.TextMuted,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text     = "→",
+            fontSize = 16.sp,
+            color    = AppColors.AccentGold.copy(alpha = 0.50f),
+        )
     }
 }
 
@@ -352,14 +390,14 @@ private fun StatItem(label: String, value: String, color: Color) {
 
 @Composable
 private fun GenderButton(
-    label: String,
+    label:    String,
     selected: Boolean,
-    onClick: () -> Unit,
+    onClick:  () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val borderColor = if (selected) AppColors.AccentGold else AppColors.Border
     val bgColor     = if (selected) AppColors.AccentGold.copy(alpha = 0.12f) else AppColors.CardDark
-    val textColor   = if (selected) AppColors.AccentGold else AppColors.TextDim
+    val textColor   = if (selected) AppColors.AccentGold else AppColors.TextMuted
 
     Box(
         modifier = modifier
@@ -367,8 +405,8 @@ private fun GenderButton(
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(Radius.s))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
+            .padding(vertical = 13.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(label, fontSize = 14.sp, color = textColor, fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal)
     }
@@ -402,24 +440,24 @@ private fun LanguageDropdown(
                 .fillMaxWidth()
                 .clip(triggerShape)
                 .background(AppColors.CardDark)
-                .border(1.dp, AppColors.AccentGold.copy(alpha = 0.35f), triggerShape)
+                .border(1.dp, AppColors.AccentGold.copy(alpha = 0.40f), triggerShape)
                 .clickable { expanded = !expanded }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("🌐", fontSize = 16.sp)
+            Text("⊗", fontSize = 20.sp, color = AppColors.AccentGold.copy(alpha = 0.70f))
             Text(
                 text     = selected.nativeName,
                 fontSize = 14.sp,
                 color    = AppColors.TextPrimary,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             Text(
                 text     = "▼",
                 fontSize = 10.sp,
                 color    = AppColors.AccentGold.copy(alpha = 0.7f),
-                modifier = Modifier.graphicsLayer { rotationZ = arrowAngle }
+                modifier = Modifier.graphicsLayer { rotationZ = arrowAngle },
             )
         }
 
@@ -642,7 +680,7 @@ private fun DatePickerDialog(
         if (day > max) day = max
     }
 
-    PickerDialogShell(title = "Дата рождения", onDismiss = onDismiss, onConfirm = { onConfirm(day, month, year) }) {
+    PickerDialogShell(title = str.profile_dialog_date_title, onDismiss = onDismiss, onConfirm = { onConfirm(day, month, year) }) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             WheelPicker(
                 items         = days,
@@ -677,7 +715,7 @@ private fun TimePickerDialog(
     var hour   by remember { mutableStateOf(initialHour.coerceIn(0, 23)) }
     var minute by remember { mutableStateOf(initialMinute.coerceIn(0, 59)) }
 
-    PickerDialogShell(title = "Время рождения", onDismiss = onDismiss, onConfirm = { onConfirm(hour, minute) }) {
+    PickerDialogShell(title = str.profile_dialog_time_title, onDismiss = onDismiss, onConfirm = { onConfirm(hour, minute) }) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

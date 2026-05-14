@@ -88,6 +88,12 @@ interface AppStrings {
     val profile_dialog_confirm: String
     val profile_dialog_date_title: String
     val profile_dialog_time_title: String
+    val place_picker_title: String
+    val place_picker_placeholder: String
+    val place_picker_hint_short: String
+    val place_picker_hint_empty: String
+    val place_picker_loading: String
+    val place_picker_confirm: String
     val profile_btn_close: String
     val profile_btn_change: String
     val profile_stat_element: String
@@ -292,6 +298,8 @@ interface AppStrings {
     val push_prompt_body: String
     val push_prompt_allow: String
     val push_prompt_deny: String
+    val push_status_enabled: String
+    val push_status_disabled: String
 }
 
 /** Текущие строки на основе выбранного языка. */

@@ -28,7 +28,6 @@ import iruna.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
 import com.iruna.app.ads.AdManager
 import com.iruna.app.ads.rememberAdManager
-import com.iruna.app.notifications.rememberPushPermissionLauncher
 import com.iruna.app.data.ALL_SIGNS
 import com.iruna.app.data.HoroscopePeriod
 import com.iruna.app.data.HoroscopeResponse
@@ -36,6 +35,7 @@ import com.iruna.app.data.ZodiacSign
 import com.iruna.app.i18n.*
 import com.iruna.app.ui.components.*
 import com.iruna.app.ui.theme.*
+import com.iruna.app.ui.screens.profile.PushPromptDialog
 import org.jetbrains.compose.resources.painterResource
 
 import androidx.compose.foundation.Image
@@ -265,7 +265,7 @@ private fun SignCarousel(
 
 @Composable
 private fun SignCarouselItem(
-    sign:       com.iruna.app.data.ZodiacSign,
+    sign:       ZodiacSign,
     isSelected: Boolean,
     onSelect:   (com.iruna.app.data.ZodiacSign) -> Unit,
 ) {
@@ -934,8 +934,8 @@ private fun WizardIntro(
                 drawCircle(
                     brush = Brush.radialGradient(
                         colorStops = arrayOf(
-                            0.0f to Color(0xFFE1BEE7).copy(alpha = 0.10f * witchGlow),
-                            0.35f to Color(0xFF7B4BFF).copy(alpha = 0.07f * witchGlow),
+                            0.0f to Color(0xFFE8C870).copy(alpha = 0.14f * witchGlow),
+                            0.35f to Color(0xFFBE9A4A).copy(alpha = 0.08f * witchGlow),
                             0.75f to Color.Transparent,
                         ),
                         center = Offset(cx, cy),
@@ -1053,49 +1053,49 @@ private fun WizardIntro(
 private fun WizardAura(modifier: Modifier = Modifier) {
     val inf = rememberInfiniteTransition(label = "aura")
 
-    // Slow primary rotation — outer cyan swirl
     val rotation by inf.animateFloat(
         0f, 360f,
         infiniteRepeatable(tween(14000, easing = LinearEasing)),
         "auraRot",
     )
-    // Independent slow rotation for the radiating light rays
     val rayRot by inf.animateFloat(
         0f, 360f,
         infiniteRepeatable(tween(32000, easing = LinearEasing)),
         "rayRot",
     )
-    // Pulse for opacity of glow layers
     val pulse by inf.animateFloat(
         0.50f, 1f,
         infiniteRepeatable(tween(2800, easing = EaseInOutSine), RepeatMode.Reverse),
         "auraPulse",
     )
-    // Breathing scale of the outer halo
     val breathe by inf.animateFloat(
         0.88f, 1.12f,
         infiniteRepeatable(tween(3600, easing = EaseInOutSine), RepeatMode.Reverse),
         "auraBreathe",
     )
-    // Continuous phase used for orbital particles & star twinkle
     val drift by inf.animateFloat(
         0f, (2f * PI).toFloat(),
         infiniteRepeatable(tween(8000, easing = LinearEasing)),
         "auraDrift",
     )
 
+    val gold      = Color(0xFFBE9A4A)
+    val goldLight = Color(0xFFE8C870)
+    val goldDeep  = Color(0xFF8B6914)
+    val amber     = Color(0xFFD4A030)
+
     Canvas(modifier = modifier) {
         val cx = size.width  / 2f
         val cy = size.height / 2f
         val r  = minOf(size.width, size.height) * 0.48f
 
-        // ── Layer 1 — Deep nebula background (very faint) ─────────────────
+        // ── Layer 1 — Deep amber nebula background ────────────────────────
         drawCircle(
             brush = Brush.radialGradient(
                 colorStops = arrayOf(
-                    0.0f to Color(0xFF2A1860).copy(alpha = 0.22f),
-                    0.35f to Color(0xFF18103E).copy(alpha = 0.18f),
-                    0.70f to Color(0xFF0B0820).copy(alpha = 0.10f),
+                    0.0f to Color(0xFF1E0F00).copy(alpha = 0.30f),
+                    0.35f to Color(0xFF110800).copy(alpha = 0.22f),
+                    0.70f to Color(0xFF080400).copy(alpha = 0.12f),
                     1.0f to Color.Transparent,
                 ),
                 center = Offset(cx, cy),
@@ -1105,14 +1105,14 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             center = Offset(cx, cy),
         )
 
-        // ── Layer 2 — Outer breathing halo (violet → cyan glow) ───────────
+        // ── Layer 2 — Outer breathing gold halo ───────────────────────────
         drawCircle(
             brush = Brush.radialGradient(
                 colorStops = arrayOf(
                     0.0f to Color.Transparent,
-                    0.55f to Color(0xFF7B4BFF).copy(alpha = 0f),
-                    0.78f to Color(0xFF7B4BFF).copy(alpha = 0.07f * pulse),
-                    0.92f to Color(0xFF4FC3F7).copy(alpha = 0.05f * pulse),
+                    0.55f to gold.copy(alpha = 0f),
+                    0.78f to gold.copy(alpha = 0.08f * pulse),
+                    0.92f to amber.copy(alpha = 0.05f * pulse),
                     1.0f to Color.Transparent,
                 ),
                 center = Offset(cx, cy),
@@ -1123,7 +1123,7 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             blendMode = BlendMode.Plus,
         )
 
-        // ── Layer 3 — Radiating light rays ────────────────────────────────
+        // ── Layer 3 — Radiating gold light rays ───────────────────────────
         rotate(rayRot, Offset(cx, cy)) {
             val rays = 14
             val rayWidth = 10.dp.toPx()
@@ -1136,7 +1136,7 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color(0xFFB388FF).copy(alpha = 0.02f + 0.04f * pulse),
+                                goldLight.copy(alpha = 0.025f + 0.04f * pulse),
                                 Color.Transparent,
                             ),
                             startY = cy - rayOuter,
@@ -1150,16 +1150,16 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             }
         }
 
-        // ── Layer 4 — Outer cyan swirl arc ────────────────────────────────
+        // ── Layer 4 — Outer gold swirl arc ────────────────────────────────
         rotate(rotation, Offset(cx, cy)) {
             drawArc(
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color(0xFF00E5FF).copy(alpha = 0.06f),
-                        Color(0xFF4FC3F7).copy(alpha = 0.18f * pulse),
-                        Color(0xFF00BCD4).copy(alpha = 0.24f * pulse),
-                        Color(0xFF4FC3F7).copy(alpha = 0.10f),
+                        amber.copy(alpha = 0.06f),
+                        gold.copy(alpha = 0.20f * pulse),
+                        goldLight.copy(alpha = 0.26f * pulse),
+                        gold.copy(alpha = 0.10f),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -1173,15 +1173,15 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             )
         }
 
-        // ── Layer 5 — Mid purple swirl arc (counter-rotation) ─────────────
+        // ── Layer 5 — Mid amber swirl arc (counter-rotation) ──────────────
         rotate(-rotation * 0.65f, Offset(cx, cy)) {
             drawArc(
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color(0xFFAB47BC).copy(alpha = 0.07f),
-                        Color(0xFF9C27B0).copy(alpha = 0.22f * pulse),
-                        Color(0xFFE1BEE7).copy(alpha = 0.16f * pulse),
+                        goldDeep.copy(alpha = 0.08f),
+                        amber.copy(alpha = 0.24f * pulse),
+                        goldLight.copy(alpha = 0.18f * pulse),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -1195,15 +1195,15 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             )
         }
 
-        // ── Layer 6 — Magenta accent arc (fast spin, additive) ────────────
+        // ── Layer 6 — Bright gold accent arc (fast spin, additive) ───────
         rotate(rotation * 1.4f + 60f, Offset(cx, cy)) {
             drawArc(
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color(0xFFFF4081).copy(alpha = 0f),
-                        Color(0xFFFF4081).copy(alpha = 0.18f * pulse),
-                        Color(0xFFFFB6C1).copy(alpha = 0.12f * pulse),
+                        goldLight.copy(alpha = 0f),
+                        goldLight.copy(alpha = 0.22f * pulse),
+                        Color(0xFFFFF0C0).copy(alpha = 0.14f * pulse),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -1224,9 +1224,9 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 brush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Transparent,
-                        AppColors.AccentGold.copy(alpha = 0.05f),
-                        AppColors.AccentGold.copy(alpha = 0.20f * pulse),
-                        AppColors.AccentGold.copy(alpha = 0.05f),
+                        gold.copy(alpha = 0.08f),
+                        goldLight.copy(alpha = 0.28f * pulse),
+                        gold.copy(alpha = 0.08f),
                         Color.Transparent,
                     ),
                     center = Offset(cx, cy),
@@ -1240,12 +1240,12 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             )
         }
 
-        // ── Layer 8 — Inner mystical core halo (behind witch) ─────────────
+        // ── Layer 8 — Inner gold core halo (behind witch) ─────────────────
         drawCircle(
             brush = Brush.radialGradient(
                 colorStops = arrayOf(
-                    0.0f to Color(0xFFB388FF).copy(alpha = 0.12f * pulse),
-                    0.40f to Color(0xFF7B4BFF).copy(alpha = 0.07f * pulse),
+                    0.0f to goldLight.copy(alpha = 0.14f * pulse),
+                    0.40f to gold.copy(alpha = 0.08f * pulse),
                     0.85f to Color.Transparent,
                 ),
                 center = Offset(cx, cy),
@@ -1256,7 +1256,7 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             blendMode = BlendMode.Plus,
         )
 
-        // ── Layer 9 — Orbital particles (drifting around the witch) ───────
+        // ── Layer 9 — Orbital particles ───────────────────────────────────
         val orbitR     = r * 0.86f
         val orbitCount = 6
         for (i in 0 until orbitCount) {
@@ -1264,14 +1264,13 @@ private fun WizardAura(modifier: Modifier = Modifier) {
             val px = cx + cos(phase) * orbitR
             val py = cy + sin(phase) * orbitR * 0.95f
             val col = when (i % 3) {
-                0 -> Color(0xFF80DEEA)
-                1 -> Color(0xFFCE93D8)
-                else -> Color(0xFFFFD54F)
+                0    -> goldLight
+                1    -> amber
+                else -> Color(0xFFFFF0C0)
             }
-            // soft glow halo
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(col.copy(alpha = 0.20f), Color.Transparent),
+                    colors = listOf(col.copy(alpha = 0.22f), Color.Transparent),
                     center = Offset(px, py),
                     radius = 14.dp.toPx(),
                 ),
@@ -1279,39 +1278,37 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 center = Offset(px, py),
                 blendMode = BlendMode.Plus,
             )
-            // bright core
             drawCircle(
-                color  = col.copy(alpha = 0.40f),
+                color  = col.copy(alpha = 0.45f),
                 radius = 2.2f.dp.toPx(),
                 center = Offset(px, py),
             )
         }
 
-        // ── Layer 10 — Twinkling stars with soft glow halos ───────────────
+        // ── Layer 10 — Twinkling gold stars ───────────────────────────────
         data class Star(val ox: Float, val oy: Float, val dp: Float, val col: Color, val phase: Float)
         listOf(
-            Star(-0.72f, -0.42f, 2.8f, Color(0xFFFFD54F), 0.0f),
-            Star( 0.65f, -0.55f, 2.2f, Color(0xFF80DEEA), 0.7f),
-            Star(-0.48f,  0.50f, 1.8f, Color(0xFFCE93D8), 1.4f),
-            Star( 0.78f,  0.28f, 2.5f, Color(0xFF80DEEA), 2.1f),
-            Star( 0.25f, -0.82f, 1.5f, Color(0xFFFFD54F), 2.8f),
-            Star(-0.82f,  0.15f, 2.0f, Color(0xFFCE93D8), 3.5f),
-            Star( 0.55f,  0.72f, 1.8f, Color(0xFF80DEEA), 4.2f),
-            Star(-0.35f,  0.78f, 2.2f, Color(0xFFFFD54F), 4.9f),
-            Star(-0.60f, -0.70f, 1.4f, Color(0xFF80DEEA), 0.3f),
-            Star( 0.42f, -0.65f, 2.8f, Color(0xFFCE93D8), 1.0f),
-            Star(-0.18f, -0.95f, 1.3f, Color(0xFFFFFFFF), 1.7f),
-            Star( 0.95f, -0.08f, 1.6f, Color(0xFFFFFFFF), 2.4f),
-            Star(-0.95f, -0.18f, 1.5f, Color(0xFFFFFFFF), 3.1f),
-            Star( 0.08f,  0.95f, 1.4f, Color(0xFFFFFFFF), 3.8f),
+            Star(-0.72f, -0.42f, 2.8f, goldLight,         0.0f),
+            Star( 0.65f, -0.55f, 2.2f, amber,             0.7f),
+            Star(-0.48f,  0.50f, 1.8f, gold,              1.4f),
+            Star( 0.78f,  0.28f, 2.5f, goldLight,         2.1f),
+            Star( 0.25f, -0.82f, 1.5f, Color(0xFFFFF0C0), 2.8f),
+            Star(-0.82f,  0.15f, 2.0f, amber,             3.5f),
+            Star( 0.55f,  0.72f, 1.8f, goldLight,         4.2f),
+            Star(-0.35f,  0.78f, 2.2f, gold,              4.9f),
+            Star(-0.60f, -0.70f, 1.4f, amber,             0.3f),
+            Star( 0.42f, -0.65f, 2.8f, goldLight,         1.0f),
+            Star(-0.18f, -0.95f, 1.3f, Color(0xFFFFFAEA), 1.7f),
+            Star( 0.95f, -0.08f, 1.6f, Color(0xFFFFFAEA), 2.4f),
+            Star(-0.95f, -0.18f, 1.5f, Color(0xFFFFFAEA), 3.1f),
+            Star( 0.08f,  0.95f, 1.4f, Color(0xFFFFFAEA), 3.8f),
         ).forEach { s ->
-            val a = ((sin(drift * 1.5f + s.phase) + 1f) / 2f).coerceIn(0f, 1f) * 0.35f
+            val a = ((sin(drift * 1.5f + s.phase) + 1f) / 2f).coerceIn(0f, 1f) * 0.40f
             val sx = cx + s.ox * r
             val sy = cy + s.oy * r
-            // soft glow halo
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(s.col.copy(alpha = a * 0.50f), Color.Transparent),
+                    colors = listOf(s.col.copy(alpha = a * 0.55f), Color.Transparent),
                     center = Offset(sx, sy),
                     radius = s.dp.dp.toPx() * 3.2f,
                 ),
@@ -1319,190 +1316,11 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 center = Offset(sx, sy),
                 blendMode = BlendMode.Plus,
             )
-            // bright star core
             drawCircle(
                 color  = s.col.copy(alpha = a),
                 radius = s.dp.dp.toPx(),
                 center = Offset(sx, sy),
             )
-        }
-    }
-}
-
-// ── Previews ──────────────────────────────────────────────────────────────────
-
-private val PreviewSign = ALL_SIGNS.first { it.id == "cancer" }
-private val PreviewForecast = HoroscopeResponse(
-    text    = "Сегодня звёзды дарят особую чуткость — прислушайся к сердцу и не бойся действовать по интуиции. Близкие окажут неожиданную поддержку, а маленькая победа в делах поднимет настроение на весь день.",
-    keyword = "Интуиция",
-    love    = 82, career = 88, health = 64, energy = 75,
-)
-
-@Preview
-@Composable
-fun PreviewCosmicHero() {
-    Box(Modifier.background(AppColors.Background)) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(AppColors.Background)
-                .padding(32.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            CosmicHero(sign = PreviewSign, elementColor = AppColors.elementColor(PreviewSign.element))
-        }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewForecastCard() {
-    Box(Modifier.background(AppColors.Background)) {
-        Column(
-            modifier = Modifier
-                .background(AppColors.Background)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            ForecastCard(forecast = PreviewForecast, elementColor = AppColors.elementColor(PreviewSign.element))
-            ScoreGaugesRow(forecast = PreviewForecast)
-        }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewWizardCta() {
-    Box(Modifier.background(AppColors.Background)) {
-        Column(
-            modifier = Modifier
-                .background(AppColors.Background)
-                .padding(16.dp),
-        ) {
-            WizardCta(
-                period       = HoroscopePeriod.DAILY,
-                onClick      = {},
-                elementColor = AppColors.elementColor(PreviewSign.element),
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-fun PreviewWizardIntroPhase() {
-    Box(Modifier.background(AppColors.Background)) {
-        Box(
-            modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.88f))
-                .padding(24.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF1A1525), Color(0xFF0D0D18))))
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
-                    .padding(24.dp)
-            ) {
-                WizardIntro(
-                    periodAcc    = "на завтра",
-                    signName     = PreviewSign.name,
-                    elementColor = AppColors.elementColor(PreviewSign.element),
-                    onWatch      = {},
-                    onDismiss    = {},
-                )
-            }
-        }
-    }
-}
-
-
-
-
-// -- Push Notifications Prompt Dialog -----------------------------------------
-
-@Composable
-private fun PushPromptDialog(
-    onAllow: () -> Unit,
-    onDeny:  () -> Unit,
-) {
-    val requestPermission = rememberPushPermissionLauncher(onResult = { granted ->
-        if (granted) onAllow() else onDeny()
-    })
-
-    Dialog(
-        onDismissRequest = onDeny,
-        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFF1A1525), Color(0xFF0D0D18))))
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Image(
-                    painter            = painterResource(Res.drawable.iruna),
-                    contentDescription = null,
-                    modifier           = Modifier.size(96.dp),
-                    contentScale       = ContentScale.Fit,
-                )
-                Text(
-                    text       = str.push_prompt_title,
-                    fontSize   = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = AppColors.TextPrimary,
-                    textAlign  = TextAlign.Center,
-                )
-                Text(
-                    text      = str.push_prompt_body,
-                    fontSize  = 14.sp,
-                    color     = AppColors.TextSecondary,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(AppColors.AccentGold)
-                        .clickable { requestPermission() }
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text       = str.push_prompt_allow,
-                        fontSize   = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = Color.Black,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .border(1.dp, AppColors.TextSecondary.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
-                        .clickable { onDeny() }
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text     = str.push_prompt_deny,
-                        fontSize = 14.sp,
-                        color    = AppColors.TextSecondary,
-                    )
-                }
-            }
         }
     }
 }
