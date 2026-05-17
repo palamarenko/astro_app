@@ -43,14 +43,16 @@ import com.iruna.app.ui.screens.profile.PushPromptDialog
 import org.jetbrains.compose.resources.painterResource
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionInWindow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.*
 
 // ── Score colours — мягкая монохромная палитра ────────────────────────────────
-private val ScoreLove    = Color(0xFFB8915A)   // янтарь
-private val ScoreCareer  = Color(0xFFBE9A4A)   // золото
-private val ScoreHealth  = Color(0xFF8A8A7A)   // тёплый серый
-private val ScoreEnergy  = Color(0xFF7A8A9A)   // стальной
+private val ScoreLove = Color(0xFFB8915A)   // янтарь
+private val ScoreCareer = Color(0xFFBE9A4A)   // золото
+private val ScoreHealth = Color(0xFF8A8A7A)   // тёплый серый
+private val ScoreEnergy = Color(0xFF7A8A9A)   // стальной
 
 
 // ── Main screen ───────────────────────────────────────────────────────────────
@@ -64,7 +66,8 @@ fun HoroscopeScreen(
 ) {
     val state by vm.state.collectAsState()
     val sign = state.selectedSign
-    val elementColor = if (sign != null) AppColors.elementColor(sign.element) else AppColors.AccentGold
+    val elementColor =
+        if (sign != null) AppColors.elementColor(sign.element) else AppColors.AccentGold
     val adManager = rememberAdManager()
     val density = LocalDensity.current
 
@@ -74,17 +77,18 @@ fun HoroscopeScreen(
 
     // ── Sticky header height (measured at runtime) ────────────────────────────
     var stickyHeaderHeightPx by remember { mutableStateOf(0) }
-    var tabPositions by remember { mutableStateOf(0) }
+    var tabPositions by remember { mutableStateOf(0f) }
+    var stikiTabPositions by remember { mutableStateOf(0f) }
 
     // ── Parallax: hero sinks down as content scrolls up ───────────────────────
-    val heroHeightPx     = with(density) { 320.dp.toPx() }
-    val heroAlpha        = (1f - scrollOffsetPx / (heroHeightPx * 0.70f)).coerceIn(0f, 1f)
+    val heroHeightPx = with(density) { 320.dp.toPx() }
+    val heroAlpha = (1f - scrollOffsetPx / (heroHeightPx * 0.70f)).coerceIn(0f, 1f)
     val heroTranslationY = scrollOffsetPx * 0.50f
 
     // ── Swipe / sign-transition tracking ─────────────────────────────────────
-    val signIndex        = ALL_SIGNS.indexOfFirst { it.id == sign?.id }
-    val signIndexState   = rememberUpdatedState(signIndex)
-    var slideDir         by remember { mutableStateOf(1) }
+    val signIndex = ALL_SIGNS.indexOfFirst { it.id == sign?.id }
+    val signIndexState = rememberUpdatedState(signIndex)
+    var slideDir by remember { mutableStateOf(1) }
     val swipeThresholdPx = with(density) { 80.dp.toPx() }
 
     Box(
@@ -93,8 +97,8 @@ fun HoroscopeScreen(
             .pointerInput(Unit) {
                 var accX = 0f
                 detectHorizontalDragGestures(
-                    onDragStart      = { accX = 0f },
-                    onDragCancel     = { accX = 0f },
+                    onDragStart = { accX = 0f },
+                    onDragCancel = { accX = 0f },
                     onHorizontalDrag = { _, delta -> accX += delta },
                     onDragEnd = {
                         val idx = signIndexState.value
@@ -103,6 +107,7 @@ fun HoroscopeScreen(
                                 slideDir = 1
                                 vm.selectSign(ALL_SIGNS[idx + 1])
                             }
+
                             accX > swipeThresholdPx && idx > 0 -> {
                                 slideDir = -1
                                 vm.selectSign(ALL_SIGNS[idx - 1])
@@ -125,19 +130,29 @@ fun HoroscopeScreen(
             if (sign != null) {
                 // ── Hero — parallax + slide on sign change ────────────────────
                 AnimatedContent(
-                    targetState  = sign,
+                    targetState = sign,
                     transitionSpec = {
                         val dir = slideDir
                         (fadeIn(tween(380)) +
-                            slideInHorizontally(tween(380, easing = FastOutSlowInEasing)) { w -> dir * w }
-                        ) togetherWith
-                        (fadeOut(tween(250)) +
-                            slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { w -> -dir * w }
-                        )
+                                slideInHorizontally(
+                                    tween(
+                                        380,
+                                        easing = FastOutSlowInEasing
+                                    )
+                                ) { w -> dir * w }
+                                ) togetherWith
+                                (fadeOut(tween(250)) +
+                                        slideOutHorizontally(
+                                            tween(
+                                                300,
+                                                easing = FastOutSlowInEasing
+                                            )
+                                        ) { w -> -dir * w }
+                                        )
                     },
                     modifier = Modifier.graphicsLayer {
                         translationY = heroTranslationY
-                        alpha        = heroAlpha
+                        alpha = heroAlpha
                     },
                     label = "heroSign",
                 ) { s ->
@@ -163,17 +178,17 @@ fun HoroscopeScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Text(
-                                    text          = s.localizedName(),
-                                    fontSize      = 36.sp,
-                                    fontWeight    = FontWeight.Light,
-                                    color         = AppColors.TextPrimary,
+                                    text = s.localizedName(),
+                                    fontSize = 36.sp,
+                                    fontWeight = FontWeight.Light,
+                                    color = AppColors.TextPrimary,
                                     letterSpacing = TextUnit(0.01f, TextUnitType.Em),
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text          = s.localizedDates(),
-                                    fontSize      = AppType.caption,
-                                    color         = AppColors.AccentGold,
+                                    text = s.localizedDates(),
+                                    fontSize = AppType.caption,
+                                    color = AppColors.AccentGold,
                                     letterSpacing = TextUnit(0.18f, TextUnitType.Em),
                                 )
                                 Spacer(Modifier.height(Spacing.s))
@@ -187,12 +202,16 @@ fun HoroscopeScreen(
                     }
                 }
 
-                Box(modifier = Modifier.padding(horizontal = Spacing.xl).onGloballyPositioned(onGloballyPositioned = {
-                    tabPositions =
-                })) {
+                Box(
+                    modifier = Modifier.padding(horizontal = Spacing.xl)
+                        .onGloballyPositioned(onGloballyPositioned = { coords ->
+                            tabPositions = coords.positionInWindow().y
+                            println("${tabPositions} ${stikiTabPositions}")
+                        })
+                ) {
                     PeriodTabsNew(
-                        selected     = state.period,
-                        onSelect     = { vm.setPeriod(it) },
+                        selected = state.period,
+                        onSelect = { vm.setPeriod(it) },
                         elementColor = elementColor,
                     )
                 }
@@ -202,31 +221,36 @@ fun HoroscopeScreen(
                     Spacer(Modifier.height(14.dp))
 
                     AnimatedContent(
-                        targetState  = Triple(state.period, state.loadingCurrent, state.currentForecast),
+                        targetState = Triple(
+                            state.period,
+                            state.loadingCurrent,
+                            state.currentForecast
+                        ),
                         transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                        label        = "forecast",
+                        label = "forecast",
                     ) { (_, loading, forecast) ->
                         when {
-                            loading          -> LoadingPlaceholder()
+                            loading -> LoadingPlaceholder()
                             forecast != null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 ForecastCard(forecast = forecast, elementColor = elementColor)
                                 ScoreGaugesRow(forecast = forecast)
                             }
-                            else             -> LoadingPlaceholder()
+
+                            else -> LoadingPlaceholder()
                         }
                     }
 
                     Spacer(Modifier.height(14.dp))
 
                     AnimatedContent(
-                        targetState  = Triple(state.period, state.isUnlocked, state.futureForecast),
+                        targetState = Triple(state.period, state.isUnlocked, state.futureForecast),
                         transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(200)) },
-                        label        = "future",
+                        label = "future",
                     ) { (period, unlocked, future) ->
                         if (!unlocked) {
                             WizardCta(
-                                period       = period,
-                                onClick      = { vm.showWizard() },
+                                period = period,
+                                onClick = { vm.showWizard() },
                                 elementColor = elementColor,
                             )
                         } else {
@@ -236,9 +260,9 @@ fun HoroscopeScreen(
                                     LoadingPlaceholder()
                                 } else {
                                     ForecastCard(
-                                        forecast     = future,
+                                        forecast = future,
                                         elementColor = elementColor,
-                                        isFuture     = true,
+                                        isFuture = true,
                                     )
                                     ScoreGaugesRow(forecast = future)
                                 }
@@ -255,34 +279,38 @@ fun HoroscopeScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(AppColors.Background)
                 .onGloballyPositioned { coords ->
                     stickyHeaderHeightPx = coords.size.height
                 },
         ) {
-            Spacer(Modifier.height(Spacing.xxl))
-            Text(
-                text       = str.nav_horoscope,
-                fontSize   = AppType.h2,
-                fontWeight = FontWeight.Normal,
-                color      = AppColors.TextPrimary,
-                modifier   = Modifier.padding(horizontal = Spacing.xl),
-            )
-            Spacer(Modifier.height(Spacing.l))
-            SignCarousel(
-                selected = sign,
-                onSelect = { s ->
-                    val newIdx = ALL_SIGNS.indexOfFirst { it.id == s.id }
-                    slideDir = if (newIdx > signIndexState.value) 1 else -1
-                    vm.selectSign(s)
-                    onSignSelected(s)
-                },
-            )
-            Spacer(Modifier.height(Spacing.m))
-            Box(Modifier.padding(horizontal = Spacing.xl).fillMaxWidth()) {
+            Column(modifier = Modifier.background(AppColors.Background)) {
+                Spacer(Modifier.height(Spacing.xxl))
+                Text(
+                    text = str.nav_horoscope,
+                    fontSize = AppType.h2,
+                    fontWeight = FontWeight.Normal,
+                    color = AppColors.TextPrimary,
+                    modifier = Modifier.padding(horizontal = Spacing.xl),
+                )
+                Spacer(Modifier.height(Spacing.l))
+                SignCarousel(
+                    selected = sign,
+                    onSelect = { s ->
+                        val newIdx = ALL_SIGNS.indexOfFirst { it.id == s.id }
+                        slideDir = if (newIdx > signIndexState.value) 1 else -1
+                        vm.selectSign(s)
+                        onSignSelected(s)
+                    },
+                )
+                Spacer(Modifier.height(Spacing.m))
+            }
+
+            Box(Modifier.padding(horizontal = Spacing.xl).fillMaxWidth().onGloballyPositioned {
+                stikiTabPositions = it.positionInWindow().y
+            }.alpha(if (stikiTabPositions >= tabPositions) 1f else 0f)) {
                 PeriodTabsNew(
-                    selected     = state.period,
-                    onSelect     = { vm.setPeriod(it) },
+                    selected = state.period,
+                    onSelect = { vm.setPeriod(it) },
                     elementColor = elementColor,
                 )
             }
@@ -292,12 +320,12 @@ fun HoroscopeScreen(
         // ── Wizard Modal ──────────────────────────────────────────────────────
         if (state.showWizard && sign != null) {
             WizardModal(
-                period       = state.period,
-                sign         = sign,
+                period = state.period,
+                sign = sign,
                 elementColor = elementColor,
-                adManager    = adManager,
-                onDismiss    = { vm.dismissWizard() },
-                onComplete   = { vm.unlockAndLoadFuture(state.period) },
+                adManager = adManager,
+                onDismiss = { vm.dismissWizard() },
+                onComplete = { vm.unlockAndLoadFuture(state.period) },
             )
         }
 
@@ -305,7 +333,7 @@ fun HoroscopeScreen(
         if (state.showPushPrompt) {
             PushPromptDialog(
                 onAllow = { vm.onPushPromptResult(enabled = true) },
-                onDeny  = { vm.dismissPushPromptForSession() },
+                onDeny = { vm.dismissPushPromptForSession() },
             )
         }
     }
@@ -339,9 +367,9 @@ private fun SignCarousel(
     ) {
         itemsIndexed(com.iruna.app.data.ALL_SIGNS) { _, sign ->
             SignCarouselItem(
-                sign       = sign,
+                sign = sign,
                 isSelected = sign.id == selected?.id,
-                onSelect   = onSelect,
+                onSelect = onSelect,
             )
         }
     }
@@ -349,14 +377,14 @@ private fun SignCarousel(
 
 @Composable
 private fun SignCarouselItem(
-    sign:       ZodiacSign,
+    sign: ZodiacSign,
     isSelected: Boolean,
-    onSelect:   (com.iruna.app.data.ZodiacSign) -> Unit,
+    onSelect: (com.iruna.app.data.ZodiacSign) -> Unit,
 ) {
     val elementColor = AppColors.elementColor(sign.element)
-    val bgAlpha   by animateFloatAsState(if (isSelected) 0.14f else 0.0f,  tween(250), label = "bg")
-    val borAlpha  by animateFloatAsState(if (isSelected) 0.70f else 0.20f, tween(250), label = "bor")
-    val imgAlpha  by animateFloatAsState(if (isSelected) 1.00f else 0.40f, tween(250), label = "img")
+    val bgAlpha by animateFloatAsState(if (isSelected) 0.14f else 0.0f, tween(250), label = "bg")
+    val borAlpha by animateFloatAsState(if (isSelected) 0.70f else 0.20f, tween(250), label = "bor")
+    val imgAlpha by animateFloatAsState(if (isSelected) 1.00f else 0.40f, tween(250), label = "img")
     val textColor by animateColorAsState(
         if (isSelected) AppColors.AccentGold else AppColors.TextMuted, tween(250), label = "txt"
     )
@@ -382,17 +410,17 @@ private fun SignCarouselItem(
             contentAlignment = Alignment.Center,
         ) {
             Image(
-                painter            = sign.iconSmallPainter(),
+                painter = sign.iconSmallPainter(),
                 contentDescription = sign.localizedName(),
-                contentScale       = ContentScale.Fit,
-                modifier           = Modifier.size(48.dp).alpha(imgAlpha),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(48.dp).alpha(imgAlpha),
             )
         }
         Spacer(Modifier.height(5.dp))
         Text(
-            text       = sign.localizedName(),
-            fontSize   = 11.sp,
-            color      = textColor,
+            text = sign.localizedName(),
+            fontSize = 11.sp,
+            color = textColor,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
         )
     }
@@ -404,24 +432,64 @@ private fun SignCarouselItem(
 private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
     val inf = rememberInfiniteTransition(label = "hero")
 
-    val outerRot by inf.animateFloat(0f, 360f,
-        infiniteRepeatable(tween(24000, easing = LinearEasing)), "outerRot")
-    val innerRot by inf.animateFloat(0f, -360f,
-        infiniteRepeatable(tween(18000, easing = LinearEasing)), "innerRot")
-    val auraScale by inf.animateFloat(1f, 1.08f,
-        infiniteRepeatable(tween(4000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "auraS")
-    val auraAlpha by inf.animateFloat(0.55f, 0.95f,
-        infiniteRepeatable(tween(4000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "auraA")
-    val symbolFloat by inf.animateFloat(0f, -4f,
-        infiniteRepeatable(tween(5000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "float")
+    val outerRot by inf.animateFloat(
+        0f, 360f,
+        infiniteRepeatable(tween(24000, easing = LinearEasing)), "outerRot"
+    )
+    val innerRot by inf.animateFloat(
+        0f, -360f,
+        infiniteRepeatable(tween(18000, easing = LinearEasing)), "innerRot"
+    )
+    val auraScale by inf.animateFloat(
+        1f, 1.08f,
+        infiniteRepeatable(tween(4000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "auraS"
+    )
+    val auraAlpha by inf.animateFloat(
+        0.55f, 0.95f,
+        infiniteRepeatable(tween(4000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "auraA"
+    )
+    val symbolFloat by inf.animateFloat(
+        0f, -4f,
+        infiniteRepeatable(tween(5000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "float"
+    )
 
     // 6 sparkle particles with stagger
-    val sp0 by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(0)), "sp0")
-    val sp1 by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(800)), "sp1")
-    val sp2 by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(1600)), "sp2")
-    val sp3 by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(2400)), "sp3")
-    val sp4 by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(3200)), "sp4")
-    val sp5 by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(4000)), "sp5")
+    val sp0 by inf.animateFloat(
+        0f,
+        1f,
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(0)),
+        "sp0"
+    )
+    val sp1 by inf.animateFloat(
+        0f,
+        1f,
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(800)),
+        "sp1"
+    )
+    val sp2 by inf.animateFloat(
+        0f,
+        1f,
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(1600)),
+        "sp2"
+    )
+    val sp3 by inf.animateFloat(
+        0f,
+        1f,
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(2400)),
+        "sp3"
+    )
+    val sp4 by inf.animateFloat(
+        0f,
+        1f,
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(3200)),
+        "sp4"
+    )
+    val sp5 by inf.animateFloat(
+        0f,
+        1f,
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(4000)),
+        "sp5"
+    )
     val sparkles = listOf(sp0, sp1, sp2, sp3, sp4, sp5)
 
     Box(
@@ -454,16 +522,16 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val r1 = 68.dp.toPx()
             rotate(outerRot * 0.35f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = gold.copy(alpha = 0.10f),
+                    color = gold.copy(alpha = 0.10f),
                     radius = r1,
                     center = Offset(cx, cy),
-                    style  = Stroke(width = 0.6.dp.toPx()),
+                    style = Stroke(width = 0.6.dp.toPx()),
                 )
                 // 4 маленькие точки по кардинальным направлениям
                 for (i in 0..3) {
                     val a = (i * 90.0) * PI / 180.0
                     drawCircle(
-                        color  = gold.copy(alpha = 0.18f),
+                        color = gold.copy(alpha = 0.18f),
                         radius = 1.2.dp.toPx(),
                         center = Offset(cx + r1 * cos(a).toFloat(), cy + r1 * sin(a).toFloat()),
                     )
@@ -474,12 +542,17 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val r2 = 88.dp.toPx()
             rotate(-innerRot * 0.45f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = gold.copy(alpha = 0.08f),
+                    color = gold.copy(alpha = 0.08f),
                     radius = r2,
                     center = Offset(cx, cy),
-                    style  = Stroke(
-                        width      = 0.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 10.dp.toPx())),
+                    style = Stroke(
+                        width = 0.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(
+                            floatArrayOf(
+                                3.dp.toPx(),
+                                10.dp.toPx()
+                            )
+                        ),
                     ),
                 )
             }
@@ -488,19 +561,24 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val r3 = 108.dp.toPx()
             rotate(outerRot * 0.6f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = gold.copy(alpha = 0.12f),
+                    color = gold.copy(alpha = 0.12f),
                     radius = r3,
                     center = Offset(cx, cy),
-                    style  = Stroke(
-                        width      = 0.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 5.dp.toPx())),
+                    style = Stroke(
+                        width = 0.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(
+                            floatArrayOf(
+                                2.dp.toPx(),
+                                5.dp.toPx()
+                            )
+                        ),
                     ),
                 )
                 // 3 маркера
                 for (i in 0..2) {
                     val a = (i * 120.0) * PI / 180.0
                     drawCircle(
-                        color  = gold.copy(alpha = 0.22f),
+                        color = gold.copy(alpha = 0.22f),
                         radius = 1.5.dp.toPx(),
                         center = Offset(cx + r3 * cos(a).toFloat(), cy + r3 * sin(a).toFloat()),
                     )
@@ -511,10 +589,10 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val r4 = 128.dp.toPx()
             rotate(-outerRot * 0.25f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = gold.copy(alpha = 0.07f),
+                    color = gold.copy(alpha = 0.07f),
                     radius = r4,
                     center = Offset(cx, cy),
-                    style  = Stroke(width = 0.5.dp.toPx()),
+                    style = Stroke(width = 0.5.dp.toPx()),
                 )
             }
 
@@ -522,20 +600,25 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val r5 = 148.dp.toPx()
             rotate(innerRot * 0.3f, pivot = Offset(cx, cy)) {
                 drawCircle(
-                    color  = gold.copy(alpha = 0.09f),
+                    color = gold.copy(alpha = 0.09f),
                     radius = r5,
                     center = Offset(cx, cy),
-                    style  = Stroke(
-                        width      = 0.6.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(1.5.dp.toPx(), 8.dp.toPx())),
+                    style = Stroke(
+                        width = 0.6.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(
+                            floatArrayOf(
+                                1.5.dp.toPx(),
+                                8.dp.toPx()
+                            )
+                        ),
                     ),
                 )
                 // 12 меток — тихие, кардинальные чуть крупнее
                 for (i in 0..11) {
-                    val a        = (i * 30.0) * PI / 180.0
+                    val a = (i * 30.0) * PI / 180.0
                     val cardinal = i % 3 == 0
                     drawCircle(
-                        color  = gold.copy(alpha = if (cardinal) 0.20f else 0.08f),
+                        color = gold.copy(alpha = if (cardinal) 0.20f else 0.08f),
                         radius = if (cardinal) 1.8.dp.toPx() else 0.9.dp.toPx(),
                         center = Offset(cx + r5 * cos(a).toFloat(), cy + r5 * sin(a).toFloat()),
                     )
@@ -546,19 +629,19 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             val sparklePts = listOf(
                 Offset(cx + 140.dp.toPx(), cy - 70.dp.toPx()),
                 Offset(cx - 135.dp.toPx(), cy + 50.dp.toPx()),
-                Offset(cx + 90.dp.toPx(),  cy + 130.dp.toPx()),
+                Offset(cx + 90.dp.toPx(), cy + 130.dp.toPx()),
                 Offset(cx - 110.dp.toPx(), cy - 100.dp.toPx()),
-                Offset(cx + 30.dp.toPx(),  cy - 148.dp.toPx()),
-                Offset(cx - 50.dp.toPx(),  cy + 145.dp.toPx()),
+                Offset(cx + 30.dp.toPx(), cy - 148.dp.toPx()),
+                Offset(cx - 50.dp.toPx(), cy + 145.dp.toPx()),
             )
             sparklePts.forEachIndexed { i, pt ->
                 val a = sparkles[i]
                 if (a > 0.05f) {
                     drawCircle(
-                        color  = AppColors.AccentGold,
+                        color = AppColors.AccentGold,
                         radius = 2.dp.toPx(),
                         center = pt,
-                        alpha  = a,
+                        alpha = a,
                     )
                 }
             }
@@ -566,16 +649,16 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
 
         // Zodiac image — large with golden color filter
         Image(
-            painter            = sign.iconPainter(),
+            painter = sign.iconPainter(),
             contentDescription = sign.localizedName(),
-            contentScale       = ContentScale.Fit,
-            colorFilter        = ColorFilter.colorMatrix(
+            contentScale = ContentScale.Fit,
+            colorFilter = ColorFilter.colorMatrix(
                 ColorMatrix(
                     floatArrayOf(
-                        1.02f,  0.02f,  0.00f, 0f,  2f,
-                        0.00f,  0.98f,  0.00f, 0f,  0f,
-                        0.00f,  0.00f,  0.88f, 0f, -8f,
-                        0.00f,  0.00f,  0.00f, 1f,  0f,
+                        1.02f, 0.02f, 0.00f, 0f, 2f,
+                        0.00f, 0.98f, 0.00f, 0f, 0f,
+                        0.00f, 0.00f, 0.88f, 0f, -8f,
+                        0.00f, 0.00f, 0.00f, 1f, 0f,
                     )
                 )
             ),
@@ -633,9 +716,9 @@ private fun PeriodTabsNew(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text       = period.localizedLabel(),
-                    fontSize   = 11.sp,
-                    color      = textColor,
+                    text = period.localizedLabel(),
+                    fontSize = 11.sp,
+                    color = textColor,
                     fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
                 )
             }
@@ -649,7 +732,7 @@ private fun PeriodTabsNew(
 private fun ForecastCard(
     forecast: HoroscopeResponse,
     elementColor: Color,
-    isFuture:     Boolean = false,
+    isFuture: Boolean = false,
 ) {
     val borderColor = if (isFuture) AppColors.AccentGold.copy(alpha = 0.35f) else Color(0xFF1D1D29)
     val bgBrush = if (isFuture)
@@ -671,17 +754,17 @@ private fun ForecastCard(
     ) {
         // Decorative opening quote (top-left, faint)
         Text(
-            text     = "“",
+            text = "“",
             fontSize = 54.sp,
-            color    = AppColors.AccentGold.copy(alpha = 0.12f),
+            color = AppColors.AccentGold.copy(alpha = 0.12f),
             modifier = Modifier.align(Alignment.TopStart).offset(y = (-10).dp),
             fontStyle = FontStyle.Italic,
         )
         // Decorative closing quote (bottom-right, faint)
         Text(
-            text     = "”",
+            text = "”",
             fontSize = 54.sp,
-            color    = AppColors.AccentGold.copy(alpha = 0.12f),
+            color = AppColors.AccentGold.copy(alpha = 0.12f),
             modifier = Modifier.align(Alignment.BottomEnd).offset(y = 10.dp),
             fontStyle = FontStyle.Italic,
         )
@@ -691,28 +774,34 @@ private fun ForecastCard(
             if (forecast.keyword.isNotBlank()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier          = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Box(Modifier.weight(1f).height(1.dp).background(AppColors.AccentGold.copy(alpha = 0.18f)))
+                    Box(
+                        Modifier.weight(1f).height(1.dp)
+                            .background(AppColors.AccentGold.copy(alpha = 0.18f))
+                    )
                     Text(
-                        text          = "  ${forecast.keyword.uppercase()}  ",
-                        fontSize      = 10.sp,
-                        color         = AppColors.AccentGold,
-                        fontWeight    = FontWeight.Normal,
+                        text = "  ${forecast.keyword.uppercase()}  ",
+                        fontSize = 10.sp,
+                        color = AppColors.AccentGold,
+                        fontWeight = FontWeight.Normal,
                         letterSpacing = TextUnit(0.28f, TextUnitType.Em),
                     )
-                    Box(Modifier.weight(1f).height(1.dp).background(AppColors.AccentGold.copy(alpha = 0.18f)))
+                    Box(
+                        Modifier.weight(1f).height(1.dp)
+                            .background(AppColors.AccentGold.copy(alpha = 0.18f))
+                    )
                 }
                 Spacer(Modifier.height(14.dp))
             }
 
             // Forecast text
             Text(
-                text       = forecast.text,
-                fontSize   = 15.5.sp,
-                fontStyle  = FontStyle.Italic,
+                text = forecast.text,
+                fontSize = 15.5.sp,
+                fontStyle = FontStyle.Italic,
                 fontWeight = FontWeight.Light,
-                color      = Color(0xFFD8D0C0),
+                color = Color(0xFFD8D0C0),
                 lineHeight = TextUnit(26f, TextUnitType.Sp),
             )
         }
@@ -724,72 +813,92 @@ private fun ForecastCard(
 @Composable
 private fun ScoreGaugesRow(forecast: HoroscopeResponse) {
     Row(
-        modifier            = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        ScoreGauge(value = forecast.love,    label = str.horoscope_score_love,    icon = "♡", color = ScoreLove)
-        ScoreGauge(value = forecast.career,  label = str.horoscope_score_career,  icon = "✦", color = ScoreCareer)
-        ScoreGauge(value = forecast.health,  label = str.horoscope_score_health,  icon = "◎", color = ScoreHealth)
-        ScoreGauge(value = forecast.energy,  label = str.horoscope_score_energy,  icon = "⊕", color = ScoreEnergy)
+        ScoreGauge(
+            value = forecast.love,
+            label = str.horoscope_score_love,
+            icon = "♡",
+            color = ScoreLove
+        )
+        ScoreGauge(
+            value = forecast.career,
+            label = str.horoscope_score_career,
+            icon = "✦",
+            color = ScoreCareer
+        )
+        ScoreGauge(
+            value = forecast.health,
+            label = str.horoscope_score_health,
+            icon = "◎",
+            color = ScoreHealth
+        )
+        ScoreGauge(
+            value = forecast.energy,
+            label = str.horoscope_score_energy,
+            icon = "⊕",
+            color = ScoreEnergy
+        )
     }
 }
 
 @Composable
 private fun ScoreGauge(value: Int, label: String, icon: String, color: Color) {
     val sweepAngle by animateFloatAsState(
-        targetValue    = (value / 100f) * 360f,
-        animationSpec  = tween(1200, easing = FastOutSlowInEasing),
-        label          = "gauge_$label"
+        targetValue = (value / 100f) * 360f,
+        animationSpec = tween(1200, easing = FastOutSlowInEasing),
+        label = "gauge_$label"
     )
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            modifier        = Modifier.size(68.dp),
+            modifier = Modifier.size(68.dp),
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val strokeW = 3.dp.toPx()
-                val inset   = strokeW / 2f
-                val r       = size.minDimension / 2f - inset
+                val inset = strokeW / 2f
+                val r = size.minDimension / 2f - inset
 
                 // Background track
                 drawCircle(
-                    color  = color.copy(alpha = 0.12f),
+                    color = color.copy(alpha = 0.12f),
                     radius = r,
-                    style  = Stroke(width = strokeW),
+                    style = Stroke(width = strokeW),
                 )
                 // Progress arc
                 drawArc(
-                    color       = color,
-                    startAngle  = -90f,
-                    sweepAngle  = sweepAngle,
-                    useCenter   = false,
-                    style       = Stroke(width = strokeW, cap = StrokeCap.Round),
-                    alpha       = 0.9f,
+                    color = color,
+                    startAngle = -90f,
+                    sweepAngle = sweepAngle,
+                    useCenter = false,
+                    style = Stroke(width = strokeW, cap = StrokeCap.Round),
+                    alpha = 0.9f,
                 )
                 // Glow drop-shadow effect (second arc, blurred via alpha)
                 drawArc(
-                    color       = color.copy(alpha = 0.25f),
-                    startAngle  = -90f,
-                    sweepAngle  = sweepAngle,
-                    useCenter   = false,
-                    style       = Stroke(width = strokeW * 3, cap = StrokeCap.Round),
+                    color = color.copy(alpha = 0.25f),
+                    startAngle = -90f,
+                    sweepAngle = sweepAngle,
+                    useCenter = false,
+                    style = Stroke(width = strokeW * 3, cap = StrokeCap.Round),
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(icon, fontSize = 9.sp, color = color)
                 Text(
-                    text       = value.toString(),
-                    fontSize   = 18.sp,
+                    text = value.toString(),
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Light,
-                    color      = AppColors.TextPrimary,
+                    color = AppColors.TextPrimary,
                 )
             }
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text          = label,
-            fontSize      = 10.sp,
-            color         = AppColors.TextMuted,
+            text = label,
+            fontSize = 10.sp,
+            color = AppColors.TextMuted,
             letterSpacing = TextUnit(0.06f, TextUnitType.Em),
         )
     }
@@ -799,29 +908,39 @@ private fun ScoreGauge(value: Int, label: String, icon: String, color: Color) {
 
 @Composable
 private fun WizardCta(
-    period:       HoroscopePeriod,
-    onClick:      () -> Unit,
+    period: HoroscopePeriod,
+    onClick: () -> Unit,
     elementColor: Color,
 ) {
     val periodAcc = when (period) {
-        HoroscopePeriod.DAILY   -> str.wizard_period_acc_daily
-        HoroscopePeriod.WEEKLY  -> str.wizard_period_acc_week
+        HoroscopePeriod.DAILY -> str.wizard_period_acc_daily
+        HoroscopePeriod.WEEKLY -> str.wizard_period_acc_week
         HoroscopePeriod.MONTHLY -> str.wizard_period_acc_month
     }
-    val inf    = rememberInfiniteTransition(label = "ctaWiz")
-    val floatY by inf.animateFloat(-2f, 2f,
-        infiniteRepeatable(tween(3000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wizY")
-    val glowA  by inf.animateFloat(0.4f, 0.8f,
-        infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wizG")
+    val inf = rememberInfiniteTransition(label = "ctaWiz")
+    val floatY by inf.animateFloat(
+        -2f, 2f,
+        infiniteRepeatable(tween(3000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wizY"
+    )
+    val glowA by inf.animateFloat(
+        0.4f, 0.8f,
+        infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wizG"
+    )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(
-                listOf(AppColors.AccentGold.copy(alpha = 0.07f), Color(0xFF101019))
-            ))
-            .border(1.dp, AppColors.AccentGold.copy(alpha = glowA * 0.4f), RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(AppColors.AccentGold.copy(alpha = 0.07f), Color(0xFF101019))
+                )
+            )
+            .border(
+                1.dp,
+                AppColors.AccentGold.copy(alpha = glowA * 0.4f),
+                RoundedCornerShape(16.dp)
+            )
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
@@ -830,41 +949,45 @@ private fun WizardCta(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Image(
-                painter            = painterResource(Res.drawable.iruna),
+                painter = painterResource(Res.drawable.iruna),
                 contentDescription = null,
-                contentScale       = ContentScale.Fit,
-                modifier           = Modifier
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
                     .size(44.dp)
                     .graphicsLayer { translationY = floatY * density },
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = str.wizard_cta_title.format(periodAcc),
-                    fontSize   = 15.sp,
-                    fontStyle  = FontStyle.Italic,
-                    color      = AppColors.AccentGold,
+                    text = str.wizard_cta_title.format(periodAcc),
+                    fontSize = 15.sp,
+                    fontStyle = FontStyle.Italic,
+                    color = AppColors.AccentGold,
                     fontWeight = FontWeight.Normal,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text     = str.wizard_cta_desc,
+                    text = str.wizard_cta_desc,
                     fontSize = 12.sp,
-                    color    = AppColors.TextMuted,
+                    color = AppColors.TextMuted,
                 )
             }
             // AD badge
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.55f), RoundedCornerShape(4.dp))
+                    .border(
+                        1.dp,
+                        AppColors.AccentGold.copy(alpha = 0.55f),
+                        RoundedCornerShape(4.dp)
+                    )
                     .padding(horizontal = 5.dp, vertical = 3.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text       = str.tarot_ad_badge,
-                    fontSize   = 9.sp,
+                    text = str.tarot_ad_badge,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color      = AppColors.AccentGold,
+                    color = AppColors.AccentGold,
                     letterSpacing = TextUnit(0.05f, TextUnitType.Em),
                 )
             }
@@ -877,13 +1000,13 @@ private fun WizardCta(
 @Composable
 private fun FutureDivider(period: HoroscopePeriod, elementColor: Color) {
     val label = when (period) {
-        HoroscopePeriod.DAILY   -> str.wizard_divider_daily
-        HoroscopePeriod.WEEKLY  -> str.wizard_divider_week
+        HoroscopePeriod.DAILY -> str.wizard_divider_daily
+        HoroscopePeriod.WEEKLY -> str.wizard_divider_week
         HoroscopePeriod.MONTHLY -> str.wizard_divider_month
     }
     Row(
-        verticalAlignment     = Alignment.CenterVertically,
-        modifier              = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Box(Modifier.weight(1f).height(1.dp).background(AppColors.AccentGold.copy(alpha = 0.2f)))
         Row(
@@ -892,15 +1015,15 @@ private fun FutureDivider(period: HoroscopePeriod, elementColor: Color) {
             modifier = Modifier.padding(horizontal = 8.dp),
         ) {
             Image(
-                painter            = painterResource(Res.drawable.iruna),
+                painter = painterResource(Res.drawable.iruna),
                 contentDescription = null,
-                contentScale       = ContentScale.Fit,
-                modifier           = Modifier.size(14.dp),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(14.dp),
             )
             Text(
-                text          = label,
-                fontSize      = 10.sp,
-                color         = AppColors.AccentGold,
+                text = label,
+                fontSize = 10.sp,
+                color = AppColors.AccentGold,
                 letterSpacing = TextUnit(0.14f, TextUnitType.Em),
             )
         }
@@ -913,7 +1036,7 @@ private fun FutureDivider(period: HoroscopePeriod, elementColor: Color) {
 @Composable
 private fun LoadingPlaceholder() {
     Box(
-        modifier        = Modifier.fillMaxWidth().height(120.dp),
+        modifier = Modifier.fillMaxWidth().height(120.dp),
         contentAlignment = Alignment.Center
     ) { LoadingDots() }
 }
@@ -922,16 +1045,16 @@ private fun LoadingPlaceholder() {
 
 @Composable
 private fun WizardModal(
-    period:       HoroscopePeriod,
-    sign:         ZodiacSign,
+    period: HoroscopePeriod,
+    sign: ZodiacSign,
     elementColor: Color,
-    adManager:    AdManager,
-    onDismiss:    () -> Unit,
-    onComplete:   () -> Unit,
+    adManager: AdManager,
+    onDismiss: () -> Unit,
+    onComplete: () -> Unit,
 ) {
     val periodAcc = when (period) {
-        HoroscopePeriod.DAILY   -> str.wizard_period_acc_daily
-        HoroscopePeriod.WEEKLY  -> str.wizard_period_acc_week
+        HoroscopePeriod.DAILY -> str.wizard_period_acc_daily
+        HoroscopePeriod.WEEKLY -> str.wizard_period_acc_week
         HoroscopePeriod.MONTHLY -> str.wizard_period_acc_month
     }
 
@@ -939,7 +1062,7 @@ private fun WizardModal(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties       = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true),
+        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true),
     ) {
         Box(
             modifier = Modifier
@@ -952,38 +1075,44 @@ private fun WizardModal(
                 modifier = Modifier
                     .fillMaxWidth(0.88f)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(Brush.linearGradient(
-                        listOf(Color(0xFF1A1525), Color(0xFF0D0D18))
-                    ))
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFF1A1525), Color(0xFF0D0D18))
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        AppColors.AccentGold.copy(alpha = 0.2f),
+                        RoundedCornerShape(24.dp)
+                    )
                     .padding(24.dp)
             ) {
                 Column {
                     WizardIntro(
-                        periodAcc    = periodAcc,
-                        signName     = sign.localizedName(),
+                        periodAcc = periodAcc,
+                        signName = sign.localizedName(),
                         elementColor = elementColor,
-                        onWatch      = {
+                        onWatch = {
                             adError = false
                             adManager.showRewardedAd(
                                 onRewarded = { onComplete() },
-                                onFailed   = { adError = true },
+                                onFailed = { adError = true },
                             )
                         },
-                        onDismiss    = onDismiss,
+                        onDismiss = onDismiss,
                     )
 
                     AnimatedVisibility(
                         visible = adError,
-                        enter   = fadeIn(tween(300)) + expandVertically(tween(300)),
-                        exit    = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+                        enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+                        exit = fadeOut(tween(200)) + shrinkVertically(tween(200)),
                     ) {
                         Text(
-                            text      = str.wizard_ad_error,
-                            fontSize  = 12.sp,
-                            color     = Color(0xFFE57373),
+                            text = str.wizard_ad_error,
+                            fontSize = 12.sp,
+                            color = Color(0xFFE57373),
                             textAlign = TextAlign.Center,
-                            modifier  = Modifier
+                            modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 10.dp),
                         )
@@ -998,15 +1127,17 @@ private fun WizardModal(
 
 @Composable
 private fun WizardIntro(
-    periodAcc:    String,
-    signName:     String,
+    periodAcc: String,
+    signName: String,
     elementColor: Color,
-    onWatch:      () -> Unit,
-    onDismiss:    () -> Unit,
+    onWatch: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    val inf    = rememberInfiniteTransition(label = "wizI")
-    val floatY by inf.animateFloat(-6f, 6f,
-        infiniteRepeatable(tween(3400, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wY")
+    val inf = rememberInfiniteTransition(label = "wizI")
+    val floatY by inf.animateFloat(
+        -6f, 6f,
+        infiniteRepeatable(tween(3400, easing = FastOutSlowInEasing), RepeatMode.Reverse), "wY"
+    )
     val witchBreathe by inf.animateFloat(
         0.97f, 1.03f,
         infiniteRepeatable(tween(3200, easing = EaseInOutSine), RepeatMode.Reverse),
@@ -1031,9 +1162,9 @@ private fun WizardIntro(
             WizardAura(modifier = Modifier.fillMaxSize())
             // Soft halo immediately behind the witch silhouette
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val cx = size.width  / 2f
+                val cx = size.width / 2f
                 val cy = size.height / 2f
-                val r  = minOf(size.width, size.height) * 0.42f
+                val r = minOf(size.width, size.height) * 0.42f
                 drawCircle(
                     brush = Brush.radialGradient(
                         colorStops = arrayOf(
@@ -1050,10 +1181,10 @@ private fun WizardIntro(
                 )
             }
             Image(
-                painter            = painterResource(Res.drawable.iruna),
+                painter = painterResource(Res.drawable.iruna),
                 contentDescription = null,
-                contentScale       = ContentScale.Fit,
-                modifier           = Modifier
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
                     .fillMaxSize()
                     .padding(30.dp)
                     .graphicsLayer {
@@ -1063,17 +1194,17 @@ private fun WizardIntro(
             )
         }
         Text(
-            text      = str.wizard_intro_title.format(periodAcc),
-            fontSize  = 22.sp,
+            text = str.wizard_intro_title.format(periodAcc),
+            fontSize = 22.sp,
             fontStyle = FontStyle.Italic,
-            color     = AppColors.TextPrimary,
+            color = AppColors.TextPrimary,
             textAlign = TextAlign.Center,
             lineHeight = 30.sp,
         )
         Text(
-            text      = str.wizard_intro_subtitle.format(signName, periodAcc),
-            fontSize  = 13.sp,
-            color     = AppColors.TextMuted,
+            text = str.wizard_intro_subtitle.format(signName, periodAcc),
+            fontSize = 13.sp,
+            color = AppColors.TextMuted,
             textAlign = TextAlign.Center,
             lineHeight = 19.sp,
         )
@@ -1114,25 +1245,29 @@ private fun WizardIntro(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text          = str.wizard_btn_watch,
-                    fontSize      = 13.sp,
-                    fontWeight    = FontWeight.Medium,
-                    color         = AppColors.AccentGold,
+                    text = str.wizard_btn_watch,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.AccentGold,
                     letterSpacing = TextUnit(0.08f, TextUnitType.Em),
                 )
                 Spacer(Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.75f), RoundedCornerShape(4.dp))
+                        .border(
+                            1.dp,
+                            AppColors.AccentGold.copy(alpha = 0.75f),
+                            RoundedCornerShape(4.dp)
+                        )
                         .padding(horizontal = 5.dp, vertical = 3.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text       = str.tarot_ad_badge,
-                        fontSize   = 9.sp,
+                        text = str.tarot_ad_badge,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        color      = AppColors.AccentGold,
+                        color = AppColors.AccentGold,
                         letterSpacing = TextUnit(0.05f, TextUnitType.Em),
                     )
                 }
@@ -1140,10 +1275,10 @@ private fun WizardIntro(
         }
         // Not now
         Text(
-            text      = str.wizard_btn_not_now,
-            fontSize  = 12.sp,
-            color     = Color(0xFF666666),
-            modifier  = Modifier.clickable { onDismiss() }.padding(8.dp),
+            text = str.wizard_btn_not_now,
+            fontSize = 12.sp,
+            color = Color(0xFF666666),
+            modifier = Modifier.clickable { onDismiss() }.padding(8.dp),
             textAlign = TextAlign.Center,
         )
     }
@@ -1182,15 +1317,15 @@ private fun WizardAura(modifier: Modifier = Modifier) {
         "auraDrift",
     )
 
-    val gold      = Color(0xFFBE9A4A)
+    val gold = Color(0xFFBE9A4A)
     val goldLight = Color(0xFFE8C870)
-    val goldDeep  = Color(0xFF8B6914)
-    val amber     = Color(0xFFD4A030)
+    val goldDeep = Color(0xFF8B6914)
+    val amber = Color(0xFFD4A030)
 
     Canvas(modifier = modifier) {
-        val cx = size.width  / 2f
+        val cx = size.width / 2f
         val cy = size.height / 2f
-        val r  = minOf(size.width, size.height) * 0.48f
+        val r = minOf(size.width, size.height) * 0.48f
 
         // ── Layer 1 — Deep amber nebula background ────────────────────────
         drawCircle(
@@ -1243,10 +1378,10 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                                 Color.Transparent,
                             ),
                             startY = cy - rayOuter,
-                            endY   = cy - rayInner,
+                            endY = cy - rayInner,
                         ),
                         topLeft = Offset(cx - rayWidth / 2f, cy - rayOuter),
-                        size    = androidx.compose.ui.geometry.Size(rayWidth, rayOuter - rayInner),
+                        size = androidx.compose.ui.geometry.Size(rayWidth, rayOuter - rayInner),
                         blendMode = BlendMode.Plus,
                     )
                 }
@@ -1269,10 +1404,10 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 ),
                 startAngle = 0f,
                 sweepAngle = 220f,
-                useCenter  = false,
-                topLeft    = Offset(cx - r, cy - r),
-                size       = androidx.compose.ui.geometry.Size(r * 2, r * 2),
-                style      = Stroke(width = 22.dp.toPx(), cap = StrokeCap.Round),
+                useCenter = false,
+                topLeft = Offset(cx - r, cy - r),
+                size = androidx.compose.ui.geometry.Size(r * 2, r * 2),
+                style = Stroke(width = 22.dp.toPx(), cap = StrokeCap.Round),
             )
         }
 
@@ -1291,10 +1426,10 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 ),
                 startAngle = 140f,
                 sweepAngle = 190f,
-                useCenter  = false,
-                topLeft    = Offset(cx - r * 0.82f, cy - r * 0.82f),
-                size       = androidx.compose.ui.geometry.Size(r * 1.64f, r * 1.64f),
-                style      = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round),
+                useCenter = false,
+                topLeft = Offset(cx - r * 0.82f, cy - r * 0.82f),
+                size = androidx.compose.ui.geometry.Size(r * 1.64f, r * 1.64f),
+                style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round),
             )
         }
 
@@ -1313,11 +1448,11 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 ),
                 startAngle = 50f,
                 sweepAngle = 110f,
-                useCenter  = false,
-                topLeft    = Offset(cx - r * 0.92f, cy - r * 0.92f),
-                size       = androidx.compose.ui.geometry.Size(r * 1.84f, r * 1.84f),
-                style      = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
-                blendMode  = BlendMode.Plus,
+                useCenter = false,
+                topLeft = Offset(cx - r * 0.92f, cy - r * 0.92f),
+                size = androidx.compose.ui.geometry.Size(r * 1.84f, r * 1.84f),
+                style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round),
+                blendMode = BlendMode.Plus,
             )
         }
 
@@ -1336,10 +1471,10 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 ),
                 startAngle = 200f,
                 sweepAngle = 140f,
-                useCenter  = false,
-                topLeft    = Offset(cx - r * 0.65f, cy - r * 0.65f),
-                size       = androidx.compose.ui.geometry.Size(r * 1.3f, r * 1.3f),
-                style      = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+                useCenter = false,
+                topLeft = Offset(cx - r * 0.65f, cy - r * 0.65f),
+                size = androidx.compose.ui.geometry.Size(r * 1.3f, r * 1.3f),
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
             )
         }
 
@@ -1360,15 +1495,15 @@ private fun WizardAura(modifier: Modifier = Modifier) {
         )
 
         // ── Layer 9 — Orbital particles ───────────────────────────────────
-        val orbitR     = r * 0.86f
+        val orbitR = r * 0.86f
         val orbitCount = 6
         for (i in 0 until orbitCount) {
             val phase = drift + (i.toFloat() / orbitCount) * (2f * PI).toFloat()
             val px = cx + cos(phase) * orbitR
             val py = cy + sin(phase) * orbitR * 0.95f
             val col = when (i % 3) {
-                0    -> goldLight
-                1    -> amber
+                0 -> goldLight
+                1 -> amber
                 else -> Color(0xFFFFF0C0)
             }
             drawCircle(
@@ -1382,29 +1517,35 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 blendMode = BlendMode.Plus,
             )
             drawCircle(
-                color  = col.copy(alpha = 0.45f),
+                color = col.copy(alpha = 0.45f),
                 radius = 2.2f.dp.toPx(),
                 center = Offset(px, py),
             )
         }
 
         // ── Layer 10 — Twinkling gold stars ───────────────────────────────
-        data class Star(val ox: Float, val oy: Float, val dp: Float, val col: Color, val phase: Float)
+        data class Star(
+            val ox: Float,
+            val oy: Float,
+            val dp: Float,
+            val col: Color,
+            val phase: Float
+        )
         listOf(
-            Star(-0.72f, -0.42f, 2.8f, goldLight,         0.0f),
-            Star( 0.65f, -0.55f, 2.2f, amber,             0.7f),
-            Star(-0.48f,  0.50f, 1.8f, gold,              1.4f),
-            Star( 0.78f,  0.28f, 2.5f, goldLight,         2.1f),
-            Star( 0.25f, -0.82f, 1.5f, Color(0xFFFFF0C0), 2.8f),
-            Star(-0.82f,  0.15f, 2.0f, amber,             3.5f),
-            Star( 0.55f,  0.72f, 1.8f, goldLight,         4.2f),
-            Star(-0.35f,  0.78f, 2.2f, gold,              4.9f),
-            Star(-0.60f, -0.70f, 1.4f, amber,             0.3f),
-            Star( 0.42f, -0.65f, 2.8f, goldLight,         1.0f),
+            Star(-0.72f, -0.42f, 2.8f, goldLight, 0.0f),
+            Star(0.65f, -0.55f, 2.2f, amber, 0.7f),
+            Star(-0.48f, 0.50f, 1.8f, gold, 1.4f),
+            Star(0.78f, 0.28f, 2.5f, goldLight, 2.1f),
+            Star(0.25f, -0.82f, 1.5f, Color(0xFFFFF0C0), 2.8f),
+            Star(-0.82f, 0.15f, 2.0f, amber, 3.5f),
+            Star(0.55f, 0.72f, 1.8f, goldLight, 4.2f),
+            Star(-0.35f, 0.78f, 2.2f, gold, 4.9f),
+            Star(-0.60f, -0.70f, 1.4f, amber, 0.3f),
+            Star(0.42f, -0.65f, 2.8f, goldLight, 1.0f),
             Star(-0.18f, -0.95f, 1.3f, Color(0xFFFFFAEA), 1.7f),
-            Star( 0.95f, -0.08f, 1.6f, Color(0xFFFFFAEA), 2.4f),
+            Star(0.95f, -0.08f, 1.6f, Color(0xFFFFFAEA), 2.4f),
             Star(-0.95f, -0.18f, 1.5f, Color(0xFFFFFAEA), 3.1f),
-            Star( 0.08f,  0.95f, 1.4f, Color(0xFFFFFAEA), 3.8f),
+            Star(0.08f, 0.95f, 1.4f, Color(0xFFFFFAEA), 3.8f),
         ).forEach { s ->
             val a = ((sin(drift * 1.5f + s.phase) + 1f) / 2f).coerceIn(0f, 1f) * 0.40f
             val sx = cx + s.ox * r
@@ -1420,7 +1561,7 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 blendMode = BlendMode.Plus,
             )
             drawCircle(
-                color  = s.col.copy(alpha = a),
+                color = s.col.copy(alpha = a),
                 radius = s.dp.dp.toPx(),
                 center = Offset(sx, sy),
             )
