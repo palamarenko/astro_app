@@ -257,11 +257,8 @@ class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
     }
 
     fun onAdFailed(message: String) {
-        _state.value = _state.value.copy(adMessage = message)
-        viewModelScope.launch {
-            kotlinx.coroutines.delay(3000L)
-            _state.value = _state.value.copy(adMessage = null)
-        }
+        // Реклама недоступна — всё равно делаем расклад, чтобы не блокировать пользователя
+        drawCards()
     }
 
     private suspend fun revealCardsWithDelay() {

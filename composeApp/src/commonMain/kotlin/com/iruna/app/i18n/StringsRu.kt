@@ -207,6 +207,7 @@ object StringsRu : AppStrings {
     override val wizard_btn_not_now      = "не сейчас"
     override val wizard_ad_title         = "РЕКЛАМА · %1\$dс"
     override val wizard_ad_skip          = "Пропустить через %1\$dс…"
+    override val wizard_ad_error         = "Реклама недоступна. Попробуйте позже или проверьте соединение."
     override val wizard_done_text        = "Завеса приподнята\nПрогноз на %1\$s открыт для знака %2\$s"
     override val wizard_done_btn         = "ЧИТАТЬ ПРОГНОЗ →"
 

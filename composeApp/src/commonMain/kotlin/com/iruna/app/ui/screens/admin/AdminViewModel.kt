@@ -6,10 +6,7 @@ import com.iruna.app.data.*
 import com.iruna.app.data.UserStorage
 import com.iruna.app.notifications.PushAdminService
 import com.iruna.app.notifications.sendLocalTestPush
-import io.ktor.client.*
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -65,6 +62,8 @@ data class AdminUiState(
     // ── Generate All Languages ────────────────────────────────────────────────
     val genAllLangsLoading: Boolean = false,
     val genAllLangsResult: String? = null,   // null = idle, "ok:X" = успех, иначе ошибка
+    val genAllLangsPeriod: HoroscopePeriod = HoroscopePeriod.DAILY,
+    val genAllLangsDate: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
 
     // ── Horoscope Prompt ──────────────────────────────────────────────────────
     val promptText: String = "",
@@ -72,13 +71,23 @@ data class AdminUiState(
     val promptSaving: Boolean = false,
     val promptSaved: Boolean = false,
     val promptError: String? = null,
+
+    // ── Generation schedule (авто-генерация гороскопов) ──────────────────────
+    val genScheduleHours: Set<Int> = emptySet(),
+    val genScheduleLoading: Boolean = false,
+    val genScheduleSaving: Boolean = false,
+    val genScheduleSaved: Boolean = false,
+    val genScheduleError: String? = null,
+
+    // ── Generation logs ───────────────────────────────────────────────────────
+    val generationLogs: List<GenerationLogEntry> = emptyList(),
+    val logsLoading: Boolean = false,
 )
 
 class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     private val firebase    = FirebaseService()
     private val pushService = PushAdminService(
-        HttpClient {
-            install(ContentNegotiation) { json() }
+        createHttpClient {
             install(HttpTimeout) {
                 requestTimeoutMillis = 300_000L  // 5 min — enough for 36 Claude calls
                 connectTimeoutMillis =  15_000L
@@ -104,8 +113,10 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     }
 
     fun setPeriod(period: HoroscopePeriod) {
-        _state.value = _state.value.copy(period = period, isLoaded = false, savedCount = -1, saveError = null)
+        _state.value = _state.value.copy(period = period, isLoaded = false, savedCount = -1, saveError = null,
+            promptText = "", promptSaved = false, promptError = null)
         load()
+        loadPrompt()
     }
 
     fun navigateDate(forward: Boolean) {
@@ -129,6 +140,7 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
     fun loadAll() {
         load()
         loadPrompt()
+        loadGenerationLogs()
     }
 
     fun load() {
@@ -175,7 +187,10 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
             try {
                 val st = _state.value
                 val key = computeDateKey(st.period, st.selectedDate)
-                val response = api.generateAdminHoroscope(sign, st.period, st.lang, key)
+                val response = api.generateAdminHoroscope(
+                    sign, st.period, st.lang, key,
+                    st.promptText.takeIf { it.isNotBlank() }
+                )
                 val h = _state.value.horoscopes.toMutableMap()
                 h[sign.id] = response
                 _state.value = _state.value.copy(
@@ -208,7 +223,10 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
                     val deferreds = remaining.map { sign ->
                         async {
                             try {
-                                val response = api.generateAdminHoroscope(sign, st.period, st.lang, key)
+                                val response = api.generateAdminHoroscope(
+                                    sign, st.period, st.lang, key,
+                                    st.promptText.takeIf { it.isNotBlank() }
+                                )
                                 val h = _state.value.horoscopes.toMutableMap()
                                 h[sign.id] = response
                                 _state.value = _state.value.copy(
@@ -306,6 +324,27 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
 
     // -- Generate All Languages -----------------------------------------------
 
+    fun setGenAllLangsPeriod(period: HoroscopePeriod) {
+        _state.value = _state.value.copy(genAllLangsPeriod = period, genAllLangsResult = null)
+    }
+
+    fun navigateGenAllLangsDate(forward: Boolean) {
+        val d = _state.value.genAllLangsDate
+        val newDate: LocalDate = when (_state.value.genAllLangsPeriod) {
+            HoroscopePeriod.DAILY   -> if (forward) d.plus(1, DateTimeUnit.DAY)  else d.plus(-1, DateTimeUnit.DAY)
+            HoroscopePeriod.WEEKLY  -> if (forward) d.plus(7, DateTimeUnit.DAY)  else d.plus(-7, DateTimeUnit.DAY)
+            HoroscopePeriod.MONTHLY -> {
+                val m = d.monthNumber; val y = d.year
+                if (forward) {
+                    if (m == 12) LocalDate(y + 1, 1, 1) else LocalDate(y, m + 1, 1)
+                } else {
+                    if (m == 1)  LocalDate(y - 1, 12, 1) else LocalDate(y, m - 1, 1)
+                }
+            }
+        }
+        _state.value = _state.value.copy(genAllLangsDate = newDate, genAllLangsResult = null)
+    }
+
     fun generateAllLanguages() {
         val url    = _state.value.functionUrl.trim()
         val secret = _state.value.adminSecret.trim()
@@ -313,8 +352,10 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
             _state.value = _state.value.copy(genAllLangsResult = "⚠ Enter Function URL and Admin Secret first")
             return
         }
-        val period  = _state.value.period
-        val dateKey = computeDateKey(period, _state.value.selectedDate)
+        val period  = _state.value.genAllLangsPeriod
+        val date    = _state.value.genAllLangsDate
+        val dateKey = computeDateKey(period, date)
+        val startMs = Clock.System.now().toEpochMilliseconds()
         viewModelScope.launch {
             _state.value = _state.value.copy(genAllLangsLoading = true, genAllLangsResult = null)
             val result = pushService.generateHoroscopes(
@@ -323,14 +364,31 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
                 date        = dateKey,
                 period      = period.id,
             )
+            val durationMs = Clock.System.now().toEpochMilliseconds() - startMs
+            val (ok, fail) = result.getOrNull() ?: Pair(0, 0)
+
+            // Сохраняем лог
+            val logId = startMs.toString()
+            val logEntry = GenerationLogEntry(
+                id           = logId,
+                timestamp    = startMs,
+                period       = period.id,
+                dateKey      = dateKey,
+                success      = if (result.isSuccess) ok else 0,
+                failed       = if (result.isSuccess) fail else 36,
+                durationMs   = durationMs,
+                triggeredBy  = "manual",
+            )
+            firebase.saveGenerationLog(logEntry)
+
             _state.value = _state.value.copy(
                 genAllLangsLoading = false,
                 genAllLangsResult  = if (result.isSuccess) {
-                    val (ok, fail) = result.getOrNull()!!
                     if (fail == 0) "ok:$ok" else "ok:$ok fail:$fail"
                 } else {
                     result.exceptionOrNull()?.message ?: "Error"
                 },
+                generationLogs = (listOf(logEntry) + _state.value.generationLogs).take(30),
             )
         }
     }
@@ -345,9 +403,10 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
         val url    = _state.value.functionUrl.trim()
         val secret = _state.value.adminSecret.trim()
         if (url.isEmpty() || secret.isEmpty()) return
+        val period = _state.value.period.id
         viewModelScope.launch {
             _state.value = _state.value.copy(promptLoading = true, promptError = null)
-            val result = pushService.getPrompt(functionUrl = url, adminSecret = secret)
+            val result = pushService.getPrompt(functionUrl = url, adminSecret = secret, period = period)
             _state.value = _state.value.copy(
                 promptLoading = false,
                 promptText    = result.getOrNull() ?: _state.value.promptText,
@@ -364,12 +423,14 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
         val url    = _state.value.functionUrl.trim()
         val secret = _state.value.adminSecret.trim()
         if (url.isEmpty() || secret.isEmpty()) return
+        val period = _state.value.period.id
         viewModelScope.launch {
             _state.value = _state.value.copy(promptSaving = true, promptError = null, promptSaved = false)
             val result = pushService.setPrompt(
                 functionUrl = url,
                 adminSecret = secret,
                 prompt      = _state.value.promptText,
+                period      = period,
             )
             _state.value = _state.value.copy(
                 promptSaving = false,
@@ -423,6 +484,58 @@ class AdminViewModel(private val api: ClaudeApiClient) : ViewModel() {
                 scheduleSaved  = result.isSuccess,
                 scheduleError  = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
             )
+        }
+    }
+
+    // -- Generation Schedule (авто-генерация гороскопов) ----------------------
+
+    fun loadGenSchedule() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(genScheduleLoading = true, genScheduleError = null)
+            val result = pushService.getGenSchedule(functionUrl = url, adminSecret = secret)
+            _state.value = _state.value.copy(
+                genScheduleLoading = false,
+                genScheduleHours   = result.getOrNull() ?: _state.value.genScheduleHours,
+                genScheduleError   = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+            )
+        }
+    }
+
+    fun toggleGenScheduleHour(hour: Int) {
+        val current = _state.value.genScheduleHours.toMutableSet()
+        if (current.contains(hour)) current.remove(hour) else current.add(hour)
+        _state.value = _state.value.copy(genScheduleHours = current, genScheduleSaved = false)
+    }
+
+    fun saveGenSchedule() {
+        val url    = _state.value.functionUrl.trim()
+        val secret = _state.value.adminSecret.trim()
+        if (url.isEmpty() || secret.isEmpty()) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(genScheduleSaving = true, genScheduleError = null, genScheduleSaved = false)
+            val result = pushService.setGenSchedule(
+                functionUrl = url,
+                adminSecret = secret,
+                hours       = _state.value.genScheduleHours,
+            )
+            _state.value = _state.value.copy(
+                genScheduleSaving = false,
+                genScheduleSaved  = result.isSuccess,
+                genScheduleError  = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+            )
+        }
+    }
+
+    // -- Generation Logs ------------------------------------------------------
+
+    fun loadGenerationLogs() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(logsLoading = true)
+            val logs = firebase.getGenerationLogs(30)
+            _state.value = _state.value.copy(logsLoading = false, generationLogs = logs)
         }
     }
 }

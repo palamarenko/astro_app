@@ -10,9 +10,10 @@ initializeApp();
 const ADMIN_SECRET   = defineSecret("ADMIN_SECRET");
 const CLAUDE_API_KEY = defineSecret("CLAUDE_API_KEY");
 
-const SCHEDULE_DOC    = "admin_config/push_schedule";
-const PROMPT_DOC      = "admin_config/horoscope_prompt";
-const FIREBASE_DB_URL = "https://zodiac-b23ce-default-rtdb.europe-west1.firebasedatabase.app";
+const SCHEDULE_DOC       = "admin_config/push_schedule";
+const GEN_SCHEDULE_DOC   = "admin_config/gen_schedule";
+const PROMPT_DOC_PREFIX  = "admin_config/prompt_";   // + "daily" | "weekly" | "monthly"
+const FIREBASE_DB_URL    = "https://zodiac-b23ce-default-rtdb.europe-west1.firebasedatabase.app";
 
 const SIGNS = [
   { id: "aries",       name: "Aries",       element: "Fire",  planet: "Mars"    },
@@ -35,13 +36,52 @@ const LANGUAGES = ["ru", "uk", "en"];
 // The signs list is injected automatically by the function.
 // Style instructions stored in Firestore — only the creative/tone part.
 // The technical wrapper (signs list, JSON schema, date, language) is always hardcoded.
-const DEFAULT_STYLE =
-  "Style: poetic, inspiring, mystical.\n" +
-  "Each sign text: 3-4 sentences that reflect the score levels — " +
-  "low scores (50-65) hint at caution or challenges, " +
-  "medium (66-80) suggest steady progress, " +
-  "high (81-100) radiate optimism and success.\n" +
-  "Keyword: 1-2 evocative words capturing the day's energy for that sign.";
+const LANG_QUALITY =
+  "Language quality:\n" +
+  "— Ukrainian: write in authentic literary Ukrainian. Avoid russicisms and calques from Russian " +
+  "(e.g. use 'тому що' not 'потому що', 'тільки' not 'только', 'будь-який' not 'любий' in the sense of 'any'). " +
+  "Use native Ukrainian vocabulary, idioms and phrasing. The text must feel natural to a native Ukrainian speaker, " +
+  "not like a word-for-word translation from Russian.\n" +
+  "— Russian: use expressive literary Russian.\n" +
+  "— English: use poetic but accessible English.";
+
+const DEFAULT_STYLES = {
+  daily:
+    "Style: warm, clear, easy to read — like advice from a trusted friend, not a mystical oracle.\n" +
+    "Avoid heavy metaphors, flowery language, and vague cosmic imagery. Write in plain, natural sentences.\n" +
+    "Each sign text: 6-8 short sentences. Include at least one concrete prediction or practical tip for the day " +
+    "(what to expect, what to do, what to avoid). Reflect score levels: " +
+    "low (50-65) — mention a specific challenge or thing to be careful about, " +
+    "medium (66-80) — note steady but real progress in one area, " +
+    "high (81-100) — name a concrete opportunity or win coming their way.\n" +
+    "Keyword: 1-2 simple, vivid words capturing the day's theme.\n" +
+    LANG_QUALITY,
+
+  weekly:
+    "Style: warm, clear, easy to read — like advice from a trusted friend, not a mystical oracle.\n" +
+    "Avoid heavy metaphors, flowery language, and vague cosmic imagery. Write in plain, natural sentences.\n" +
+    "Each sign text: 3-4 short sentences covering the most important theme of the week. " +
+    "Include at least one concrete prediction or actionable tip (what to focus on, what to watch out for). " +
+    "Reflect score levels: low (50-65) — name a specific tension or obstacle to expect this week, " +
+    "medium (66-80) — highlight one area where steady effort will pay off, " +
+    "high (81-100) — point to a clear opportunity or highlight of the week.\n" +
+    "IMPORTANT: Do NOT mention week numbers (e.g. 'week 32' or 'W32'). " +
+    "Instead refer to the time naturally, e.g. 'the second week of August', 'mid-July'.\n" +
+    "Keyword: 1-2 simple, vivid words capturing the week's theme.\n" +
+    LANG_QUALITY,
+
+  monthly:
+    "Style: warm, clear, easy to read — like advice from a trusted friend, not a mystical oracle.\n" +
+    "Avoid heavy metaphors, flowery language, and vague cosmic imagery. Write in plain, natural sentences.\n" +
+    "Each sign text: 3-4 short sentences about the main theme of the month. " +
+    "Name the 1-2 life areas most in focus (love, work, finances, health, self-development) and give one clear, " +
+    "specific prediction or piece of guidance for the month. Reflect score levels: " +
+    "low (50-65) — be direct about what will be difficult and why patience matters, " +
+    "medium (66-80) — describe what consistent effort will bring, " +
+    "high (81-100) — describe the specific breakthrough or reward waiting this month.\n" +
+    "Keyword: 1-2 simple, vivid words capturing the month's theme.\n" +
+    LANG_QUALITY,
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -87,12 +127,27 @@ async function saveToDb(lang, period, dateKey, signId, data) {
   if (!resp.ok) throw new Error("Firebase DB " + resp.status);
 }
 
-async function getStyleInstructions(db) {
+async function getStyleInstructions(db, period) {
+  const p = (period === "weekly" || period === "monthly") ? period : "daily";
+  const defaultStyle = DEFAULT_STYLES[p];
   try {
-    const doc = await db.doc(PROMPT_DOC).get();
-    return (doc.exists && doc.data().prompt) ? doc.data().prompt : DEFAULT_STYLE;
+    const doc = await db.doc(PROMPT_DOC_PREFIX + p).get();
+    return (doc.exists && doc.data().prompt) ? doc.data().prompt : defaultStyle;
   } catch (e) {
-    return DEFAULT_STYLE;
+    return defaultStyle;
+  }
+}
+
+async function saveGenerationLog(entry) {
+  try {
+    const url = FIREBASE_DB_URL + "/generation_logs/" + entry.id + ".json";
+    await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
+    });
+  } catch (e) {
+    console.warn("saveGenerationLog failed: " + e.message);
   }
 }
 
@@ -107,8 +162,12 @@ function buildSignsDesc() {
 async function generateAllForLang(lang, period, dateKey, apiKey, styleInstructions) {
   const langName = lang === "uk" ? "Ukrainian" : lang === "en" ? "English" : "Russian";
   const signsDesc = buildSignsDesc();
+  const periodWord = period === "weekly" ? "weekly" : period === "monthly" ? "monthly" : "daily";
+  const periodDesc = period === "weekly" ? "week (" + dateKey + ")"
+                   : period === "monthly" ? "month (" + dateKey + ")"
+                   : "day (" + dateKey + ")";
   const prompt =
-    "Generate daily horoscopes for all 12 zodiac signs for the day (" + dateKey + ").\n" +
+    "Generate " + periodWord + " horoscopes for all 12 zodiac signs for the " + periodDesc + ".\n" +
     "Language: " + langName + ".\n\n" +
     styleInstructions + "\n\n" +
     "Signs and their traits:\n" + signsDesc + "\n\n" +
@@ -118,7 +177,7 @@ async function generateAllForLang(lang, period, dateKey, apiKey, styleInstructio
     "\"libra\":{...},\"scorpio\":{...},\"sagittarius\":{...},\"capricorn\":{...}," +
     "\"aquarius\":{...},\"pisces\":{...}}";
 
-  const raw = await callClaude(prompt, apiKey, 3000);
+  const raw = await callClaude(prompt, apiKey, 6000);
   const parsed = JSON.parse(extractJson(raw));
 
   // Validate all 12 signs are present
@@ -207,19 +266,32 @@ exports.adminApi = onRequest(
         res.json({ success: true });
 
       } else if (action === "getPrompt") {
-        const doc = await db.doc(PROMPT_DOC).get();
-        const prompt = (doc.exists && doc.data().prompt) ? doc.data().prompt : DEFAULT_STYLE;
+        const period = (req.body && req.body.period) ? req.body.period : "daily";
+        const p = (period === "weekly" || period === "monthly") ? period : "daily";
+        const doc = await db.doc(PROMPT_DOC_PREFIX + p).get();
+        const prompt = (doc.exists && doc.data().prompt) ? doc.data().prompt : DEFAULT_STYLES[p];
         res.json({ prompt: prompt, isDefault: !doc.exists || !doc.data().prompt });
 
       } else if (action === "setPrompt") {
-        const prompt = (req.body && req.body.prompt) ? req.body.prompt : DEFAULT_STYLE;
-        await db.doc(PROMPT_DOC).set({ prompt: prompt, updatedAt: Date.now() });
+        const period = (req.body && req.body.period) ? req.body.period : "daily";
+        const p = (period === "weekly" || period === "monthly") ? period : "daily";
+        const prompt = (req.body && req.body.prompt) ? req.body.prompt : DEFAULT_STYLES[p];
+        await db.doc(PROMPT_DOC_PREFIX + p).set({ prompt: prompt, updatedAt: Date.now() });
+        res.json({ success: true });
+
+      } else if (action === "getGenSchedule") {
+        const doc = await db.doc(GEN_SCHEDULE_DOC).get();
+        res.json({ localHours: doc.exists ? (doc.data().localHours || []) : [] });
+
+      } else if (action === "setGenSchedule") {
+        const localHours = (req.body && Array.isArray(req.body.localHours)) ? req.body.localHours : [];
+        await db.doc(GEN_SCHEDULE_DOC).set({ localHours: localHours, updatedAt: Date.now() });
         res.json({ success: true });
 
       } else if (action === "generateHoroscopes") {
         const dateKey = (req.body && req.body.date) ? req.body.date : utcDateKey(1);
         const period  = (req.body && req.body.period) ? req.body.period : "daily";
-        const styleInstructions = await getStyleInstructions(db);
+        const styleInstructions = await getStyleInstructions(db, period);
         console.log("Manual generateHoroscopes for " + dateKey + " period=" + period);
         const result = await generateForDate(dateKey, CLAUDE_API_KEY.value(), styleInstructions, period);
         res.json({ success: result.success, failed: result.failed, errors: result.errors, date: dateKey, period: period });
@@ -255,33 +327,55 @@ async function horoscopesComplete(dateKey) {
 
 exports.scheduledGenerateHoroscopes = onSchedule(
   {
-    schedule: "0 7 * * *",
+    schedule: "0 * * * *",   // каждый час; реальное время берётся из Firestore (GEN_SCHEDULE_DOC)
     timeZone: "UTC",
     secrets: [CLAUDE_API_KEY],
     timeoutSeconds: 540,
     memory: "512MiB",
   },
   async function() {
+    const db             = getFirestore();
+    const genDoc         = await db.doc(GEN_SCHEDULE_DOC).get();
+    const localHours     = genDoc.exists ? (genDoc.data().localHours || []) : [];
+    const currentUtcHour = new Date().getUTCHours();
+
+    // localHours здесь трактуются как UTC-часы запуска
+    if (!localHours.includes(currentUtcHour)) {
+      console.log("scheduledGenerateHoroscopes: UTC " + currentUtcHour + " not in schedule " + JSON.stringify(localHours) + ", skipping");
+      return;
+    }
+
     const apiKey   = CLAUDE_API_KEY.value();
-    const db       = getFirestore();
-    const styleTpl = await getStyleInstructions(db);
+    const styleTpl = await getStyleInstructions(db, "daily");
     const tomorrow = utcDateKey(1);
     const dayAfter = utcDateKey(2);
 
-    console.log("=== scheduledGenerateHoroscopes: " + tomorrow + " + " + dayAfter + " ===");
+    console.log("=== scheduledGenerateHoroscopes: UTC " + currentUtcHour + " triggered — " + tomorrow + " + " + dayAfter + " ===");
 
     if (await horoscopesComplete(tomorrow)) {
       console.log(tomorrow + ": already complete, skipping");
     } else {
+      const t1 = Date.now();
       const r1 = await generateForDate(tomorrow, apiKey, styleTpl, "daily");
       console.log(tomorrow + ": ok=" + r1.success + " fail=" + r1.failed);
+      await saveGenerationLog({
+        id: String(t1), timestamp: t1, period: "daily", dateKey: tomorrow,
+        success: r1.success, failed: r1.failed, durationMs: Date.now() - t1,
+        triggeredBy: "scheduled",
+      });
     }
 
     if (await horoscopesComplete(dayAfter)) {
       console.log(dayAfter + ": already complete, skipping");
     } else {
+      const t2 = Date.now();
       const r2 = await generateForDate(dayAfter, apiKey, styleTpl, "daily");
       console.log(dayAfter + ": ok=" + r2.success + " fail=" + r2.failed);
+      await saveGenerationLog({
+        id: String(t2), timestamp: t2, period: "daily", dateKey: dayAfter,
+        success: r2.success, failed: r2.failed, durationMs: Date.now() - t2,
+        triggeredBy: "scheduled",
+      });
     }
   }
 );

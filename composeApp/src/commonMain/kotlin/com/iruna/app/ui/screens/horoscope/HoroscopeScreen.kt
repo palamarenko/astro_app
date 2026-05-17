@@ -221,7 +221,9 @@ fun HoroscopeScreen(
         if (state.showPushPrompt) {
             PushPromptDialog(
                 onAllow = { vm.onPushPromptResult(enabled = true) },
-                onDeny  = { vm.onPushPromptResult(enabled = false) },
+                // "Позже" — только скрываем на эту сессию, НЕ помечаем как "спрошено".
+                // Следующая сессия снова покажет промпт.
+                onDeny  = { vm.dismissPushPromptForSession() },
             )
         }
     }
@@ -851,6 +853,8 @@ private fun WizardModal(
         HoroscopePeriod.MONTHLY -> str.wizard_period_acc_month
     }
 
+    var adError by remember { mutableStateOf(false) }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties       = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true),
@@ -872,20 +876,37 @@ private fun WizardModal(
                     .border(1.dp, AppColors.AccentGold.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
                     .padding(24.dp)
             ) {
-                WizardIntro(
-                    periodAcc    = periodAcc,
-                    signName     = sign.localizedName(),
-                    elementColor = elementColor,
-                    onWatch      = {
-                        // Всегда запускаем реальную рекламу AdMob
-                        adManager.showRewardedAd(
-                            onRewarded = { onComplete() },
-                            // Если реклама не готова — всё равно даём доступ
-                            onFailed   = { onComplete() },
+                Column {
+                    WizardIntro(
+                        periodAcc    = periodAcc,
+                        signName     = sign.localizedName(),
+                        elementColor = elementColor,
+                        onWatch      = {
+                            adError = false
+                            adManager.showRewardedAd(
+                                onRewarded = { onComplete() },
+                                onFailed   = { adError = true },
+                            )
+                        },
+                        onDismiss    = onDismiss,
+                    )
+
+                    AnimatedVisibility(
+                        visible = adError,
+                        enter   = fadeIn(tween(300)) + expandVertically(tween(300)),
+                        exit    = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+                    ) {
+                        Text(
+                            text      = str.wizard_ad_error,
+                            fontSize  = 12.sp,
+                            color     = Color(0xFFE57373),
+                            textAlign = TextAlign.Center,
+                            modifier  = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
                         )
-                    },
-                    onDismiss    = onDismiss,
-                )
+                    }
+                }
             }
         }
     }

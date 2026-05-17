@@ -2,14 +2,9 @@ package com.iruna.app.data
 
 import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.Logger
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -36,17 +31,7 @@ private const val MODEL = "claude-haiku-4-5-20251001"
 class ClaudeApiClient(private val apiKey: String) {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
-    private val client = HttpClient {
-        install(ContentNegotiation) { json(json) }
-        install(Logging) {
-            logger = object : Logger {
-                override fun log(message: String) {
-                    println("Ktor: $message")
-                }
-            }
-            level = LogLevel.ALL
-        }
-    }
+    private val client: HttpClient = createHttpClient(json)
 
     // Strip optional ```json ... ``` fences the model sometimes adds despite instructions
     private fun extractJson(raw: String): String {
@@ -58,6 +43,21 @@ class ClaudeApiClient(private val apiKey: String) {
             .trimStart('\n', '\r')
             .substringBeforeLast("```")
             .trim()
+    }
+
+    // If the model wrapped the response in a top-level key (e.g. {"horoscope":{...}}),
+    // unwrap and return the inner object that contains "text".
+    private fun unwrapHoroscopeJson(raw: String): String {
+        return try {
+            val el = json.parseToJsonElement(raw)
+            if (el !is kotlinx.serialization.json.JsonObject) return raw
+            // Already flat — has "text" at top level
+            if (el.containsKey("text")) return raw
+            // Find first nested object that has "text"
+            val nested = el.values.filterIsInstance<kotlinx.serialization.json.JsonObject>()
+                .firstOrNull { it.containsKey("text") }
+            nested?.toString() ?: raw
+        } catch (_: Exception) { raw }
     }
 
     private suspend fun complete(prompt: String, maxTokens: Int = 512): String {
@@ -82,10 +82,10 @@ class ClaudeApiClient(private val apiKey: String) {
             Language: $langName.
             Scores range 50–100 where 50=bad, 75=average, 100=perfect.
             The text must reflect the score levels (low scores → warnings/caution, high → optimism/praise).
-            Respond ONLY with JSON, no markdown:
+            IMPORTANT: Respond ONLY with this exact flat JSON structure, no markdown, no extra keys, no nesting:
             {"text":"3-4 poetic sentences","keyword":"1-2 words","love":72,"career":85,"health":60,"energy":78}
         """.trimIndent()
-        return json.decodeFromString(extractJson(complete(prompt)))
+        return json.decodeFromString(unwrapHoroscopeJson(extractJson(complete(prompt))))
     }
 
     suspend fun getCompatibility(sign1: ZodiacSign, sign2: ZodiacSign, lang: String = "ru"): CompatibilityResponse {
@@ -201,12 +201,14 @@ class ClaudeApiClient(private val apiKey: String) {
         return json.decodeFromString(extractJson(complete(prompt, maxTokens = 200)))
     }
 
-    // Admin: generate a horoscope in the target language for a specific period
+    // Admin: generate a horoscope in the target language for a specific period.
+    // styleInstructions — the editable prompt from admin panel (Firestore); falls back to built-in default.
     suspend fun generateAdminHoroscope(
         sign: ZodiacSign,
         period: HoroscopePeriod,
         lang: String,
         dateKey: String,
+        styleInstructions: String? = null,
     ): HoroscopeResponse {
         val langName = when (lang) { "en" -> "English"; "uk" -> "Ukrainian"; else -> "Russian" }
         val periodDesc = when (period) {
@@ -214,14 +216,29 @@ class ClaudeApiClient(private val apiKey: String) {
             HoroscopePeriod.WEEKLY  -> "for the week ($dateKey)"
             HoroscopePeriod.MONTHLY -> "for the month ($dateKey)"
         }
+        val weeklyNote = if (period == HoroscopePeriod.WEEKLY)
+            "\nDo NOT mention week numbers (e.g. 'week 32' or 'W32'). " +
+            "Instead refer to the time naturally, e.g. 'the second week of August', 'mid-July', 'the last days of October'."
+        else ""
+        val style = styleInstructions?.takeIf { it.isNotBlank() }?.plus(weeklyNote) ?:
+            "Style: warm, clear, easy to read — like advice from a trusted friend, not a mystical oracle.\n" +
+            "Avoid heavy metaphors, flowery language, and vague cosmic imagery. Write in plain, natural sentences.\n" +
+            "Text: 6-8 short sentences. Include at least one concrete prediction or practical tip. " +
+            "Scores: integers from 50 to 100 (50=bad, 75=average, 100=perfect). " +
+            "The text must reflect the scores — name specific challenges for low scores, specific opportunities for high scores." +
+            weeklyNote + "\n" +
+            "For Ukrainian: write in authentic literary Ukrainian. Avoid russicisms and calques from Russian. " +
+            "Use native Ukrainian vocabulary and phrasing — the text must feel natural to a native Ukrainian speaker, " +
+            "not like a translation from Russian.\n" +
+            "For Russian: use expressive literary Russian.\n" +
+            "For English: use poetic but accessible English."
         val prompt = """
             Write a horoscope for zodiac sign "${sign.name}" (element: ${sign.element}, planet: ${sign.planet}) $periodDesc.
-            Language: $langName. Style: poetic, inspiring, mystical.
-            Text: 3-4 sentences. Scores: integers from 50 to 100 (50=bad, 75=average, 100=perfect).
-            The text must reflect the score levels — low scores should hint at caution or challenges, high scores at success and joy.
-            Respond ONLY with valid JSON, no markdown:
+            Language: $langName.
+            $style
+            IMPORTANT: Respond ONLY with this exact flat JSON structure, no markdown, no extra keys, no nesting:
             {"text":"...","keyword":"1-2 words","love":72,"career":85,"health":60,"energy":78}
         """.trimIndent()
-        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 450)))
+        return json.decodeFromString(unwrapHoroscopeJson(extractJson(complete(prompt, maxTokens = 900))))
     }
 }

@@ -88,6 +88,20 @@ data class TarotReadingResponse(
     val past: String, val present: String, val future: String, val summary: String,
 )
 
+// ── Generation log ────────────────────────────────────────────────────────────
+
+@Serializable
+data class GenerationLogEntry(
+    val id: String,           // timestamp string — ключ в Firebase
+    val timestamp: Long,      // unix ms
+    val period: String,       // "daily" / "weekly" / "monthly"
+    val dateKey: String,      // "2026-06-03" / "2026-W23" / "2026-06"
+    val success: Int,
+    val failed: Int,
+    val durationMs: Long,
+    val triggeredBy: String = "manual",  // "manual" | "scheduled"
+)
+
 // ── Enums ─────────────────────────────────────────────────────────────────────
 enum class HoroscopePeriod(val id: String, val label: String, val promptRu: String) {
     DAILY("daily", "Сегодня", "на сегодня"),

@@ -73,6 +73,40 @@ fun TarotListScreen(
             .fillMaxSize()
             .background(AppColors.Background)
     ) {
+        // ── Декоративні зірки фону ────────────────────────────────────────────
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Велика зірка — вгорі праворуч
+            Image(
+                painter            = painterResource(Res.drawable.ic_star),
+                contentDescription = null,
+                modifier           = Modifier
+                    .size(70.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-16).dp, y = 52.dp)
+                    .graphicsLayer { alpha = 0.50f },
+            )
+            // Мала зірка — верх зліва
+            Image(
+                painter            = painterResource(Res.drawable.ic_star),
+                contentDescription = null,
+                modifier           = Modifier
+                    .size(14.dp)
+                    .align(Alignment.TopStart)
+                    .offset(x = 18.dp, y = 130.dp)
+                    .graphicsLayer { alpha = 0.18f },
+            )
+            // Маленька зірка — праворуч посередині
+            Image(
+                painter            = painterResource(Res.drawable.ic_star),
+                contentDescription = null,
+                modifier           = Modifier
+                    .size(9.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-48).dp, y = 160.dp)
+                    .graphicsLayer { alpha = 0.14f },
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -256,7 +290,7 @@ private fun PeriodCard(
         ) {
             // ── Иконка периода ────────────────────────────────────────────
             Box(
-                modifier = Modifier.size(90.dp),
+                modifier = Modifier.size(60.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 // Внешнее золотое свечение
@@ -375,10 +409,14 @@ private fun MiniCardSlot(card: TarotCard?) {
             )
             Box(Modifier.fillMaxSize().background(AppColors.AccentGold.copy(alpha = 0.06f)))
         } else {
-            Text(
-                text     = "✦",
-                fontSize = 9.sp,
-                color    = AppColors.AccentGold.copy(alpha = 0.25f),
+            // Порожній слот — рубашка карти приглушена
+            Image(
+                painter            = painterResource(Res.drawable.back_card),
+                contentDescription = null,
+                contentScale       = ContentScale.Fit,
+                modifier           = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = 0.42f },
             )
         }
     }

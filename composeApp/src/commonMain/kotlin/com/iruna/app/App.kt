@@ -159,6 +159,13 @@ private fun AppContent(
         return
     }
 
+    // После завершения онбординга проверяем нужно ли показать push-промпт.
+    // LaunchedEffect(Unit) запускается один раз при входе в AppContent
+    // (т.е. сразу после того, как онбординг пройден).
+    LaunchedEffect(Unit) {
+        horoscopeVm.checkPushPrompt()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

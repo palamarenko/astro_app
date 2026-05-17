@@ -160,26 +160,3 @@ fun AdminSettingsScreen(
     }
 }
 
-// ── Shared tab item ───────────────────────────────────────────────────────────
-
-@Composable
-internal fun AdminTabItem(label: String, active: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(Radius.s))
-            .background(if (active) AppColors.AccentGold else AppColors.Surface)
-            .then(
-                if (!active) Modifier.border(1.dp, AppColors.AccentGold.copy(alpha = 0.3f), RoundedCornerShape(Radius.s))
-                else Modifier
-            )
-            .clickable(enabled = !active, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = label,
-            color = if (active) Color(0xFF0A0A0F) else AppColors.AccentGold,
-            fontSize = 12.sp,
-            fontWeight = if (active) FontWeight.Medium else FontWeight.Normal
-        )
-    }
-}

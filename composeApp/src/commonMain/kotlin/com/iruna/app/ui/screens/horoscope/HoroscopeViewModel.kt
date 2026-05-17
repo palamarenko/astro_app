@@ -53,11 +53,34 @@ class HoroscopeViewModel(
         }
 
     init {
-        // Проверяем нужно ли показать push-промпт при первом заходе
+        // init запускается при создании VM (до завершения онбординга).
+        // Показываем промпт только если онбординг уже пройден И разрешение ещё не запрашивали.
+        // Для новых пользователей (profile == null) промпт покажет checkPushPrompt(),
+        // которая вызывается из App.kt после завершения онбординга.
         val profile = UserStorage.load()
-        if (profile != null && !profile.pushNotificationsAsked) {
+        if (profile != null && profile.onboardingFinished && !profile.pushNotificationsAsked) {
             _state.value = _state.value.copy(showPushPrompt = true)
         }
+    }
+
+    /**
+     * Вызывается из App.kt сразу после того, как онбординг завершился.
+     * Показывает промпт, если разрешение ещё ни разу не запрашивалось.
+     */
+    fun checkPushPrompt() {
+        val profile = UserStorage.load() ?: return
+        if (!profile.pushNotificationsAsked) {
+            _state.value = _state.value.copy(showPushPrompt = true)
+        }
+    }
+
+    /**
+     * Пользователь нажал «Позже» — скрываем промпт только на эту сессию.
+     * НЕ сохраняем pushNotificationsAsked = true, чтобы в следующей сессии
+     * промпт снова появился.
+     */
+    fun dismissPushPromptForSession() {
+        _state.value = _state.value.copy(showPushPrompt = false)
     }
 
     // ── Public API ────────────────────────────────────────────────────────────

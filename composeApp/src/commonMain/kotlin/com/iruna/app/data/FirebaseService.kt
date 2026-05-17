@@ -1,27 +1,13 @@
 package com.iruna.app.data
 
-import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
 class FirebaseService {
-    private val client = HttpClient {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
-        }
-        install(Logging) {
-            logger = Logger.DEFAULT
-            level  = LogLevel.ALL
-        }
-    }
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val client = createHttpClient(json)
 
     private val baseUrl = "https://zodiac-b23ce-default-rtdb.europe-west1.firebasedatabase.app"
 
@@ -83,6 +69,34 @@ class FirebaseService {
             response.status.value in 200..299
         } catch (e: Exception) {
             false
+        }
+    }
+
+    // ── Generation logs ───────────────────────────────────────────────────────
+
+    /** Сохраняет запись лога генерации. Ключ = timestamp. */
+    suspend fun saveGenerationLog(entry: GenerationLogEntry): Boolean {
+        return try {
+            val url = "$baseUrl/generation_logs/${entry.id}.json"
+            val response = client.put(url) {
+                contentType(ContentType.Application.Json)
+                setBody(entry)
+            }
+            response.status.value in 200..299
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Загружает все записи лога, возвращает последние [limit] отсортированных по убыванию.
+     *  Ключи — строки timestamp (мс), поэтому $key сортирует их правильно без доп. индекса. */
+    suspend fun getGenerationLogs(limit: Int = 30): List<GenerationLogEntry> {
+        return try {
+            val url = "$baseUrl/generation_logs.json?orderBy=%22%24key%22&limitToLast=$limit"
+            val raw = client.get(url).body<Map<String, GenerationLogEntry>?>()
+            raw?.values?.sortedByDescending { it.timestamp } ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }

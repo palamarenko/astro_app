@@ -127,7 +127,7 @@ fun ProfileScreen(
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
 
                 // Имя
-                ProfileCard(icon = "⊙", label = str.profile_field_name_label) {
+                ProfileCard( label = str.profile_field_name_label, icon = "⊙") {
                     OutlinedTextField(
                         value         = state.name,
                         onValueChange = { vm.setName(it) },
@@ -305,7 +305,6 @@ fun ProfileScreen(
 @Composable
 private fun ProfileCard(
     icon : String,label: String,
-    icon: String = "",
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -390,7 +389,6 @@ private fun StatItem(label: String, value: String, color: Color) {
 
 @Composable
 private fun GenderButton(
-    symbol : String,
     label:    String,
     selected: Boolean,
     onClick:  () -> Unit,

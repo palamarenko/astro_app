@@ -207,6 +207,7 @@ object StringsEn : AppStrings {
     override val wizard_btn_not_now      = "not now"
     override val wizard_ad_title         = "AD · %1\$ds"
     override val wizard_ad_skip          = "Skip in %1\$ds…"
+    override val wizard_ad_error         = "Ad unavailable. Please try again later or check your connection."
     override val wizard_done_text        = "The veil has lifted\nForecast for %1\$s is open for %2\$s"
     override val wizard_done_btn         = "READ FORECAST →"
 

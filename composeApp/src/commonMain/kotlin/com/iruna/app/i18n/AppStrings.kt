@@ -216,6 +216,7 @@ interface AppStrings {
     val wizard_ad_title: String
     /** Format: %1$d = seconds */
     val wizard_ad_skip: String
+    val wizard_ad_error: String
     /** Format: %1$s = period, %2$s = sign name */
     val wizard_done_text: String
     val wizard_done_btn: String

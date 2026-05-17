@@ -62,6 +62,9 @@ fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifie
     }
 
     Box(modifier = modifier.fillMaxSize()) {
+        // ── Декоративні зірки фону ────────────────────────────────────────────
+        StarDecorations()
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -564,23 +567,50 @@ private fun TarotCardSlot(
     }
 }
 
-// ── Mystical card back ────────────────────────────────────────────────────────
+// ── Mystical card back — back_card.png ───────────────────────────────────────
 
 @Composable
 private fun CardBack(dimmed: Boolean = false) {
-    val baseAlpha = if (dimmed) 0.28f else 1f
+    val baseAlpha =  0.8f
     val gold = AppColors.AccentGold
     val breathAlpha by rememberInfiniteTransition(label = "breath").animateFloat(
         initialValue = 0f,
-        targetValue = if (dimmed) 0f else 0.18f,
+        targetValue  = if (dimmed) 0f else 0.25f,
         animationSpec = infiniteRepeatable(tween(2400, easing = EaseInOutSine), RepeatMode.Reverse),
         label = "ba"
     )
 
-    // Внешний Box без clip — свечение выходит за скруглённые углы
+    // ColorMatrix: scale + offset (offset в діапазоні 0-255 Android-простору)
+    // Яскрава версія — для карт після витягування
+    val brightFilter = remember {
+        ColorFilter.colorMatrix(
+            ColorMatrix().apply {
+                setToScale(1.35f, 1.25f, 1.05f, 1f)
+                this[0, 4] = 32f   // R +32/255
+                this[1, 4] = 25f   // G +25/255
+                this[2, 4] = 8f    // B +8/255
+            }
+        )
+    }
+
+    // М'яка версія — для placeholder-карт до початку розкладу
+    val dimFilter = remember {
+        ColorFilter.colorMatrix(
+            ColorMatrix().apply {
+                setToScale(1.15f, 1.10f, 1.0f, 1f)
+                this[0, 4] = 18f   // R +18/255
+                this[1, 4] = 14f   // G +14/255
+                this[2, 4] = 5f    // B +5/255
+            }
+        )
+    }
+
+    val activeFilter = if (dimmed) dimFilter else brightFilter
+
+    // Зовнішній Box без clip — свічення виходить за скруглені кути
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
 
-        // ── Свечение — бокс шире карты на 40dp с каждой стороны ─────────────
+        // ── Свічення — бокс ширший за карту на 40dp з кожного боку ──────────
         if (!dimmed) {
             Box(
                 modifier = Modifier
@@ -605,59 +635,84 @@ private fun CardBack(dimmed: Boolean = false) {
             )
         }
 
-        // ── Тело карты — клипировано по скруглённому прямоугольнику ──────────
+        // ── Теплий фон за картою (щоб кути не були прозорими) ────────────────
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(RoundedCornerShape(Radius.m))
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF1E1B42).copy(alpha = baseAlpha),
-                            Color(0xFF090912).copy(alpha = baseAlpha),
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val cx = size.width / 2f
-                val cy = size.height / 2f
-                val maxR = minOf(size.width, size.height) * 0.43f
+                .background(Color(0xFF1C170E))
+                .graphicsLayer { alpha = baseAlpha }
+        )
 
-                listOf(0.28f, 0.50f, 0.72f, 0.92f).forEachIndexed { idx, factor ->
-                    drawCircle(
-                        color = gold.copy(alpha = baseAlpha * (0.08f + idx * 0.03f)),
-                        radius = maxR * factor,
-                        center = Offset(cx, cy),
-                        style = Stroke(width = 0.8.dp.toPx())
-                    )
-                }
+        // ── Рубашка карти — back_card.png ────────────────────────────────────
+        Image(
+            painter            = painterResource(Res.drawable.back_card),
+            contentDescription = null,
+            contentScale       = ContentScale.Fit,
+            colorFilter        = activeFilter,
+            modifier           = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(Radius.m))
+                .graphicsLayer { alpha = baseAlpha },
+        )
+    }
+}
 
-                val starR = maxR * 0.30f
-                val innerR = starR * 0.42f
-                val path = Path()
-                for (i in 0 until 8) {
-                    val oa = (i * 45.0 - 90.0) * (PI / 180.0)
-                    val ia = ((i * 45.0 + 22.5) - 90.0) * (PI / 180.0)
-                    val ox = cx + starR * cos(oa).toFloat()
-                    val oy = cy + starR * sin(oa).toFloat()
-                    val ix = cx + innerR * cos(ia).toFloat()
-                    val iy = cy + innerR * sin(ia).toFloat()
-                    if (i == 0) path.moveTo(ox, oy) else path.lineTo(ox, oy)
-                    path.lineTo(ix, iy)
-                }
-                path.close()
-                drawPath(path, color = gold.copy(alpha = baseAlpha * 0.55f), style = Fill)
-                drawPath(path, color = gold.copy(alpha = baseAlpha * 0.28f), style = Stroke(0.8.dp.toPx()))
-            }
+// ── Декоративні зірки фону ────────────────────────────────────────────────────
 
-            Box(
-                modifier = Modifier.fillMaxSize().padding(7.dp)
-                    .border(1.dp, gold.copy(alpha = baseAlpha * 0.22f), RoundedCornerShape(Radius.m - 5.dp))
-            )
-            Text(text = "✦", fontSize = TextUnit(18f, TextUnitType.Sp), color = gold.copy(alpha = baseAlpha * 0.65f))
-        }
+@Composable
+private fun StarDecorations() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Велика зірка — вгорі праворуч
+        Image(
+            painter            = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier           = Modifier
+                .size(82.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = (-14).dp, y = 44.dp)
+                .graphicsLayer { alpha = 0.55f },
+        )
+        // Мала зірка — зліва посередині
+        Image(
+            painter            = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier           = Modifier
+                .size(16.dp)
+                .align(Alignment.TopStart)
+                .offset(x = 22.dp, y = 120.dp)
+                .graphicsLayer { alpha = 0.20f },
+        )
+        // Маленька зірка — праворуч
+        Image(
+            painter            = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier           = Modifier
+                .size(10.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = (-52).dp, y = 150.dp)
+                .graphicsLayer { alpha = 0.15f },
+        )
+        // Середня зірка — нижче зліва
+        Image(
+            painter            = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier           = Modifier
+                .size(24.dp)
+                .align(Alignment.TopStart)
+                .offset(x = 8.dp, y = 215.dp)
+                .graphicsLayer { alpha = 0.12f },
+        )
+        // Дрібна зірка — центр праворуч
+        Image(
+            painter            = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier           = Modifier
+                .size(8.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = (-90).dp, y = 95.dp)
+                .graphicsLayer { alpha = 0.18f },
+        )
     }
 }
 

@@ -110,15 +110,16 @@ class PushAdminService(private val client: HttpClient) {
         Pair(success, failed)
     }
 
-    /** Загружает текущий промпт из Firestore (или дефолтный если не задан). */
+    /** Загружает промпт из Firestore для указанного периода (или дефолтный если не задан). */
     suspend fun getPrompt(
         functionUrl: String,
         adminSecret: String,
+        period: String = "daily",
     ): Result<String> = runCatching {
         val response = client.post(functionUrl) {
             header("x-admin-secret", adminSecret)
             contentType(ContentType.Application.Json)
-            setBody("""{"action":"getPrompt"}""")
+            setBody("""{"action":"getPrompt","period":"$period"}""")
         }
         if (!response.status.isSuccess()) {
             error("Function error ${response.status.value}: ${response.bodyAsText()}")
@@ -127,17 +128,56 @@ class PushAdminService(private val client: HttpClient) {
         body["prompt"]?.jsonPrimitive?.content ?: ""
     }
 
-    /** Сохраняет промпт в Firestore. */
+    /** Сохраняет промпт в Firestore для указанного периода. */
     suspend fun setPrompt(
         functionUrl: String,
         adminSecret: String,
         prompt: String,
+        period: String = "daily",
     ): Result<Unit> = runCatching {
         val escaped = prompt.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
         val response = client.post(functionUrl) {
             header("x-admin-secret", adminSecret)
             contentType(ContentType.Application.Json)
-            setBody("""{"action":"setPrompt","prompt":"$escaped"}""")
+            setBody("""{"action":"setPrompt","period":"$period","prompt":"$escaped"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+    }
+
+    /** Загружает расписание авто-генерации гороскопов (часы по UTC). */
+    suspend fun getGenSchedule(
+        functionUrl: String,
+        adminSecret: String,
+    ): Result<Set<Int>> = runCatching {
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"getGenSchedule"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        body["localHours"]
+            ?.jsonArray
+            ?.map { it.jsonPrimitive.int }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    /** Сохраняет расписание авто-генерации гороскопов. */
+    suspend fun setGenSchedule(
+        functionUrl: String,
+        adminSecret: String,
+        hours: Set<Int>,
+    ): Result<Unit> = runCatching {
+        val hoursJson = hours.sorted().joinToString(",")
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"setGenSchedule","localHours":[$hoursJson]}""")
         }
         if (!response.status.isSuccess()) {
             error("Function error ${response.status.value}: ${response.bodyAsText()}")
