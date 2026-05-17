@@ -92,6 +92,12 @@ fun HoroscopeScreen(
     var slideDir by remember { mutableStateOf(1) }
     val swipeThresholdPx = with(density) { 80.dp.toPx() }
 
+    // ── Reset scroll to top on sign change ───────────────────────────────────
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(sign?.id) {
+        scrollState.animateScrollTo(0)
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -282,12 +288,11 @@ fun HoroscopeScreen(
         // ── Sticky header (non-scrolling overlay) ─────────────────────────────
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coords ->
-                    stickyHeaderHeightPx = coords.size.height
-                },
+                .fillMaxWidth(),
         ) {
-            Column(modifier = Modifier.background(AppColors.Background)) {
+            Column(modifier = Modifier.background(AppColors.Background) .onGloballyPositioned { coords ->
+                stickyHeaderHeightPx = coords.size.height
+            }) {
                 Spacer(Modifier.height(Spacing.xxl))
                 Text(
                     text = str.nav_horoscope,
