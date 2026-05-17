@@ -58,6 +58,8 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
+fastlane/.env
+fastlane/play-store-key.json
 
 # ── Misc folders at root that shouldn't be tracked ────────────────────────────
 create/

@@ -114,9 +114,30 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        create("release") {
+            // Значения берутся из переменных окружения (задаются в fastlane/.env)
+            val keystorePath     = System.getenv("KEYSTORE_PATH")
+            val keystorePassword = System.getenv("KEYSTORE_STORE_PASSWORD")
+            val keyAlias         = System.getenv("KEYSTORE_KEY_ALIAS")
+            val keyPassword      = System.getenv("KEYSTORE_KEY_PASSWORD")
+
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile         = file(keystorePath)
+                storePassword     = keystorePassword
+                this.keyAlias     = keyAlias
+                this.keyPassword  = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            val releaseSigning = signingConfigs.findByName("release")
+            if (releaseSigning?.storeFile != null) {
+                signingConfig = releaseSigning
+            }
         }
     }
     compileOptions {

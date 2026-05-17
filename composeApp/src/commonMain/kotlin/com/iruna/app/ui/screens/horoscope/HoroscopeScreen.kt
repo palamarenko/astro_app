@@ -3,6 +3,7 @@ package com.iruna.app.ui.screens.horoscope
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,7 +18,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -62,150 +66,230 @@ fun HoroscopeScreen(
     val sign = state.selectedSign
     val elementColor = if (sign != null) AppColors.elementColor(sign.element) else AppColors.AccentGold
     val adManager = rememberAdManager()
+    val density = LocalDensity.current
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // ── Scroll state ──────────────────────────────────────────────────────────
+    val scrollState = rememberScrollState()
+    val scrollOffsetPx = scrollState.value.toFloat()
+
+    // ── Sticky header height (measured at runtime) ────────────────────────────
+    var stickyHeaderHeightPx by remember { mutableStateOf(0) }
+    var tabPositions by remember { mutableStateOf(0) }
+
+    // ── Parallax: hero sinks down as content scrolls up ───────────────────────
+    val heroHeightPx     = with(density) { 320.dp.toPx() }
+    val heroAlpha        = (1f - scrollOffsetPx / (heroHeightPx * 0.70f)).coerceIn(0f, 1f)
+    val heroTranslationY = scrollOffsetPx * 0.50f
+
+    // ── Swipe / sign-transition tracking ─────────────────────────────────────
+    val signIndex        = ALL_SIGNS.indexOfFirst { it.id == sign?.id }
+    val signIndexState   = rememberUpdatedState(signIndex)
+    var slideDir         by remember { mutableStateOf(1) }
+    val swipeThresholdPx = with(density) { 80.dp.toPx() }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                var accX = 0f
+                detectHorizontalDragGestures(
+                    onDragStart      = { accX = 0f },
+                    onDragCancel     = { accX = 0f },
+                    onHorizontalDrag = { _, delta -> accX += delta },
+                    onDragEnd = {
+                        val idx = signIndexState.value
+                        when {
+                            accX < -swipeThresholdPx && idx < ALL_SIGNS.size - 1 -> {
+                                slideDir = 1
+                                vm.selectSign(ALL_SIGNS[idx + 1])
+                            }
+                            accX > swipeThresholdPx && idx > 0 -> {
+                                slideDir = -1
+                                vm.selectSign(ALL_SIGNS[idx - 1])
+                            }
+                        }
+                        accX = 0f
+                    },
+                )
+            }
+    ) {
+        // ── Scrollable content ────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
+        ) {
+            val headerHeightDp = with(density) { stickyHeaderHeightPx.toDp() }
+            Spacer(Modifier.height(if (stickyHeaderHeightPx > 0) headerHeightDp else 165.dp))
+
+            if (sign != null) {
+                // ── Hero — parallax + slide on sign change ────────────────────
+                AnimatedContent(
+                    targetState  = sign,
+                    transitionSpec = {
+                        val dir = slideDir
+                        (fadeIn(tween(380)) +
+                            slideInHorizontally(tween(380, easing = FastOutSlowInEasing)) { w -> dir * w }
+                        ) togetherWith
+                        (fadeOut(tween(250)) +
+                            slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { w -> -dir * w }
+                        )
+                    },
+                    modifier = Modifier.graphicsLayer {
+                        translationY = heroTranslationY
+                        alpha        = heroAlpha
+                    },
+                    label = "heroSign",
+                ) { s ->
+                    val ec = AppColors.elementColor(s.element)
+                    Column(modifier = Modifier.padding(horizontal = Spacing.xl)) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            CosmicHero(sign = s, elementColor = ec)
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
+                                    .background(
+                                        Brush.verticalGradient(
+                                            colorStops = arrayOf(
+                                                0.00f to Color.Transparent,
+                                                0.35f to AppColors.Background.copy(alpha = 0.80f),
+                                                0.65f to AppColors.Background.copy(alpha = 0.96f),
+                                                1.00f to AppColors.Background,
+                                            )
+                                        )
+                                    )
+                                    .padding(top = 48.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(
+                                    text          = s.localizedName(),
+                                    fontSize      = 36.sp,
+                                    fontWeight    = FontWeight.Light,
+                                    color         = AppColors.TextPrimary,
+                                    letterSpacing = TextUnit(0.01f, TextUnitType.Em),
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text          = s.localizedDates(),
+                                    fontSize      = AppType.caption,
+                                    color         = AppColors.AccentGold,
+                                    letterSpacing = TextUnit(0.18f, TextUnitType.Em),
+                                )
+                                Spacer(Modifier.height(Spacing.s))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ElementPill(s.localizedElement(), ec)
+                                    ElementPill(s.localizedPlanet(), AppColors.AccentGold)
+                                }
+                                Spacer(Modifier.height(Spacing.l))
+                            }
+                        }
+                    }
+                }
+
+                Box(modifier = Modifier.padding(horizontal = Spacing.xl).onGloballyPositioned(onGloballyPositioned = {
+                    tabPositions =
+                })) {
+                    PeriodTabsNew(
+                        selected     = state.period,
+                        onSelect     = { vm.setPeriod(it) },
+                        elementColor = elementColor,
+                    )
+                }
+
+                // ── Content — scrolls normally, no parallax ───────────────────
+                Column(modifier = Modifier.padding(horizontal = Spacing.xl)) {
+                    Spacer(Modifier.height(14.dp))
+
+                    AnimatedContent(
+                        targetState  = Triple(state.period, state.loadingCurrent, state.currentForecast),
+                        transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+                        label        = "forecast",
+                    ) { (_, loading, forecast) ->
+                        when {
+                            loading          -> LoadingPlaceholder()
+                            forecast != null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                ForecastCard(forecast = forecast, elementColor = elementColor)
+                                ScoreGaugesRow(forecast = forecast)
+                            }
+                            else             -> LoadingPlaceholder()
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    AnimatedContent(
+                        targetState  = Triple(state.period, state.isUnlocked, state.futureForecast),
+                        transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(200)) },
+                        label        = "future",
+                    ) { (period, unlocked, future) ->
+                        if (!unlocked) {
+                            WizardCta(
+                                period       = period,
+                                onClick      = { vm.showWizard() },
+                                elementColor = elementColor,
+                            )
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                                FutureDivider(period = period, elementColor = elementColor)
+                                if (state.loadingFuture || future == null) {
+                                    LoadingPlaceholder()
+                                } else {
+                                    ForecastCard(
+                                        forecast     = future,
+                                        elementColor = elementColor,
+                                        isFuture     = true,
+                                    )
+                                    ScoreGaugesRow(forecast = future)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(100.dp))
+                }
+            }
+        }
+
+        // ── Sticky header (non-scrolling overlay) ─────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(AppColors.Background)
+                .onGloballyPositioned { coords ->
+                    stickyHeaderHeightPx = coords.size.height
+                },
         ) {
             Spacer(Modifier.height(Spacing.xxl))
-
-            // ── Title ─────────────────────────────────────────────────────────
             Text(
-                text = str.nav_horoscope,
-                fontSize = AppType.h2,
+                text       = str.nav_horoscope,
+                fontSize   = AppType.h2,
                 fontWeight = FontWeight.Normal,
-                color = AppColors.TextPrimary,
-                modifier = Modifier.padding(horizontal = Spacing.xl),
+                color      = AppColors.TextPrimary,
+                modifier   = Modifier.padding(horizontal = Spacing.xl),
             )
-
             Spacer(Modifier.height(Spacing.l))
-
-            // ── Sign Carousel ─────────────────────────────────────────────────
             SignCarousel(
                 selected = sign,
                 onSelect = { s ->
+                    val newIdx = ALL_SIGNS.indexOfFirst { it.id == s.id }
+                    slideDir = if (newIdx > signIndexState.value) 1 else -1
                     vm.selectSign(s)
                     onSignSelected(s)
                 },
             )
-
             Spacer(Modifier.height(Spacing.m))
-
-            if (sign != null) {
-            // ── Content below carousel ────────────────────────────────────────
-            Column(modifier = Modifier.padding(horizontal = Spacing.xl)) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                CosmicHero(sign = sign, elementColor = elementColor)
-
-                // Dark gradient + name on top of the image
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                colorStops = arrayOf(
-                                    0.00f to Color.Transparent,
-                                    0.35f to AppColors.Background.copy(alpha = 0.80f),
-                                    0.65f to AppColors.Background.copy(alpha = 0.96f),
-                                    1.00f to AppColors.Background,
-                                )
-                            )
-                        )
-                        .padding(top = 48.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = sign.localizedName(),
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Light,
-                        color = AppColors.TextPrimary,
-                        letterSpacing = TextUnit(0.01f, TextUnitType.Em),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = sign.localizedDates(),
-                        fontSize = AppType.caption,
-                        color = AppColors.AccentGold,
-                        letterSpacing = TextUnit(0.18f, TextUnitType.Em),
-                    )
-                    Spacer(Modifier.height(Spacing.s))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ElementPill(sign.localizedElement(), elementColor)
-                        ElementPill(sign.localizedPlanet(), AppColors.AccentGold)
-                    }
-                    Spacer(Modifier.height(Spacing.l))
-                }
+            Box(Modifier.padding(horizontal = Spacing.xl).fillMaxWidth()) {
+                PeriodTabsNew(
+                    selected     = state.period,
+                    onSelect     = { vm.setPeriod(it) },
+                    elementColor = elementColor,
+                )
             }
-
-            // ── Tabs ──────────────────────────────────────────────────────────
-            PeriodTabsNew(
-                selected  = state.period,
-                onSelect  = { vm.setPeriod(it) },
-                elementColor = elementColor,
-            )
-
-            Spacer(Modifier.height(14.dp))
-
-            // ── Current forecast ──────────────────────────────────────────────
-            AnimatedContent(
-                targetState = Triple(state.period, state.loadingCurrent, state.currentForecast),
-                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                label = "forecast"
-            ) { (_, loading, forecast) ->
-                when {
-                    loading   -> LoadingPlaceholder()
-                    forecast != null -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                            ForecastCard(forecast = forecast, elementColor = elementColor)
-                            ScoreGaugesRow(forecast = forecast)
-                        }
-                    }
-                    else -> LoadingPlaceholder()
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // ── Wizard CTA or future forecast ─────────────────────────────────
-            AnimatedContent(
-                targetState = Triple(state.period, state.isUnlocked, state.futureForecast),
-                transitionSpec = { fadeIn(tween(400)) togetherWith fadeOut(tween(200)) },
-                label = "future"
-            ) { (period, unlocked, future) ->
-                if (!unlocked) {
-                    // Show wizard CTA
-                    WizardCta(
-                        period    = period,
-                        onClick   = { vm.showWizard() },
-                        elementColor = elementColor,
-                    )
-                } else {
-                    // Show future forecast
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        FutureDivider(period = period, elementColor = elementColor)
-                        if (state.loadingFuture || future == null) {
-                            LoadingPlaceholder()
-                        } else {
-                            ForecastCard(
-                                forecast     = future,
-                                elementColor = elementColor,
-                                isFuture     = true,
-                            )
-                            ScoreGaugesRow(forecast = future)
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(100.dp))
-            } // end padded content column
-            } // end if (sign != null)
+            Spacer(Modifier.height(Spacing.m))
         }
 
-        // ── Wizard Modal overlay ──────────────────────────────────────────────
+        // ── Wizard Modal ──────────────────────────────────────────────────────
         if (state.showWizard && sign != null) {
             WizardModal(
                 period       = state.period,
@@ -221,8 +305,6 @@ fun HoroscopeScreen(
         if (state.showPushPrompt) {
             PushPromptDialog(
                 onAllow = { vm.onPushPromptResult(enabled = true) },
-                // "Позже" — только скрываем на эту сессию, НЕ помечаем как "спрошено".
-                // Следующая сессия снова покажет промпт.
                 onDeny  = { vm.dismissPushPromptForSession() },
             )
         }
