@@ -79,6 +79,7 @@ fun HoroscopeScreen(
     var stickyHeaderHeightPx by remember { mutableStateOf(0) }
     var tabPositions by remember { mutableStateOf(0f) }
     var stikiTabPositions by remember { mutableStateOf(0f) }
+    var diffScroll by remember { mutableStateOf(0f) }
 
     // ── Parallax: hero sinks down as content scrolls up ───────────────────────
     val heroHeightPx = with(density) { 320.dp.toPx() }
@@ -204,9 +205,12 @@ fun HoroscopeScreen(
 
                 Box(
                     modifier = Modifier.padding(horizontal = Spacing.xl)
+                        .alpha(if (diffScroll > scrollState.value) 1f else 0f)
                         .onGloballyPositioned(onGloballyPositioned = { coords ->
-                            tabPositions = coords.positionInWindow().y
-                            println("${tabPositions} ${stikiTabPositions}")
+                            if(tabPositions == 0f) tabPositions = coords.positionInWindow().y
+                            if(stikiTabPositions != 0f && tabPositions != 0f && diffScroll == 0f) diffScroll = tabPositions - stikiTabPositions
+                            println(" HELLO ${tabPositions} ${stikiTabPositions} ${scrollState.value} ${diffScroll}")
+
                         })
                 ) {
                     PeriodTabsNew(
@@ -305,16 +309,18 @@ fun HoroscopeScreen(
                 Spacer(Modifier.height(Spacing.m))
             }
 
-            Box(Modifier.padding(horizontal = Spacing.xl).fillMaxWidth().onGloballyPositioned {
-                stikiTabPositions = it.positionInWindow().y
-            }.alpha(if (stikiTabPositions >= tabPositions) 1f else 0f)) {
+            Column (Modifier.padding(horizontal = Spacing.xl).fillMaxWidth().onGloballyPositioned {
+                if(stikiTabPositions == 0f) stikiTabPositions = it.positionInWindow().y
+                if(stikiTabPositions != 0f && tabPositions != 0f && diffScroll == 0f) diffScroll =  tabPositions - stikiTabPositions
+            }.alpha(if (diffScroll <= scrollState.value && diffScroll != 0f) 1f else 0f).background(AppColors.Background)) {
                 PeriodTabsNew(
                     selected = state.period,
                     onSelect = { vm.setPeriod(it) },
                     elementColor = elementColor,
                 )
+                Spacer(Modifier.height(Spacing.m))
+
             }
-            Spacer(Modifier.height(Spacing.m))
         }
 
         // ── Wizard Modal ──────────────────────────────────────────────────────
