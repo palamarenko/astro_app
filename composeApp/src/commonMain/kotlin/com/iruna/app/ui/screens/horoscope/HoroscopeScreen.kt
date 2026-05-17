@@ -127,9 +127,14 @@ fun HoroscopeScreen(
     ) {
         // ── Scrollable content ────────────────────────────────────────────────
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
+            modifier = if(state.loadingFuture){
+                Modifier
+                    .fillMaxSize()
+            }else{
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+            }
         ) {
             val headerHeightDp = with(density) { stickyHeaderHeightPx.toDp() }
             Spacer(Modifier.height(if (stickyHeaderHeightPx > 0) headerHeightDp else 165.dp))
@@ -745,6 +750,7 @@ private fun ForecastCard(
     elementColor: Color,
     isFuture: Boolean = false,
 ) {
+
     val borderColor = if (isFuture) AppColors.AccentGold.copy(alpha = 0.35f) else Color(0xFF1D1D29)
     val bgBrush = if (isFuture)
         Brush.linearGradient(
@@ -1046,10 +1052,18 @@ private fun FutureDivider(period: HoroscopePeriod, elementColor: Color) {
 
 @Composable
 private fun LoadingPlaceholder() {
-    Box(
-        modifier = Modifier.fillMaxWidth().height(120.dp),
-        contentAlignment = Alignment.Center
-    ) { LoadingDots() }
+    Column {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(120.dp),
+            contentAlignment = Alignment.Center
+        ) { LoadingDots() }
+
+        Box(
+            modifier = Modifier.fillMaxWidth().height(500.dp),
+            contentAlignment = Alignment.Center
+        ){}
+    }
+
 }
 
 // ── Wizard Modal ──────────────────────────────────────────────────────────────
