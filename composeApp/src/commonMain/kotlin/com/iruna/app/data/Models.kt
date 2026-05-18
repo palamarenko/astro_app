@@ -110,3 +110,10 @@ enum class HoroscopePeriod(val id: String, val label: String, val promptRu: Stri
 }
 
 enum class BottomTab { HOROSCOPE, TAROT, COMPATIBILITY, PROFILE }
+
+// ── Horoscope metadata (calendar fill tracking) ───────────────────────────────
+@Serializable
+data class HoroscopeMeta(
+    val count: Int = 0,       // number of signs with non-empty text (0–12)
+    val savedAt: Long = 0L,   // epoch ms
+)

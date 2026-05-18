@@ -11,8 +11,8 @@ serialization = "1.6.3"
 lifecycle = "2.8.0"
 datetime = "0.6.0"
 minSdk = "24"
-targetSdk = "34"
-compileSdk = "34"
+targetSdk = "35"
+compileSdk = "35"
 
 [libraries]
 # Ktor

@@ -3,6 +3,9 @@ package com.iruna.app.data
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import kotlinx.serialization.json.Json
 
 class FirebaseService {
@@ -98,5 +101,72 @@ class FirebaseService {
         } catch (e: Exception) {
             emptyList()
         }
+    }
+
+    /** Возвращает количество знаков, сохранённых для конкретного dateKey.
+     *  Использует shallow=true — загружает только ключи знаков, без текста. */
+    suspend fun getSignCountForDateKey(lang: String, period: String, dateKey: String): Int {
+        return try {
+            val url = "$baseUrl/horoscopes/$lang/$period/$dateKey.json?shallow=true"
+            val raw = client.get(url).body<Map<String, Boolean>?>()
+            raw?.size ?: 0
+        } catch (e: Exception) { 0 }
+    }
+
+    /** Возвращает набор dateKey-ключей (дни/недели/месяцы) для которых есть гороскопы.
+     *  Использует shallow=true — загружает только ключи, без данных. */
+    suspend fun getAvailableDateKeys(lang: String, period: String): Set<String> {
+        return try {
+            val url = "$baseUrl/horoscopes/$lang/$period.json?shallow=true"
+            val raw = client.get(url).body<Map<String, Boolean>?>()
+            raw?.keys ?: emptySet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+
+    /** Удаляет все гороскопы для указанного dateKey во всех языках (ru, uk, en). */
+    suspend fun deleteAllLangsDateKey(period: String, dateKey: String): Boolean {
+        return try {
+            listOf("ru", "uk", "en").forEach { lang ->
+                client.delete("$baseUrl/horoscopes/$lang/$period/$dateKey.json")
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ── Horoscope metadata ────────────────────────────────────────────────────
+
+    /** Записывает метадату: сколько знаков заполнено для lang/period/dateKey. */
+    suspend fun saveHoroscopeMeta(lang: String, period: String, dateKey: String, count: Int): Boolean {
+        return try {
+            val url = "$baseUrl/meta/$lang/$period/$dateKey.json"
+            client.put(url) {
+                contentType(ContentType.Application.Json)
+                setBody(HoroscopeMeta(count = count, savedAt = Clock.System.now().toEpochMilliseconds()))
+            }
+            true
+        } catch (e: Exception) { false }
+    }
+
+    /** Загружает метадату: возвращает Map<dateKey, count> для lang/period. */
+    suspend fun getHoroscopeMeta(lang: String, period: String): Map<String, Int> {
+        return try {
+            val url = "$baseUrl/meta/$lang/$period.json"
+            val raw = client.get(url).body<Map<String, HoroscopeMeta>?>()
+            raw?.mapValues { it.value.count } ?: emptyMap()
+        } catch (e: Exception) { emptyMap() }
+    }
+
+    /** Удаляет метадату для dateKey во всех языках. */
+    suspend fun deleteHoroscopeMeta(period: String, dateKey: String): Boolean {
+        return try {
+            listOf("ru", "uk", "en").forEach { lang ->
+                client.delete("$baseUrl/meta/$lang/$period/$dateKey.json")
+            }
+            true
+        } catch (e: Exception) { false }
     }
 }
