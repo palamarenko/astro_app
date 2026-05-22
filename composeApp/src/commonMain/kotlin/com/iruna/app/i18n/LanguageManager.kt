@@ -29,18 +29,17 @@ object LanguageManager {
             AppLanguage.RU -> StringsRu
             AppLanguage.UK -> StringsUk
             AppLanguage.EN -> StringsEn
+            AppLanguage.ES -> StringsEs
+            AppLanguage.DE -> StringsDe
+            AppLanguage.FR -> StringsFr
         }
 
     /**
      * Инициализация. Вызывать после UserStorage.load().
-     * @param savedCode  сохранённый ISO-код или null/пусто → язык устройства.
+     * @param savedCode  сохранённый ISO-код или null/пусто → English (EN).
      */
     fun init(savedCode: String?) {
-        val lang = if (!savedCode.isNullOrEmpty()) {
-            AppLanguage.fromCode(savedCode)
-        } else {
-            AppLanguage.deviceDefault()
-        }
+        val lang = AppLanguage.fromCode(savedCode ?: "")
         _language.value = lang
         applyLanguage(lang.code)
     }

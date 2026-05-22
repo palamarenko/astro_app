@@ -34,13 +34,14 @@ fun AdminViewModel.loadCalendarData() {
     viewModelScope.launch {
         _state.value = _state.value.copy(calendarLoading = true)
         val period = _state.value.calendarPeriod.id
-        val (ruMeta, ukMeta, enMeta) = listOf("ru", "uk", "en")
+        val allLangs = listOf("ru", "uk", "en", "es", "de", "fr")
+        val metaByLang = allLangs
             .map { lang -> async { firebase.getHoroscopeMeta(lang, period) } }
             .map { it.await() }
-        // Суммируем по всем трём языкам: max = 36 (12 знаков × 3 языка)
-        val allKeys = ruMeta.keys + ukMeta.keys + enMeta.keys
+        // Суммируем по всем 6 языкам: max = 72 (12 знаков × 6 языков)
+        val allKeys = metaByLang.flatMap { it.keys }.toSet()
         val merged  = allKeys.associateWith { key ->
-            (ruMeta[key] ?: 0) + (ukMeta[key] ?: 0) + (enMeta[key] ?: 0)
+            metaByLang.sumOf { it[key] ?: 0 }
         }
         _state.value = _state.value.copy(calendarMeta = merged, calendarLoading = false)
     }
@@ -73,7 +74,7 @@ fun AdminViewModel.backfillMeta() {
         val period = _state.value.calendarPeriod.id
         var saved  = 0
         try {
-            listOf("ru", "uk", "en").forEach { lang ->
+            listOf("ru", "uk", "en", "es", "de", "fr").forEach { lang ->
                 val dateKeys = firebase.getAvailableDateKeys(lang, period)
                 val jobs = dateKeys.map { dateKey ->
                     async {

@@ -44,10 +44,15 @@ private val TAB_ORDER = listOf(
 
 @Composable
 fun App() {
-    // Инициализация языка — один раз при старте приложения
+    // Инициализация языка — один раз при старте приложения.
+    // Если язык не был сохранён — сохраняем разрешённый (EN по умолчанию),
+    // чтобы настройки и отображение всегда совпадали.
     remember {
-        val saved = UserStorage.load()?.language
-        LanguageManager.init(saved)
+        val profile = UserStorage.load()
+        LanguageManager.init(profile?.language)
+        if (profile != null && profile.language.isEmpty()) {
+            UserStorage.save(profile.copy(language = LanguageManager.current.code))
+        }
     }
 
     val lang by LanguageManager.language.collectAsState()
@@ -55,7 +60,7 @@ fun App() {
     // ViewModel-ы создаются один раз и живут вне key(lang),
     // чтобы смена языка не пересоздавала их (иначе init-блоки
     // срабатывают повторно и показывают, например, попап уведомлений).
-    val api          = remember { ClaudeApiClient(anthropicApiKey) }
+    val api          = remember { AnthropicAiProvider(anthropicApiKey) }
     val horoscopeVm  = remember { HoroscopeViewModel() }
     val tarotVm      = remember { TarotViewModel(api) }
     val compatVm     = remember { CompatibilityViewModel(api) }

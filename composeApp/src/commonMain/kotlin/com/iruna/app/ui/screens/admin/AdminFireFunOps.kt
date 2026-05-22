@@ -83,38 +83,66 @@ fun AdminViewModel.generateAllLanguages() {
     val date    = _state.value.genAllLangsDate
     val dateKey = computeDateKey(period, date)
     val startMs = Clock.System.now().toEpochMilliseconds()
-    viewModelScope.launch {
-        _state.value = _state.value.copy(genAllLangsLoading = true, genAllLangsResult = null)
-        val result     = pushService.generateHoroscopes(functionUrl = url, adminSecret = secret, date = dateKey, period = period.id)
-        val durationMs = Clock.System.now().toEpochMilliseconds() - startMs
-        val (ok, fail) = result.getOrNull() ?: Pair(0, 0)
+    val langs   = listOf("ru", "uk", "en", "es", "de", "fr")
 
+    viewModelScope.launch {
+        _state.value = _state.value.copy(
+            genAllLangsLoading     = true,
+            genAllLangsResult      = null,
+            genAllLangsCurrentLang = null,
+            genAllLangsDone        = 0,
+        )
+
+        var totalOk   = 0
+        var totalFail = 0
+
+        for ((index, lang) in langs.withIndex()) {
+            // Обновляем UI: текущий язык и прогресс
+            _state.value = _state.value.copy(
+                genAllLangsCurrentLang = lang,
+                genAllLangsDone        = index,
+            )
+
+            val result = pushService.generateHoroscopes(
+                functionUrl = url,
+                adminSecret = secret,
+                date        = dateKey,
+                period      = period.id,
+                lang        = lang,
+            )
+            val (ok, fail) = result.getOrNull() ?: Pair(0, 0)
+
+            if (result.isSuccess) {
+                totalOk   += ok
+                totalFail += fail
+                // Сохраняем мету сразу после успешной генерации языка
+                if (fail == 0) {
+                    firebase.saveHoroscopeMeta(lang, period.id, dateKey, 12)
+                }
+            } else {
+                totalFail += 12
+            }
+        }
+
+        val durationMs = Clock.System.now().toEpochMilliseconds() - startMs
         val logEntry = GenerationLogEntry(
             id          = startMs.toString(),
             timestamp   = startMs,
             period      = period.id,
             dateKey     = dateKey,
-            success     = if (result.isSuccess) ok else 0,
-            failed      = if (result.isSuccess) fail else 36,
+            success     = totalOk,
+            failed      = totalFail,
             durationMs  = durationMs,
             triggeredBy = "manual",
         )
         firebase.saveGenerationLog(logEntry)
 
-        if (result.isSuccess && fail == 0) {
-            listOf("ru", "uk", "en").forEach { lang ->
-                firebase.saveHoroscopeMeta(lang, period.id, dateKey, 12)
-            }
-        }
-
         _state.value = _state.value.copy(
-            genAllLangsLoading = false,
-            genAllLangsResult  = if (result.isSuccess) {
-                if (fail == 0) "ok:$ok" else "ok:$ok fail:$fail"
-            } else {
-                result.exceptionOrNull()?.message ?: "Error"
-            },
-            generationLogs = (listOf(logEntry) + _state.value.generationLogs).take(30),
+            genAllLangsLoading     = false,
+            genAllLangsCurrentLang = null,
+            genAllLangsDone        = langs.size,
+            genAllLangsResult      = if (totalFail == 0) "ok:$totalOk" else "ok:$totalOk fail:$totalFail",
+            generationLogs         = (listOf(logEntry) + _state.value.generationLogs).take(30),
         )
     }
 }

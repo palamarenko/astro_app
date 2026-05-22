@@ -16,7 +16,10 @@ enum class AppLanguage(
 ) {
     RU("ru", "Русский"),
     UK("uk", "Українська"),
-    EN("en", "English");
+    EN("en", "English"),
+    ES("es", "Español"),
+    DE("de", "Deutsch"),
+    FR("fr", "Français");
 
     companion object {
         /** Найти язык по ISO-коду (первые 2 символа). По умолчанию — EN. */

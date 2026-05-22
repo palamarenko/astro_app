@@ -5,17 +5,10 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.delay
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-
-data class TarotPersonalContext(
-    val name: String? = null,
-    val gender: String? = null,     // "male" | "female"
-    val birthDate: String? = null,
-    val birthSign: String? = null,
-    val birthPlace: String? = null,
-)
 
 @Serializable data class AnthropicMessage(val role: String, val content: String)
 @Serializable data class AnthropicRequest(
@@ -26,14 +19,32 @@ data class TarotPersonalContext(
 @Serializable data class ContentBlock(val type: String, val text: String = "")
 @Serializable data class AnthropicResponse(val content: List<ContentBlock> = emptyList())
 
-private const val MODEL = "claude-haiku-4-5-20251001"
+private const val ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
-class ClaudeApiClient(private val apiKey: String) {
+/**
+ * Реализация [AiGenerationService] через Anthropic Claude API.
+ *
+ * Автоматически повторяет запрос при ошибке 529 (overloaded) — до 3 попыток
+ * с нарастающей задержкой 3 / 6 сек.
+ */
+class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private val client: HttpClient = createHttpClient(json)
 
-    // Strip optional ```json ... ``` fences the model sometimes adds despite instructions
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** ISO-код → название языка для промптов. */
+    private fun langName(lang: String) = when (lang) {
+        "uk" -> "Ukrainian"
+        "en" -> "English"
+        "es" -> "Spanish"
+        "de" -> "German"
+        "fr" -> "French"
+        else -> "Russian"
+    }
+
+    /** Убирает опциональные ```json … ``` обёртки. */
     private fun extractJson(raw: String): String {
         val s = raw.trim()
         if (!s.startsWith("```")) return s
@@ -45,38 +56,63 @@ class ClaudeApiClient(private val apiKey: String) {
             .trim()
     }
 
-    // If the model wrapped the response in a top-level key (e.g. {"horoscope":{...}}),
-    // unwrap and return the inner object that contains "text".
+    /** Если модель обернула ответ в ключ верхнего уровня — разворачиваем. */
     private fun unwrapHoroscopeJson(raw: String): String {
         return try {
             val el = json.parseToJsonElement(raw)
             if (el !is kotlinx.serialization.json.JsonObject) return raw
-            // Already flat — has "text" at top level
             if (el.containsKey("text")) return raw
-            // Find first nested object that has "text"
             val nested = el.values.filterIsInstance<kotlinx.serialization.json.JsonObject>()
                 .firstOrNull { it.containsKey("text") }
             nested?.toString() ?: raw
         } catch (_: Exception) { raw }
     }
 
+    /**
+     * Базовый HTTP-запрос к Anthropic.
+     * При ошибке 529 (overloaded) — до 3 попыток с задержкой 3 / 6 сек.
+     */
     private suspend fun complete(prompt: String, maxTokens: Int = 512): String {
-        val httpResp = client.post("https://api.anthropic.com/v1/messages") {
-            contentType(ContentType.Application.Json)
-            header("x-api-key", apiKey)
-            header("anthropic-version", "2023-06-01")
-            setBody(AnthropicRequest(model = MODEL, maxTokens = maxTokens, messages = listOf(AnthropicMessage("user", prompt))))
+        val maxAttempts = 3
+        var lastError: Exception = Exception("Unknown error")
+
+        repeat(maxAttempts) { attempt ->
+            val httpResp = client.post("https://api.anthropic.com/v1/messages") {
+                contentType(ContentType.Application.Json)
+                header("x-api-key", apiKey)
+                header("anthropic-version", "2023-06-01")
+                setBody(
+                    AnthropicRequest(
+                        model     = ANTHROPIC_MODEL,
+                        maxTokens = maxTokens,
+                        messages  = listOf(AnthropicMessage("user", prompt)),
+                    )
+                )
+            }
+            when {
+                httpResp.status.value == 529 -> {
+                    // Перегруженность — ждём и повторяем
+                    lastError = Exception("Anthropic overloaded (529), attempt ${attempt + 1}/$maxAttempts")
+                    if (attempt < maxAttempts - 1) delay(3000L * (attempt + 1))
+                }
+                !httpResp.status.isSuccess() -> {
+                    // Другие HTTP-ошибки — бросаем сразу
+                    val body = httpResp.bodyAsText()
+                    throw Exception("Anthropic ${httpResp.status.value}: $body")
+                }
+                else -> {
+                    val response: AnthropicResponse = httpResp.body()
+                    return response.content.firstOrNull()?.text ?: ""
+                }
+            }
         }
-        if (!httpResp.status.isSuccess()) {
-            val body = httpResp.bodyAsText()
-            throw Exception("Anthropic ${httpResp.status.value}: $body")
-        }
-        val response: AnthropicResponse = httpResp.body()
-        return response.content.firstOrNull()?.text ?: ""
+        throw lastError
     }
 
-    suspend fun getHoroscope(sign: ZodiacSign, periodPrompt: String, lang: String = "ru"): HoroscopeResponse {
-        val langName = when (lang) { "uk" -> "Ukrainian"; "en" -> "English"; else -> "Russian" }
+    // ── AiGenerationService impl ──────────────────────────────────────────────
+
+    override suspend fun getHoroscope(sign: ZodiacSign, periodPrompt: String, lang: String): HoroscopeResponse {
+        val langName = langName(lang)
         val prompt = """
             Horoscope for "${sign.name}" (${sign.element}) $periodPrompt.
             Language: $langName.
@@ -88,12 +124,8 @@ class ClaudeApiClient(private val apiKey: String) {
         return json.decodeFromString(unwrapHoroscopeJson(extractJson(complete(prompt))))
     }
 
-    suspend fun getCompatibility(sign1: ZodiacSign, sign2: ZodiacSign, lang: String = "ru"): CompatibilityResponse {
-        val langName = when (lang) {
-            "uk" -> "Ukrainian"
-            "en" -> "English"
-            else -> "Russian"
-        }
+    override suspend fun getCompatibility(sign1: ZodiacSign, sign2: ZodiacSign, lang: String): CompatibilityResponse {
+        val langName = langName(lang)
         val prompt = """
             Astrological compatibility of "${sign1.name}" and "${sign2.name}".
             Language: $langName.
@@ -103,28 +135,26 @@ class ClaudeApiClient(private val apiKey: String) {
         return json.decodeFromString(extractJson(complete(prompt)))
     }
 
-
-
-    /** Generates only the overall summary for a three-card spread.
-     *  The individual card texts (past/present/future) come from Firebase. */
-    suspend fun getTarotSummary(
+    override suspend fun getTarotSummary(
         cards: List<TarotCard>,
-        context: TarotPersonalContext? = null,
-        lang: String = "ru",
+        context: TarotPersonalContext?,
+        lang: String,
     ): String {
-        val langName = when (lang) {
-            "uk" -> "Ukrainian"
-            "en" -> "English"
-            else -> "Russian"
-        }
+        val langName = langName(lang)
         val positions = when (lang) {
             "uk" -> listOf("Минуле", "Теперішнє", "Майбутнє")
             "en" -> listOf("Past", "Present", "Future")
+            "es" -> listOf("Pasado", "Presente", "Futuro")
+            "de" -> listOf("Vergangenheit", "Gegenwart", "Zukunft")
+            "fr" -> listOf("Passé", "Présent", "Futur")
             else -> listOf("Прошлое", "Настоящее", "Будущее")
         }
         val reversedLabel = when (lang) {
             "uk" -> "перевернута"
             "en" -> "reversed"
+            "es" -> "invertida"
+            "de" -> "umgekehrt"
+            "fr" -> "renversé"
             else -> "перевёрнутая"
         }
 
@@ -137,11 +167,17 @@ class ClaudeApiClient(private val apiKey: String) {
             "male"   -> when (lang) {
                 "uk" -> "Стать: чоловіча — використовуй чоловічий рід у зверненні."
                 "en" -> "Gender: male — address the seeker using masculine forms."
+                "es" -> "Género: masculino — dirígete al consultante usando formas masculinas."
+                "de" -> "Geschlecht: männlich — verwende männliche Anredeformen."
+                "fr" -> "Genre: masculin — adresse-toi au consultant en utilisant des formes masculines."
                 else -> "Пол: мужской — обращайся к человеку в мужском роде."
             }
             "female" -> when (lang) {
                 "uk" -> "Стать: жіноча — використовуй жіночий рід у зверненні."
                 "en" -> "Gender: female — address the seeker using feminine forms."
+                "es" -> "Género: femenino — dirígete a la consultante usando formas femeninas."
+                "de" -> "Geschlecht: weiblich — verwende weibliche Anredeformen."
+                "fr" -> "Genre: féminin — adresse-toi à la consultante en utilisant des formes féminines."
                 else -> "Пол: женский — обращайся к человеку в женском роде."
             }
             else -> ""
@@ -149,7 +185,7 @@ class ClaudeApiClient(private val apiKey: String) {
 
         val contextBlock = if (context != null) {
             val parts = buildList {
-                context.name?.let { add("имя: $it") }
+                context.name?.let      { add("имя: $it") }
                 context.birthDate?.let { add("дата рождения: $it") }
                 context.birthSign?.let { add("знак зодиака: $it") }
                 context.birthPlace?.let { add("место рождения: $it") }
@@ -175,7 +211,7 @@ class ClaudeApiClient(private val apiKey: String) {
         return complete(prompt, maxTokens = 300)
     }
 
-    suspend fun getSignInsight(sign: ZodiacSign): String {
+    override suspend fun getSignInsight(sign: ZodiacSign): String {
         val prompt = """
             Brief astrological insight for "${sign.name}":
             character traits, life mission, relationship style.
@@ -184,33 +220,14 @@ class ClaudeApiClient(private val apiKey: String) {
         return complete(prompt, maxTokens = 256)
     }
 
-    // Admin: generate tarot card interpretations in the target language
-    suspend fun generateAdminTarotCard(
-        card: TarotCard,
-        lang: String,
-    ): TarotCardContent {
-        val langName = when (lang) { "en" -> "English"; "uk" -> "Ukrainian"; else -> "Russian" }
-        val prompt = """
-            Write tarot card interpretations for the Major Arcana card "${card.name}" (${card.number}), keywords: ${card.keywords}.
-            Language: $langName. Style: poetic, mystical, personal, inspiring.
-            Context: "past" — how this card's energy manifested in the past; "present" — current situation; "future" — what awaits ahead.
-            Each field: exactly ~20 words, one concise sentence. Do NOT repeat keywords verbatim.
-            Respond ONLY with valid JSON, no markdown:
-            {"past":"...","present":"...","future":"..."}
-        """.trimIndent()
-        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 200)))
-    }
-
-    // Admin: generate a horoscope in the target language for a specific period.
-    // styleInstructions — the editable prompt from admin panel (Firestore); falls back to built-in default.
-    suspend fun generateAdminHoroscope(
+    override suspend fun generateAdminHoroscope(
         sign: ZodiacSign,
         period: HoroscopePeriod,
         lang: String,
         dateKey: String,
-        styleInstructions: String? = null,
+        styleInstructions: String?,
     ): HoroscopeResponse {
-        val langName = when (lang) { "en" -> "English"; "uk" -> "Ukrainian"; else -> "Russian" }
+        val langName = langName(lang)
         val periodDesc = when (period) {
             HoroscopePeriod.DAILY   -> "for the day ($dateKey)"
             HoroscopePeriod.WEEKLY  -> "for the week ($dateKey)"
@@ -231,7 +248,10 @@ class ClaudeApiClient(private val apiKey: String) {
             "Use native Ukrainian vocabulary and phrasing — the text must feel natural to a native Ukrainian speaker, " +
             "not like a translation from Russian.\n" +
             "For Russian: use expressive literary Russian.\n" +
-            "For English: use poetic but accessible English."
+            "For English: use poetic but accessible English.\n" +
+            "For Spanish: write in natural, warm Spanish. Use smooth, conversational phrasing that feels native.\n" +
+            "For German: write in clear, warm, modern German. Avoid overly formal tone.\n" +
+            "For French: write in elegant, natural French. The tone should feel warm and literary."
         val prompt = """
             Write a horoscope for zodiac sign "${sign.name}" (element: ${sign.element}, planet: ${sign.planet}) $periodDesc.
             Language: $langName.
@@ -240,5 +260,79 @@ class ClaudeApiClient(private val apiKey: String) {
             {"text":"...","keyword":"1-2 words","love":72,"career":85,"health":60,"energy":78}
         """.trimIndent()
         return json.decodeFromString(unwrapHoroscopeJson(extractJson(complete(prompt, maxTokens = 900))))
+    }
+
+    override suspend fun generateAdminAllSigns(
+        signs: List<ZodiacSign>,
+        period: HoroscopePeriod,
+        lang: String,
+        dateKey: String,
+        styleInstructions: String?,
+    ): Map<String, HoroscopeResponse> {
+        val langName   = langName(lang)
+        val periodWord = when (period) {
+            HoroscopePeriod.DAILY   -> "daily"
+            HoroscopePeriod.WEEKLY  -> "weekly"
+            HoroscopePeriod.MONTHLY -> "monthly"
+        }
+        val periodDesc = when (period) {
+            HoroscopePeriod.DAILY   -> "day ($dateKey)"
+            HoroscopePeriod.WEEKLY  -> "week ($dateKey)"
+            HoroscopePeriod.MONTHLY -> "month ($dateKey)"
+        }
+        val weeklyNote = if (period == HoroscopePeriod.WEEKLY)
+            "\nDo NOT mention week numbers (e.g. 'week 32'). Refer to time naturally, e.g. 'mid-July'."
+        else ""
+        val style = styleInstructions?.takeIf { it.isNotBlank() }?.plus(weeklyNote) ?:
+            "Style: warm, clear, easy to read — like advice from a trusted friend, not a mystical oracle.\n" +
+            "Avoid heavy metaphors. Write in plain, natural sentences.\n" +
+            "Text: 6-8 short sentences. Include at least one concrete prediction or practical tip.\n" +
+            "Scores: integers 50–100 (50=bad, 75=average, 100=perfect). Reflect scores in the text." +
+            weeklyNote + "\n" +
+            "For Ukrainian: authentic literary Ukrainian, no russicisms.\n" +
+            "For Russian: expressive literary Russian.\n" +
+            "For English: poetic but accessible English.\n" +
+            "For Spanish: natural, warm Spanish.\n" +
+            "For German: clear, warm, modern German.\n" +
+            "For French: elegant, natural French."
+        val signsDesc     = signs.joinToString("; ") { "${it.id} (${it.name}, ${it.element}, ${it.planet})" }
+        val schemaExample = signs.first().id
+        val prompt = """
+            Generate $periodWord horoscopes for all 12 zodiac signs for the $periodDesc.
+            Language: $langName.
+
+            $style
+
+            Signs: $signsDesc
+
+            IMPORTANT: Respond ONLY with a valid flat JSON object — no markdown, no extra text:
+            {"$schemaExample":{"text":"...","keyword":"1-2 words","love":72,"career":85,"health":60,"energy":78},"taurus":{...},...}
+            Include all 12 signs. Each "text" must be in $langName.
+        """.trimIndent()
+
+        val raw    = complete(prompt, maxTokens = 6000)
+        val parsed = json.parseToJsonElement(extractJson(raw))
+        if (parsed !is kotlinx.serialization.json.JsonObject) return emptyMap()
+
+        return signs.mapNotNull { sign ->
+            val obj = parsed[sign.id] as? kotlinx.serialization.json.JsonObject ?: return@mapNotNull null
+            try {
+                val response = json.decodeFromString<HoroscopeResponse>(obj.toString())
+                sign.id to response
+            } catch (_: Exception) { null }
+        }.toMap()
+    }
+
+    override suspend fun generateAdminTarotCard(card: TarotCard, lang: String): TarotCardContent {
+        val langName = langName(lang)
+        val prompt = """
+            Write tarot card interpretations for the Major Arcana card "${card.name}" (${card.number}), keywords: ${card.keywords}.
+            Language: $langName. Style: poetic, mystical, personal, inspiring.
+            Context: "past" — how this card's energy manifested in the past; "present" — current situation; "future" — what awaits ahead.
+            Each field: exactly ~20 words, one concise sentence. Do NOT repeat keywords verbatim.
+            Respond ONLY with valid JSON, no markdown:
+            {"past":"...","present":"...","future":"..."}
+        """.trimIndent()
+        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 200)))
     }
 }

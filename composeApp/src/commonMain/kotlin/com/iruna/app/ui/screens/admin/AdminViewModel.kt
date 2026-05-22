@@ -15,13 +15,14 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 
-class AdminViewModel(internal val api: ClaudeApiClient) : ViewModel() {
+class AdminViewModel(internal val api: AiGenerationService) : ViewModel() {
     internal val firebase    = FirebaseService()
     internal val pushService = PushAdminService(
         createHttpClient {
             install(HttpTimeout) {
-                requestTimeoutMillis = 300_000L
-                connectTimeoutMillis =  15_000L
+                requestTimeoutMillis = 660_000L  // 11 min — покрывает 6 языков × ~90 сек/язык
+                connectTimeoutMillis =  30_000L  // 30 сек — хватает на холодный старт Cloud Run
+                socketTimeoutMillis  = 660_000L  // 11 min — без обрыва пока функция генерирует
             }
         }
     )

@@ -90,7 +90,7 @@ private fun ProfileUiState.toProfile(): UserProfile {
     )
 }
 
-class ProfileViewModel(private val api: ClaudeApiClient) : ViewModel() {
+class ProfileViewModel(private val api: AiGenerationService) : ViewModel() {
 
     private val _state = MutableStateFlow(
         UserStorage.load()?.toUiState() ?: ProfileUiState()

@@ -85,7 +85,8 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
             if (state.genAllLangsLoading) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color(0xFFB89EFF), strokeWidth = 2.dp)
-                    Text("Generating… RU + UK + EN × 12 signs", color = Color(0xFFB89EFF), fontSize = 12.sp)
+                    val langLabel = state.genAllLangsCurrentLang?.uppercase() ?: "…"
+                    Text("Generating $langLabel  ·  ${state.genAllLangsDone} / 6", color = Color(0xFFB89EFF), fontSize = 12.sp)
                 }
             } else {
                 Text("🌍 Generate · ${state.genAllLangsPeriod.label}", color = if (genEnabled) Color(0xFFB89EFF) else AppColors.TextDim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -100,7 +101,7 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
                 val color   = when { isOk -> Color(0xFF6FCF97); isWarn -> AppColors.AccentGold; else -> Color(0xFFEB5757) }
                 val display = if (isOk) {
                     val parts = result.removePrefix("ok:").split(" ")
-                    if (parts.size > 1) "✓ Generated ${parts[0]}  ${parts[1]}" else "✓ Generated ${parts[0]} / 36"
+                    if (parts.size > 1) "✓ Generated ${parts[0]}  ${parts[1]}" else "✓ Generated ${parts[0]} / 72"
                 } else result
                 Spacer(Modifier.height(6.dp))
                 Row(

@@ -18,7 +18,7 @@ data class CompatibilityUiState(
     val error: String? = null,
 )
 
-class CompatibilityViewModel(private val api: ClaudeApiClient) : ViewModel() {
+class CompatibilityViewModel(private val api: AiGenerationService) : ViewModel() {
     private val _state = MutableStateFlow(CompatibilityUiState())
     val state: StateFlow<CompatibilityUiState> = _state.asStateFlow()
 

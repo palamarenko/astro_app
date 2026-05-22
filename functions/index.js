@@ -30,7 +30,7 @@ const SIGNS = [
   { id: "pisces",      name: "Pisces",      element: "Water", planet: "Neptune" },
 ];
 
-const LANGUAGES = ["ru", "uk", "en"];
+const LANGUAGES = ["ru", "uk", "en", "es", "de", "fr"];
 
 // Default prompt template. Variables: {date}, {lang}
 // The signs list is injected automatically by the function.
@@ -43,7 +43,13 @@ const LANG_QUALITY =
   "Use native Ukrainian vocabulary, idioms and phrasing. The text must feel natural to a native Ukrainian speaker, " +
   "not like a word-for-word translation from Russian.\n" +
   "— Russian: use expressive literary Russian.\n" +
-  "— English: use poetic but accessible English.";
+  "— English: use poetic but accessible English.\n" +
+  "— Spanish: write in natural, warm Latin-American Spanish. Avoid overly formal Castilian constructions. " +
+  "Use smooth, conversational phrasing that feels native and approachable.\n" +
+  "— German: write in clear, warm, modern German. Avoid bureaucratic or overly formal tone. " +
+  "Use natural sentence structures and accessible vocabulary, as if speaking to a friend.\n" +
+  "— French: write in elegant, natural French. Avoid anglicisms and overly complex constructions. " +
+  "The tone should feel warm and literary, like a trusted advisor speaking to you directly.";
 
 const DEFAULT_STYLES = {
   daily:
@@ -160,7 +166,12 @@ function buildSignsDesc() {
 
 // Generate horoscopes for ALL 12 signs in a single Claude request for one language
 async function generateAllForLang(lang, period, dateKey, apiKey, styleInstructions) {
-  const langName = lang === "uk" ? "Ukrainian" : lang === "en" ? "English" : "Russian";
+  const langName = lang === "uk" ? "Ukrainian"
+                 : lang === "en" ? "English"
+                 : lang === "es" ? "Spanish"
+                 : lang === "de" ? "German"
+                 : lang === "fr" ? "French"
+                 : "Russian";
   const signsDesc = buildSignsDesc();
   const periodWord = period === "weekly" ? "weekly" : period === "monthly" ? "monthly" : "daily";
   const periodDesc = period === "weekly" ? "week (" + dateKey + ")"
@@ -291,10 +302,42 @@ exports.adminApi = onRequest(
       } else if (action === "generateHoroscopes") {
         const dateKey = (req.body && req.body.date) ? req.body.date : utcDateKey(1);
         const period  = (req.body && req.body.period) ? req.body.period : "daily";
+        const lang    = (req.body && req.body.lang)   ? req.body.lang   : null;
         const styleInstructions = await getStyleInstructions(db, period);
-        console.log("Manual generateHoroscopes for " + dateKey + " period=" + period);
-        const result = await generateForDate(dateKey, CLAUDE_API_KEY.value(), styleInstructions, period);
-        res.json({ success: result.success, failed: result.failed, errors: result.errors, date: dateKey, period: period });
+        if (lang) {
+          // Генерировать только один язык
+          console.log("Manual generateHoroscopes lang=" + lang + " date=" + dateKey + " period=" + period);
+          const MAX_RETRIES = 8;
+          var lastErr = null;
+          var success = 0, failed = 0;
+          for (var attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+              const horoscopes = await generateAllForLang(lang, period, dateKey, CLAUDE_API_KEY.value(), styleInstructions);
+              await Promise.all(SIGNS.map(function(sign) {
+                return saveToDb(lang, period, dateKey, sign.id, horoscopes[sign.id]);
+              }));
+              success = 12;
+              console.log("OK " + dateKey + " " + lang + " (all 12 signs)");
+              break;
+            } catch (e) {
+              lastErr = e;
+              console.warn("Attempt " + attempt + "/" + MAX_RETRIES + " failed for " + lang + ": " + e.message);
+              if (attempt < MAX_RETRIES) {
+                await new Promise(function(r) { setTimeout(r, Math.min(2000 * attempt, 10000)); });
+              }
+              if (attempt === MAX_RETRIES) {
+                failed = 12;
+                console.error("FAIL all retries exhausted for " + lang);
+              }
+            }
+          }
+          res.json({ success: success, failed: failed, errors: failed > 0 ? [lang + ": " + (lastErr ? lastErr.message : "unknown")] : [], date: dateKey, period: period, lang: lang });
+        } else {
+          // Генерировать все языки (устаревший режим, для обратной совместимости)
+          console.log("Manual generateHoroscopes ALL langs for " + dateKey + " period=" + period);
+          const result = await generateForDate(dateKey, CLAUDE_API_KEY.value(), styleInstructions, period);
+          res.json({ success: result.success, failed: result.failed, errors: result.errors, date: dateKey, period: period });
+        }
 
       } else {
         res.status(400).json({ error: "Unknown action: " + action });

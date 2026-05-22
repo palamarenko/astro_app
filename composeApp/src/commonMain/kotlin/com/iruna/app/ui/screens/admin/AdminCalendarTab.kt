@@ -73,7 +73,7 @@ internal fun CalendarTab(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(target, color = Color(0xFFEB5757), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "All horoscopes for this period will be removed across all languages (RU, UK, EN). This cannot be undone.",
+                        "All horoscopes for this period will be removed across all languages (RU, UK, EN, ES, DE, FR). This cannot be undone.",
                         color = AppColors.TextDim, fontSize = 12.sp, lineHeight = 17.sp,
                     )
                 }
@@ -168,7 +168,7 @@ internal fun CalendarTab(
         // ── Legend ────────────────────────────────────────────────────────────
         Spacer(Modifier.height(Spacing.l))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            CalLegendItem(Color(0xFF6FCF97).copy(alpha = 0.2f), Color(0xFF6FCF97).copy(alpha = 0.5f), "Full (36/36)")
+            CalLegendItem(Color(0xFF6FCF97).copy(alpha = 0.2f), Color(0xFF6FCF97).copy(alpha = 0.5f), "Full (72/72)")
             CalLegendItem(Color(0xFFF2994A).copy(alpha = 0.2f), Color(0xFFF2994A).copy(alpha = 0.5f), "Partial")
             CalLegendItem(AppColors.Surface, AppColors.Border, "Empty")
             CalLegendItem(AppColors.AccentGold.copy(alpha = 0.15f), AppColors.AccentGold.copy(alpha = 0.7f), "Today")
@@ -211,8 +211,8 @@ private fun DailyCalendarView(
 
     Spacer(Modifier.height(6.dp))
     val monthPrefix  = "$year-${month.toString().padStart(2, '0')}-"
-    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v >= 36 }
-    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v in 1..35 }
+    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v >= 72 }
+    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v in 1..71 }
     val totalDays    = daysInMonth(year, month)
     Text(
         buildString {
@@ -247,8 +247,8 @@ private fun DailyCalendarView(
                     } else {
                         val dateKey   = "$year-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
                         val count     = state.calendarMeta[dateKey] ?: 0
-                        val isFull    = count >= 36
-                        val isPartial = count in 1..35
+                        val isFull    = count >= 72
+                        val isPartial = count in 1..71
                         val isToday   = today.year == year && today.monthNumber == month && today.dayOfMonth == day
                         Box(
                             modifier = Modifier
@@ -266,7 +266,7 @@ private fun DailyCalendarView(
                                     fontSize = 11.sp,
                                     fontWeight = if (isToday || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                                 )
-                                if (isPartial) Text("$count/36", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
+                                if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
                             }
                         }
                     }
@@ -301,8 +301,8 @@ private fun WeeklyCalendarView(
     }
 
     Spacer(Modifier.height(6.dp))
-    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v >= 36 }
-    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v in 1..35 }
+    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v >= 72 }
+    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v in 1..71 }
     Text(buildString { append("$fullCount / $maxWeek full"); if (partialCount > 0) append("  ·  $partialCount partial") }, color = AppColors.TextDim, fontSize = 11.sp)
     Spacer(Modifier.height(Spacing.m))
 
@@ -312,8 +312,8 @@ private fun WeeklyCalendarView(
                 row.forEach { week ->
                     val weekKey   = "$year-W${week.toString().padStart(2, '0')}"
                     val count     = state.calendarMeta[weekKey] ?: 0
-                    val isFull    = count >= 36
-                    val isPartial = count in 1..35
+                    val isFull    = count >= 72
+                    val isPartial = count in 1..71
                     val isCurrent = week == todayWeek
                     val firstDay  = dayOfYearToDate(year, (week - 1) * 7 + 1)
                     Box(
@@ -334,7 +334,7 @@ private fun WeeklyCalendarView(
                                 fontSize = 11.sp,
                                 fontWeight = if (isCurrent || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                             )
-                            if (isPartial) Text("$count/36", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
+                            if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
                         }
                     }
                 }
@@ -366,8 +366,8 @@ private fun MonthlyCalendarView(
     }
 
     Spacer(Modifier.height(6.dp))
-    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v >= 36 }
-    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v in 1..35 }
+    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v >= 72 }
+    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v in 1..71 }
     Text(buildString { append("$fullCount / 12 full"); if (partialCount > 0) append("  ·  $partialCount partial") }, color = AppColors.TextDim, fontSize = 11.sp)
     Spacer(Modifier.height(Spacing.m))
 
@@ -377,8 +377,8 @@ private fun MonthlyCalendarView(
                 row.forEach { month ->
                     val monthKey  = "$year-${month.toString().padStart(2, '0')}"
                     val count     = state.calendarMeta[monthKey] ?: 0
-                    val isFull    = count >= 36
-                    val isPartial = count in 1..35
+                    val isFull    = count >= 72
+                    val isPartial = count in 1..71
                     val isCurrent = today.year == year && today.monthNumber == month
                     Box(
                         modifier = Modifier
@@ -398,7 +398,7 @@ private fun MonthlyCalendarView(
                                 fontSize = 12.sp,
                                 fontWeight = if (isCurrent || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                             )
-                            if (isPartial) Text("$count/36", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
+                            if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
                         }
                     }
                 }

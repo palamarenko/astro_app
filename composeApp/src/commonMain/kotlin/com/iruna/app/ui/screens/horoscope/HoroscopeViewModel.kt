@@ -47,9 +47,12 @@ class HoroscopeViewModel(
 
     private val lang: String
         get() = when (LanguageManager.current) {
+            AppLanguage.RU -> "ru"
             AppLanguage.UK -> "uk"
             AppLanguage.EN -> "en"
-            else           -> "ru"
+            AppLanguage.ES -> "es"
+            AppLanguage.DE -> "de"
+            AppLanguage.FR -> "fr"
         }
 
     init {
@@ -163,7 +166,13 @@ class HoroscopeViewModel(
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
         val dateKey = if (future) futureDateKey(period, today) else currentDateKey(period, today)
         return try {
-            firebase.getHoroscope(lang, period.id, dateKey, sign.id)
+            val result = firebase.getHoroscope(lang, period.id, dateKey, sign.id)
+            // Fallback to English if the horoscope is not available in the current language
+            if (result == null && lang != "en") {
+                firebase.getHoroscope("en", period.id, dateKey, sign.id)
+            } else {
+                result
+            }
         } catch (_: Exception) {
             null
         }

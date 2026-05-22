@@ -1,6 +1,6 @@
 package com.iruna.app.i18n
 
-/** Все UI-строки приложения. Реализуется тремя объектами: StringsRu, StringsEn, StringsUk. */
+/** Все UI-строки приложения. Реализуется объектами: StringsRu, StringsEn, StringsUk, StringsEs, StringsDe, StringsFr. */
 interface AppStrings {
 
     // ── Navigation ────────────────────────────────────────────────────────────

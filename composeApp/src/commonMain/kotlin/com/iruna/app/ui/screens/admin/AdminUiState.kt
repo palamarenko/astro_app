@@ -31,6 +31,7 @@ data class AdminUiState(
     val isLoaded: Boolean = false,
     val generatingSignIds: Set<String> = emptySet(),
     val isGeneratingAll: Boolean = false,
+    val generateError: String? = null,
     // ── Push notifications ────────────────────────────────────────────────────
     val functionUrl: String = "",
     val adminSecret: String = "",
@@ -47,6 +48,10 @@ data class AdminUiState(
     val genAllLangsResult: String? = null,
     val genAllLangsPeriod: HoroscopePeriod = HoroscopePeriod.DAILY,
     val genAllLangsDate: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+    /** Текущий язык в процессе генерации, например "es" (null = не генерируется). */
+    val genAllLangsCurrentLang: String? = null,
+    /** Сколько языков уже обработано (успешно или с ошибкой). */
+    val genAllLangsDone: Int = 0,
     // ── Horoscope Prompt ──────────────────────────────────────────────────────
     val promptText: String = "",
     val promptLoading: Boolean = false,

@@ -20,7 +20,7 @@ data class AdminTarotUiState(
     val generatingCardKeys: Set<String> = emptySet(),
 )
 
-class AdminTarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
+class AdminTarotViewModel(private val api: AiGenerationService) : ViewModel() {
     private val firebase = FirebaseService()
     private val _state = MutableStateFlow(AdminTarotUiState())
     val state: StateFlow<AdminTarotUiState> = _state.asStateFlow()

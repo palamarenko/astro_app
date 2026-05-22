@@ -48,7 +48,7 @@ fun AdminViewModel.updateScore(signId: String, field: String, delta: Int) {
 fun AdminViewModel.generateForSign(sign: ZodiacSign) {
     if (_state.value.generatingSignIds.contains(sign.id)) return
     viewModelScope.launch {
-        _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds + sign.id)
+        _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds + sign.id, generateError = null)
         try {
             val st  = _state.value
             val key = computeDateKey(st.period, st.selectedDate)
@@ -58,7 +58,10 @@ fun AdminViewModel.generateForSign(sign: ZodiacSign) {
             _state.value = _state.value.copy(horoscopes = h, generatingSignIds = _state.value.generatingSignIds - sign.id)
         } catch (e: Exception) {
             if (e !is kotlinx.coroutines.CancellationException)
-                _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds - sign.id)
+                _state.value = _state.value.copy(
+                    generatingSignIds = _state.value.generatingSignIds - sign.id,
+                    generateError = e.message ?: "Generation error",
+                )
         }
     }
 }
@@ -68,29 +71,38 @@ fun AdminViewModel.generateAllSigns() {
     viewModelScope.launch {
         val st  = _state.value
         val key = computeDateKey(st.period, st.selectedDate)
-        _state.value = _state.value.copy(isGeneratingAll = true, generatingSignIds = ALL_SIGNS.map { it.id }.toSet())
+        _state.value = _state.value.copy(isGeneratingAll = true, generatingSignIds = ALL_SIGNS.map { it.id }.toSet(), generateError = null)
         try {
             val maxAttempts = 3
             var remaining   = ALL_SIGNS.toList()
             repeat(maxAttempts) { attempt ->
                 if (remaining.isEmpty()) return@repeat
-                val deferreds = remaining.map { sign ->
-                    async {
-                        try {
-                            val response = api.generateAdminHoroscope(sign, st.period, st.lang, key, st.promptText.takeIf { it.isNotBlank() })
-                            val h = _state.value.horoscopes.toMutableMap()
-                            h[sign.id] = response
-                            _state.value = _state.value.copy(horoscopes = h, generatingSignIds = _state.value.generatingSignIds - sign.id)
-                        } catch (e: Exception) {
-                            if (e !is kotlinx.coroutines.CancellationException)
-                                _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds - sign.id)
-                        }
+                try {
+                    // Один запрос — все оставшиеся знаки сразу
+                    val results = api.generateAdminAllSigns(
+                        signs             = remaining,
+                        period            = st.period,
+                        lang              = st.lang,
+                        dateKey           = key,
+                        styleInstructions = st.promptText.takeIf { it.isNotBlank() },
+                    )
+                    val h = _state.value.horoscopes.toMutableMap()
+                    results.forEach { (signId, response) ->
+                        h[signId] = response
                     }
+                    val doneIds = results.keys
+                    _state.value = _state.value.copy(
+                        horoscopes        = h,
+                        generatingSignIds = _state.value.generatingSignIds - doneIds,
+                    )
+                } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    // При ошибке всего запроса — сохраняем сообщение, попробуем ещё раз
+                    _state.value = _state.value.copy(generateError = e.message ?: "Generation error")
                 }
-                deferreds.awaitAll()
                 remaining = ALL_SIGNS.filter { sign -> _state.value.horoscopes[sign.id]?.text.isNullOrBlank() }
                 if (remaining.isNotEmpty() && attempt < maxAttempts - 1)
-                    _state.value = _state.value.copy(generatingSignIds = _state.value.generatingSignIds + remaining.map { it.id }.toSet())
+                    _state.value = _state.value.copy(generatingSignIds = remaining.map { it.id }.toSet())
             }
         } finally {
             _state.value = _state.value.copy(isGeneratingAll = false, generatingSignIds = emptySet())

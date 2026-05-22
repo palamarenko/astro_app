@@ -87,7 +87,8 @@ class PushAdminService(private val client: HttpClient) {
 
     /**
      * Запускает генерацию гороскопов через Cloud Function для указанной даты.
-     * Генерирует все 12 знаков × 3 языка (ru, uk, en).
+     * Если [lang] задан — генерирует только этот язык (12 знаков).
+     * Если [lang] = null — генерирует все языки (устаревший режим).
      * Возвращает Pair(success, failed).
      */
     suspend fun generateHoroscopes(
@@ -95,11 +96,16 @@ class PushAdminService(private val client: HttpClient) {
         adminSecret: String,
         date: String,
         period: String = "daily",
+        lang: String? = null,
     ): Result<Pair<Int, Int>> = runCatching {
+        val requestBody = if (lang != null)
+            """{"action":"generateHoroscopes","date":"$date","period":"$period","lang":"$lang"}"""
+        else
+            """{"action":"generateHoroscopes","date":"$date","period":"$period"}"""
         val response = client.post(functionUrl) {
             header("x-admin-secret", adminSecret)
             contentType(ContentType.Application.Json)
-            setBody("""{"action":"generateHoroscopes","date":"$date","period":"$period"}""")
+            setBody(requestBody)
         }
         if (!response.status.isSuccess()) {
             error("Function error ${response.status.value}: ${response.bodyAsText()}")

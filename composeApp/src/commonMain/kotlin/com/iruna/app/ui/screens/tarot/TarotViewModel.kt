@@ -125,7 +125,7 @@ private fun periodCurrentKey(period: HoroscopePeriod): String = when (period) {
     HoroscopePeriod.MONTHLY -> TarotStorage.monthKey()
 }
 
-class TarotViewModel(private val api: ClaudeApiClient) : ViewModel() {
+class TarotViewModel(private val api: AiGenerationService) : ViewModel() {
     private val firebase = FirebaseService()
     private val _state = MutableStateFlow(TarotUiState())
     val state: StateFlow<TarotUiState> = _state.asStateFlow()

@@ -32,9 +32,16 @@ internal fun EditTab(state: AdminUiState, vm: AdminViewModel) {
 
                 ControlLabel("LANGUAGE")
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("ru" to "RU", "uk" to "UK", "en" to "EN").forEach { (code, label) ->
-                        ChipButton(label = label, selected = state.lang == code, onClick = { vm.setLang(code) })
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("ru" to "RU", "uk" to "UK", "en" to "EN").forEach { (code, label) ->
+                            ChipButton(label = label, selected = state.lang == code, onClick = { vm.setLang(code) })
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("es" to "ES", "de" to "DE", "fr" to "FR").forEach { (code, label) ->
+                            ChipButton(label = label, selected = state.lang == code, onClick = { vm.setLang(code) })
+                        }
                     }
                 }
 
@@ -111,6 +118,10 @@ internal fun EditTab(state: AdminUiState, vm: AdminViewModel) {
                             Box(modifier = Modifier.fillMaxWidth(progress).fillMaxHeight().background(Brush.horizontalGradient(listOf(AppColors.AccentGold.copy(alpha = 0.7f), AppColors.AccentGold))))
                         }
                     }
+                }
+                state.generateError?.let { err ->
+                    Spacer(Modifier.height(6.dp))
+                    Text("✗ $err", color = Color(0xFFEB5757), fontSize = 11.sp)
                 }
             }
 
