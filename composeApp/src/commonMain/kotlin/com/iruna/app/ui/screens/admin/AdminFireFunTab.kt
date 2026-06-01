@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.iruna.app.data.*
+import com.iruna.app.i18n.format
 import com.iruna.app.ui.theme.*
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -259,7 +260,11 @@ private fun LogEntryCard(entry: GenerationLogEntry) {
         try {
             val instant = Instant.fromEpochMilliseconds(entry.timestamp)
             val local   = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-            "%02d.%02d.%d %02d:%02d".format(local.dayOfMonth, local.monthNumber, local.year, local.hour, local.minute)
+            val d = local.dayOfMonth.toString().padStart(2, '0')
+            val mo = local.monthNumber.toString().padStart(2, '0')
+            val h = local.hour.toString().padStart(2, '0')
+            val mi = local.minute.toString().padStart(2, '0')
+            "$d.$mo.${local.year} $h:$mi"
         } catch (e: Exception) { entry.id }
     }
 

@@ -185,10 +185,10 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
 
         val contextBlock = if (context != null) {
             val parts = buildList {
-                context.name?.let      { add("имя: $it") }
-                context.birthDate?.let { add("дата рождения: $it") }
-                context.birthSign?.let { add("знак зодиака: $it") }
-                context.birthPlace?.let { add("место рождения: $it") }
+                context.name?.let      { add("name: $it") }
+                context.birthDate?.let { add("date of birth: $it") }
+                context.birthSign?.let { add("zodiac sign: $it") }
+                context.birthPlace?.let { add("place of birth: $it") }
             }
             if (parts.isNotEmpty())
                 "\nSeekerʼs personal context (weave it naturally where meaningful, do not force it): ${parts.joinToString(", ")}."

@@ -29,7 +29,7 @@ object StringsDe : AppStrings {
 
     // ── Tarot ─────────────────────────────────────────────────────────────────
     override val tarot_label               = "MYSTISCHE KARTEN"
-    override val tarot_title1              = "Tarot-"
+    override val tarot_title1              = "Tarot"
     override val tarot_title2              = "Legung"
     override val tarot_select_period       = "Legungszeitraum wählen"
     override val tarot_period_day_title    = "Für heute"

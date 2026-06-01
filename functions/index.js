@@ -199,14 +199,16 @@ async function generateAllForLang(lang, period, dateKey, apiKey, styleInstructio
   return parsed; // { aries: {text,keyword,love,career,health,energy}, ... }
 }
 
-// Generate for one date: 3 Claude requests (one per language), each returning all 12 signs
-async function generateForDate(dateKey, apiKey, styleInstructions, period) {
-  const periodVal = period || "daily";
+// Generate for one date: one Claude request per language, each returning all 12 signs.
+// langs — optional array of language codes to generate; defaults to all LANGUAGES.
+async function generateForDate(dateKey, apiKey, styleInstructions, period, langs) {
+  const periodVal  = period || "daily";
+  const targetLangs = langs || LANGUAGES;
   let success = 0, failed = 0;
   const errors = [];
 
-  for (var li = 0; li < LANGUAGES.length; li++) {
-    const lang = LANGUAGES[li];
+  for (var li = 0; li < targetLangs.length; li++) {
+    const lang = targetLangs[li];
     const MAX_RETRIES = 8;
     var lastErr = null;
 
@@ -351,26 +353,115 @@ exports.adminApi = onRequest(
 
 // ─── scheduledGenerateHoroscopes ─────────────────────────────────────────────
 
+// ─── Date key helpers ─────────────────────────────────────────────────────────
+
+/** ISO week key: YYYY-Www (same format as the Kotlin app) */
+function isoWeekKey(offsetDays) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + (offsetDays || 0));
+  d.setUTCHours(0, 0, 0, 0);
+  // Shift to nearest Thursday (ISO week owner)
+  const day = d.getUTCDay() || 7; // 1=Mon … 7=Sun
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+}
+
+/** Monthly key: YYYY-MM */
+function monthKey(offsetMonths) {
+  const d = new Date();
+  d.setUTCMonth(d.getUTCMonth() + (offsetMonths || 0), 1);
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0");
+}
+
+// ─── Completion check ─────────────────────────────────────────────────────────
+
 /**
- * Проверяет, что все 12 знаков заполнены хотя бы для одного языка (ru).
- * Если да — считаем дату полностью сгенерированной и пропускаем.
+ * Returns true if meta record exists for the given lang/period/dateKey with count >= 12.
  */
-async function horoscopesComplete(dateKey) {
+async function isLangComplete(lang, period, dateKey) {
   try {
-    const url = FIREBASE_DB_URL + "/horoscopes/ru/daily/" + dateKey + ".json";
+    const url = FIREBASE_DB_URL + "/meta/" + lang + "/" + period + "/" + dateKey + ".json";
     const resp = await fetch(url);
     if (!resp.ok) return false;
     const data = await resp.json();
-    if (!data || typeof data !== "object") return false;
-    return SIGNS.every(function(s) { return data[s.id] && data[s.id].text; });
+    return data && data.count >= 12;
   } catch (e) {
     return false;
   }
 }
 
-exports.scheduledGenerateHoroscopes = onSchedule(
+/**
+ * Returns array of language codes that are NOT yet fully generated for the given period/dateKey.
+ */
+async function getMissingLangs(period, dateKey) {
+  const checks = await Promise.all(
+    LANGUAGES.map(function(lang) {
+      return isLangComplete(lang, period, dateKey).then(function(done) {
+        return done ? null : lang;
+      });
+    })
+  );
+  return checks.filter(function(l) { return l !== null; });
+}
+
+// ─── Save horoscope meta (mirrors Kotlin FirebaseService.saveHoroscopeMeta) ──
+
+async function saveHoroscopeMeta(lang, period, dateKey) {
+  try {
+    const url = FIREBASE_DB_URL + "/meta/" + lang + "/" + period + "/" + dateKey + ".json";
+    await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ count: 12, generatedAt: Date.now() }),
+    });
+  } catch (e) {
+    console.warn("saveHoroscopeMeta failed: " + e.message);
+  }
+}
+
+// ─── Generate one period/dateKey with logging ─────────────────────────────────
+
+async function generatePeriodDate(apiKey, db, period, dateKey) {
+  // Check each language individually — only generate the missing ones
+  const missingLangs = await getMissingLangs(period, dateKey);
+
+  if (missingLangs.length === 0) {
+    console.log(period + " " + dateKey + ": all 6 languages complete, skipping");
+    return;
+  }
+
+  console.log("=== generating " + period + " " + dateKey + " — missing: [" + missingLangs.join(", ") + "] ===");
+
+  const styleInstructions = await getStyleInstructions(db, period);
+  const t = Date.now();
+
+  const result = await generateForDate(dateKey, apiKey, styleInstructions, period, missingLangs);
+  console.log(period + " " + dateKey + ": ok=" + result.success + " fail=" + result.failed);
+
+  // Save meta only for languages that succeeded
+  for (var li = 0; li < missingLangs.length; li++) {
+    const lang = missingLangs[li];
+    if (await isLangComplete(lang, period, dateKey)) {
+      await saveHoroscopeMeta(lang, period, dateKey);
+    }
+  }
+
+  await saveGenerationLog({
+    id: String(t), timestamp: t, period: period, dateKey: dateKey,
+    success: result.success, failed: result.failed, durationMs: Date.now() - t,
+    triggeredBy: "scheduled",
+  });
+}
+
+// ─── scheduledGenerateDaily ──────────────────────────────────────────────────
+// Каждый час; реальные часы запуска берутся из Firestore (GEN_SCHEDULE_DOC).
+// Генерирует daily для завтра + послезавтра (все 6 языков).
+
+exports.scheduledGenerateDaily = onSchedule(
   {
-    schedule: "0 * * * *",   // каждый час; реальное время берётся из Firestore (GEN_SCHEDULE_DOC)
+    schedule: "0 * * * *",
     timeZone: "UTC",
     secrets: [CLAUDE_API_KEY],
     timeoutSeconds: 540,
@@ -382,44 +473,60 @@ exports.scheduledGenerateHoroscopes = onSchedule(
     const localHours     = genDoc.exists ? (genDoc.data().localHours || []) : [];
     const currentUtcHour = new Date().getUTCHours();
 
-    // localHours здесь трактуются как UTC-часы запуска
     if (!localHours.includes(currentUtcHour)) {
-      console.log("scheduledGenerateHoroscopes: UTC " + currentUtcHour + " not in schedule " + JSON.stringify(localHours) + ", skipping");
+      console.log("scheduledGenerateDaily: UTC " + currentUtcHour + " not in schedule, skipping");
       return;
     }
 
-    const apiKey   = CLAUDE_API_KEY.value();
-    const styleTpl = await getStyleInstructions(db, "daily");
-    const tomorrow = utcDateKey(1);
-    const dayAfter = utcDateKey(2);
+    const apiKey = CLAUDE_API_KEY.value();
+    console.log("=== scheduledGenerateDaily: UTC " + currentUtcHour + " ===");
 
-    console.log("=== scheduledGenerateHoroscopes: UTC " + currentUtcHour + " triggered — " + tomorrow + " + " + dayAfter + " ===");
+    await generatePeriodDate(apiKey, db, "daily", utcDateKey(1));
+    await generatePeriodDate(apiKey, db, "daily", utcDateKey(2));
+  }
+);
 
-    if (await horoscopesComplete(tomorrow)) {
-      console.log(tomorrow + ": already complete, skipping");
-    } else {
-      const t1 = Date.now();
-      const r1 = await generateForDate(tomorrow, apiKey, styleTpl, "daily");
-      console.log(tomorrow + ": ok=" + r1.success + " fail=" + r1.failed);
-      await saveGenerationLog({
-        id: String(t1), timestamp: t1, period: "daily", dateKey: tomorrow,
-        success: r1.success, failed: r1.failed, durationMs: Date.now() - t1,
-        triggeredBy: "scheduled",
-      });
-    }
+// ─── scheduledGenerateWeekly ─────────────────────────────────────────────────
+// Каждое воскресенье в 03:00 UTC.
+// Генерирует weekly для текущей недели + следующей (все 6 языков).
 
-    if (await horoscopesComplete(dayAfter)) {
-      console.log(dayAfter + ": already complete, skipping");
-    } else {
-      const t2 = Date.now();
-      const r2 = await generateForDate(dayAfter, apiKey, styleTpl, "daily");
-      console.log(dayAfter + ": ok=" + r2.success + " fail=" + r2.failed);
-      await saveGenerationLog({
-        id: String(t2), timestamp: t2, period: "daily", dateKey: dayAfter,
-        success: r2.success, failed: r2.failed, durationMs: Date.now() - t2,
-        triggeredBy: "scheduled",
-      });
-    }
+exports.scheduledGenerateWeekly = onSchedule(
+  {
+    schedule: "0 3 * * 0",
+    timeZone: "UTC",
+    secrets: [CLAUDE_API_KEY],
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async function() {
+    const db     = getFirestore();
+    const apiKey = CLAUDE_API_KEY.value();
+    console.log("=== scheduledGenerateWeekly ===");
+
+    await generatePeriodDate(apiKey, db, "weekly", isoWeekKey(0));
+    await generatePeriodDate(apiKey, db, "weekly", isoWeekKey(7));
+  }
+);
+
+// ─── scheduledGenerateMonthly ────────────────────────────────────────────────
+// 25-го числа каждого месяца в 03:00 UTC.
+// Генерирует monthly для текущего месяца + следующего (все 6 языков).
+
+exports.scheduledGenerateMonthly = onSchedule(
+  {
+    schedule: "0 3 25 * *",
+    timeZone: "UTC",
+    secrets: [CLAUDE_API_KEY],
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async function() {
+    const db     = getFirestore();
+    const apiKey = CLAUDE_API_KEY.value();
+    console.log("=== scheduledGenerateMonthly ===");
+
+    await generatePeriodDate(apiKey, db, "monthly", monthKey(0));
+    await generatePeriodDate(apiKey, db, "monthly", monthKey(1));
   }
 );
 
