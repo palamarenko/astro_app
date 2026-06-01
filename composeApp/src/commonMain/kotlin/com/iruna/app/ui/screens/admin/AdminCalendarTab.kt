@@ -266,6 +266,7 @@ private fun DailyCalendarView(
                                     fontSize = 11.sp,
                                     fontWeight = if (isToday || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                                 )
+                                if (isFull)    Text("$count/72", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
                                 if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
                             }
                         }
@@ -334,6 +335,7 @@ private fun WeeklyCalendarView(
                                 fontSize = 11.sp,
                                 fontWeight = if (isCurrent || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                             )
+                            if (isFull)    Text("$count/72", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
                             if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
                         }
                     }
@@ -398,6 +400,7 @@ private fun MonthlyCalendarView(
                                 fontSize = 12.sp,
                                 fontWeight = if (isCurrent || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                             )
+                            if (isFull)    Text("$count/72", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
                             if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
                         }
                     }

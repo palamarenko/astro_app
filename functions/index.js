@@ -355,17 +355,19 @@ exports.adminApi = onRequest(
 
 // ─── Date key helpers ─────────────────────────────────────────────────────────
 
-/** ISO week key: YYYY-Www (same format as the Kotlin app) */
-function isoWeekKey(offsetDays) {
+/**
+ * Week key matching the Kotlin app's computeDateKey logic:
+ *   week = (dayOfYear / 7) + 1
+ */
+function appWeekKey(offsetDays) {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + (offsetDays || 0));
   d.setUTCHours(0, 0, 0, 0);
-  // Shift to nearest Thursday (ISO week owner)
-  const day = d.getUTCDay() || 7; // 1=Mon … 7=Sun
-  d.setUTCDate(d.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return d.getUTCFullYear() + "-W" + String(week).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  const start = new Date(Date.UTC(year, 0, 1));
+  const dayOfYear = Math.floor((d - start) / 86400000) + 1; // 1-based
+  const week = Math.floor(dayOfYear / 7) + 1;
+  return year + "-W" + String(week).padStart(2, "0");
 }
 
 /** Monthly key: YYYY-MM */
@@ -503,8 +505,8 @@ exports.scheduledGenerateWeekly = onSchedule(
     const apiKey = CLAUDE_API_KEY.value();
     console.log("=== scheduledGenerateWeekly ===");
 
-    await generatePeriodDate(apiKey, db, "weekly", isoWeekKey(0));
-    await generatePeriodDate(apiKey, db, "weekly", isoWeekKey(7));
+    await generatePeriodDate(apiKey, db, "weekly", appWeekKey(0));
+    await generatePeriodDate(apiKey, db, "weekly", appWeekKey(7));
   }
 );
 

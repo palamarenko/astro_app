@@ -83,7 +83,7 @@ fun AdminViewModel.generateAllLanguages() {
     val date    = _state.value.genAllLangsDate
     val dateKey = computeDateKey(period, date)
     val startMs = Clock.System.now().toEpochMilliseconds()
-    val langs   = listOf("ru", "uk", "en", "es", "de", "fr")
+    val allLangs = listOf("ru", "uk", "en", "es", "de", "fr")
 
     viewModelScope.launch {
         _state.value = _state.value.copy(
@@ -92,6 +92,21 @@ fun AdminViewModel.generateAllLanguages() {
             genAllLangsCurrentLang = null,
             genAllLangsDone        = 0,
         )
+
+        // Проверяем мету — пропускаем языки у которых уже 12 знаков
+        val langs = allLangs.filter { lang ->
+            val count = firebase.getHoroscopeMeta(lang, period.id)[dateKey] ?: 0
+            count < 12
+        }
+
+        if (langs.isEmpty()) {
+            _state.value = _state.value.copy(
+                genAllLangsLoading = false,
+                genAllLangsDone    = allLangs.size,
+                genAllLangsResult  = "ok:${allLangs.size * 12} (all already complete)",
+            )
+            return@launch
+        }
 
         var totalOk   = 0
         var totalFail = 0
