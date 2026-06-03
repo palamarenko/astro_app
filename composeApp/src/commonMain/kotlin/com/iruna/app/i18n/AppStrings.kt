@@ -301,6 +301,23 @@ interface AppStrings {
     val push_prompt_deny: String
     val push_status_enabled: String
     val push_status_disabled: String
+
+    // ── Dream Decoding ────────────────────────────────────────────────────────
+    val dream_nav: String
+    val dream_label: String
+    val dream_title1: String
+    val dream_title2: String
+    val dream_input_hint: String
+    val dream_input_placeholder: String
+    val dream_btn_decode: String
+    val dream_ad_badge: String
+    val dream_ad_not_ready: String
+    val dream_how_title: String
+    val dream_how_desc: String
+    val dream_result_label: String
+    val dream_btn_new: String
+    val dream_loading_hint: String
+    val dream_chars_limit: String
 }
 
 /** Текущие строки на основе выбранного языка. */

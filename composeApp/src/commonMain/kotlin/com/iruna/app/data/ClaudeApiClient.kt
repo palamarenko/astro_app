@@ -323,6 +323,30 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
         }.toMap()
     }
 
+    override suspend fun getDreamInterpretation(dreamText: String, lang: String): String {
+        val langName = langName(lang)
+        val langNote = when (lang) {
+            "uk" -> "Write exclusively in Ukrainian. Use authentic literary Ukrainian — no russicisms, no calques from Russian. The text must feel natural to a native Ukrainian speaker."
+            "ru" -> "Write exclusively in Russian. Use expressive literary Russian."
+            "en" -> "Write exclusively in English. Use poetic but accessible English."
+            "es" -> "Write exclusively in Spanish. Use natural, warm Spanish that feels native."
+            "de" -> "Write exclusively in German. Use clear, warm, modern German."
+            "fr" -> "Write exclusively in French. Use elegant, natural French with a warm literary tone."
+            else -> "Write exclusively in Russian."
+        }
+        val prompt = """
+            You are a dream interpreter who combines symbolism, psychology, and mystical insight.
+            A person described this dream: "$dreamText"
+            $langNote
+            Write a warm, personal, insightful interpretation of this dream in 3-5 sentences.
+            Cover: key symbols, emotional meaning, and a gentle guidance message.
+            Style: mystical yet accessible, like a wise friend — not overly formal.
+            IMPORTANT: Your entire response must be in $langName only. Do not use any other language.
+            Plain text only, no JSON, no markdown, no headings.
+        """.trimIndent()
+        return complete(prompt, maxTokens = 400)
+    }
+
     override suspend fun generateAdminTarotCard(card: TarotCard, lang: String): TarotCardContent {
         val langName = langName(lang)
         val prompt = """

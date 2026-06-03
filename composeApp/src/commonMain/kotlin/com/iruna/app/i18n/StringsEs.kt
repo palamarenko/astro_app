@@ -289,4 +289,21 @@ object StringsEs : AppStrings {
     override val push_prompt_deny     = "Ahora no"
     override val push_status_enabled  = "Notificaciones activadas"
     override val push_status_disabled = "Notificaciones desactivadas"
+
+    // ── Dream Decoding ────────────────────────────────────────────────────────
+    override val dream_nav                  = "Sueños"
+    override val dream_label                = "MUNDO DE SUEÑOS"
+    override val dream_title1               = "Descifrado"
+    override val dream_title2               = "de sueños"
+    override val dream_input_hint           = "Describe tu sueño"
+    override val dream_input_placeholder    = "Escribe todo lo que recuerdas: lugar, eventos, personas, emociones, colores, símbolos…"
+    override val dream_btn_decode           = "Descifrar sueño"
+    override val dream_ad_badge             = "AD"
+    override val dream_ad_not_ready         = "El anuncio aún se está cargando, inténtalo en unos segundos"
+    override val dream_how_title            = "✦ ¿Cómo funciona?"
+    override val dream_how_desc             = "Describe tu sueño con el mayor detalle posible. Cuantos más detalles, más precisa será la interpretación. Usamos simbolismo, psicología e intuición para revelar su significado."
+    override val dream_result_label         = "✦ INTERPRETACIÓN DEL SUEÑO ✦"
+    override val dream_btn_new              = "✦  Nuevo sueño  ✦"
+    override val dream_loading_hint         = "Las estrellas leen tu sueño…"
+    override val dream_chars_limit          = "/2000"
 }

@@ -8,10 +8,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import iruna.composeapp.generated.resources.Res
+import iruna.composeapp.generated.resources.ic_moon
+import org.jetbrains.compose.resources.painterResource
 
 // Все иконки нарисованы в системе координат 22x22, как в исходных SVG.
 // Размер контролируется параметром [size]; цвет — параметром [color].
@@ -125,4 +129,14 @@ fun CompatibilityNavIcon(color: Color, size: Dp = 22.dp, modifier: Modifier = Mo
         drawCircle(color = color, radius = 4f * s, center = Offset(7.5f * s, 11f * s), style = stroke)
         drawCircle(color = color, radius = 4f * s, center = Offset(14.5f * s, 11f * s), style = stroke)
     }
+}
+
+@Composable
+fun DreamNavIcon(color: Color, size: Dp = 22.dp, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Image(
+        painter = painterResource(Res.drawable.ic_moon),
+        contentDescription = null,
+        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color),
+        modifier = modifier.size(size),
+    )
 }

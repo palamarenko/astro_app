@@ -289,4 +289,21 @@ object StringsRu : AppStrings {
     override val push_prompt_deny     = "Не сейчас"
     override val push_status_enabled  = "Уведомления включены"
     override val push_status_disabled = "Уведомления выключены"
+
+    // ── Dream Decoding ────────────────────────────────────────────────────────
+    override val dream_nav                  = "Сны"
+    override val dream_label                = "МИР СНОВ"
+    override val dream_title1               = "Расшифровка"
+    override val dream_title2               = "снов"
+    override val dream_input_hint           = "Опишите свой сон"
+    override val dream_input_placeholder    = "Напишите всё, что помните: место, события, люди, эмоции, цвета, символы…"
+    override val dream_btn_decode           = "Расшифровать сон"
+    override val dream_ad_badge             = "AD"
+    override val dream_ad_not_ready         = "Реклама ещё загружается, попробуйте через несколько секунд"
+    override val dream_how_title            = "✦ Как это работает?"
+    override val dream_how_desc             = "Опишите свой сон как можно подробнее. Чем больше деталей — тем точнее расшифровка. Мы используем символику, психологию и интуицию, чтобы помочь раскрыть его значение."
+    override val dream_result_label         = "✦ ТОЛКОВАНИЕ СНОВИДЕНИЯ ✦"
+    override val dream_btn_new              = "✦  Новый сон  ✦"
+    override val dream_loading_hint         = "Звёзды читают ваш сон…"
+    override val dream_chars_limit          = "/2000"
 }

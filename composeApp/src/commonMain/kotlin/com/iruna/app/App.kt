@@ -22,6 +22,7 @@ import com.iruna.app.data.*
 import com.iruna.app.i18n.*
 import com.iruna.app.ui.components.AppBackHandler
 import com.iruna.app.ui.components.CompatibilityNavIcon
+import com.iruna.app.ui.components.DreamNavIcon
 import com.iruna.app.ui.components.HoroscopeNavIcon
 import com.iruna.app.ui.components.StarfieldBackground
 import com.iruna.app.ui.components.TarotNavIcon
@@ -29,6 +30,7 @@ import com.iruna.app.ui.screens.*
 import com.iruna.app.ui.screens.horoscope.*
 import com.iruna.app.ui.screens.tarot.*
 import com.iruna.app.ui.screens.compatibility.*
+import com.iruna.app.ui.screens.dream.*
 import com.iruna.app.ui.screens.profile.*
 import com.iruna.app.ui.screens.admin.*
 import com.iruna.app.ui.theme.*
@@ -38,7 +40,7 @@ import com.iruna.app.ui.theme.*
 private val TAB_ORDER = listOf(
     BottomTab.HOROSCOPE,
     BottomTab.TAROT,
-    BottomTab.COMPATIBILITY,
+    BottomTab.DREAM,
     BottomTab.PROFILE,
 )
 
@@ -64,6 +66,7 @@ fun App() {
     val horoscopeVm  = remember { HoroscopeViewModel() }
     val tarotVm      = remember { TarotViewModel(api) }
     val compatVm     = remember { CompatibilityViewModel(api) }
+    val dreamVm      = remember { DreamViewModel(api) }
     val profileVm    = remember { ProfileViewModel(api) }
     val adminVm      = remember { AdminViewModel(api) }
     val adminTarotVm = remember { AdminTarotViewModel(api) }
@@ -75,6 +78,7 @@ fun App() {
             horoscopeVm  = horoscopeVm,
             tarotVm      = tarotVm,
             compatVm     = compatVm,
+            dreamVm      = dreamVm,
             profileVm    = profileVm,
             adminVm      = adminVm,
             adminTarotVm = adminTarotVm,
@@ -87,6 +91,7 @@ private fun AppContent(
     horoscopeVm:  HoroscopeViewModel,
     tarotVm:      TarotViewModel,
     compatVm:     CompatibilityViewModel,
+    dreamVm:      DreamViewModel,
     profileVm:    ProfileViewModel,
     adminVm:      AdminViewModel,
     adminTarotVm: AdminTarotViewModel,
@@ -240,6 +245,11 @@ private fun AppContent(
                     }
                     BottomTab.COMPATIBILITY -> ComingSoonScreen(modifier = Modifier.fillMaxSize())
 
+                    BottomTab.DREAM         -> DreamScreen(
+                        vm = dreamVm,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+
                     BottomTab.PROFILE       -> {
                         when {
                             showAdminSettings -> AdminSettingsScreen(
@@ -279,7 +289,7 @@ private fun AppContent(
                         }
                     }
 
-                    else -> {}
+                    else -> { /* no-op */ }
                 }
             }
         }
@@ -315,7 +325,7 @@ private fun BottomNav(
     val navItems = listOf(
         NavItem(BottomTab.HOROSCOPE,      str.nav_horoscope)      { c -> HoroscopeNavIcon(color = c) },
         NavItem(BottomTab.TAROT,          str.nav_tarot)          { c -> TarotNavIcon(color = c) },
-        NavItem(BottomTab.COMPATIBILITY,  str.nav_compatibility)  { c -> CompatibilityNavIcon(color = c) },
+        NavItem(BottomTab.DREAM,          str.dream_nav)          { c -> DreamNavIcon(color = c) },
         NavItem(BottomTab.PROFILE,        str.nav_profile)        { _ ->
             Image(
                 painter = selectedSign.iconSmallPainter(),

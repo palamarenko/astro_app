@@ -28,6 +28,8 @@ interface AiGenerationService {
 
     suspend fun getSignInsight(sign: ZodiacSign): String
 
+    suspend fun getDreamInterpretation(dreamText: String, lang: String): String
+
     // ── Административные функции ──────────────────────────────────────────────
 
     /** Генерирует гороскоп для одного знака. */

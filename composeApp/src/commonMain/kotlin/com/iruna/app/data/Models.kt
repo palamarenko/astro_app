@@ -109,7 +109,7 @@ enum class HoroscopePeriod(val id: String, val label: String, val promptRu: Stri
     MONTHLY("monthly", "Месяц",   "на этот месяц"),
 }
 
-enum class BottomTab { HOROSCOPE, TAROT, COMPATIBILITY, PROFILE }
+enum class BottomTab { HOROSCOPE, TAROT, COMPATIBILITY, DREAM, PROFILE }
 
 // ── Horoscope metadata (calendar fill tracking) ───────────────────────────────
 @Serializable
