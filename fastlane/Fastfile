@@ -1,0 +1,116 @@
+default_platform(:android)
+
+# ──────────────────────────────────────────────
+#  Вспомогательные методы
+# ──────────────────────────────────────────────
+
+def ensure_env(key)
+  value = ENV[key]
+  UI.user_error!("Переменная окружения '#{key}' не задана. Проверь .env или экспортируй её вручную.") if value.nil? || value.empty?
+  value
+end
+
+def build_aab
+  gradle(
+    task: ":composeApp:bundle",
+    build_type: "Release",
+    project_dir: ".",
+    properties: {
+      "android.injected.signing.store.file"     => ensure_env("KEYSTORE_PATH"),
+      "android.injected.signing.store.password" => ensure_env("KEYSTORE_STORE_PASSWORD"),
+      "android.injected.signing.key.alias"      => ensure_env("KEYSTORE_KEY_ALIAS"),
+      "android.injected.signing.key.password"   => ensure_env("KEYSTORE_KEY_PASSWORD"),
+    }
+  )
+end
+
+# ──────────────────────────────────────────────
+#  Платформа Android
+# ──────────────────────────────────────────────
+
+platform :android do
+
+  # ---- Internal Testing ----
+  desc "Собрать AAB и залить в Internal Testing"
+  lane :deploy_internal do
+    build_aab
+    upload_to_play_store(
+      track: "internal",
+      aab: "composeApp/build/outputs/bundle/release/composeApp-release.aab",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"
+    )
+    UI.success("✅ Загружено в Internal Testing!")
+  end
+
+  # ---- Alpha ----
+  desc "Собрать AAB и залить в Alpha"
+  lane :deploy_alpha do
+    build_aab
+    upload_to_play_store(
+      track: "alpha",
+      aab: "composeApp/build/outputs/bundle/release/composeApp-release.aab",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("✅ Загружено в Alpha!")
+  end
+
+  # ---- Production ----
+  desc "Собрать AAB и залить в Production (rollout 10% по умолчанию)"
+  lane :deploy_production do |options|
+    rollout = options[:rollout] || "0.1"
+    build_aab
+    upload_to_play_store(
+      track: "production",
+      aab: "composeApp/build/outputs/bundle/release/composeApp-release.aab",
+      skip_upload_apk: true,
+      rollout: rollout,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("✅ Загружено в Production (rollout #{(rollout.to_f * 100).to_i}%)!")
+  end
+
+  # ---- Только сборка без загрузки (проверка) ----
+  desc "Только собрать подписанный AAB"
+  lane :build_only do
+    build_aab
+    UI.success("✅ AAB собран: composeApp/build/outputs/bundle/release/composeApp-release.aab")
+  end
+
+  # ---- Поднять versionCode автоматически ----
+  desc "Поднять versionCode + собрать + Internal"
+  lane :bump_and_deploy do
+    # Читаем текущий versionCode из Play Store и ставим +1
+    version_codes = google_play_track_version_codes(track: "internal")
+    new_version_code = (version_codes.max || 0) + 1
+    UI.message("Новый versionCode: #{new_version_code}")
+
+    # Патчим build.gradle.kts
+    path = "composeApp/build.gradle.kts"
+    content = File.read(path)
+    content.gsub!(/versionCode\s*=\s*\d+/, "versionCode = #{new_version_code}")
+    File.write(path, content)
+
+    build_aab
+
+    upload_to_play_store(
+      track: "internal",
+      aab: "composeApp/build/outputs/bundle/release/composeApp-release.aab",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft"
+    )
+    UI.success("✅ versionCode #{new_version_code} загружен в Internal Testing!")
+  end
+
+end
