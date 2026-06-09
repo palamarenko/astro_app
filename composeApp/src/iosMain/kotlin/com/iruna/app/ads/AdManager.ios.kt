@@ -1,16 +1,28 @@
 package com.iruna.app.ads
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 
-/**
- * iOS-заглушка: AdMob для iOS требует отдельной настройки через CocoaPods/SPM.
- * TODO: Подключить Google-Mobile-Ads-SDK через Podfile и реализовать показ рекламы.
- */
 @Composable
-actual fun rememberAdManager(): AdManager = IosAdManager
+actual fun rememberAdManager(): AdManager {
+    LaunchedEffect(Unit) { IosAdBridge.preload?.invoke() }
+    return IosAdManagerImpl
+}
 
-private object IosAdManager : AdManager {
-    override val isAdReady: Boolean = false
-    override fun preloadAd() = Unit
-    override fun showRewardedAd(onRewarded: () -> Unit, onFailed: () -> Unit) = onFailed()
+private object IosAdManagerImpl : AdManager {
+    override val isAdReady: Boolean
+        get() = IosAdBridge.adReady
+
+    override fun preloadAd() {
+        IosAdBridge.preload?.invoke()
+    }
+
+    override fun showRewardedAd(onRewarded: () -> Unit, onFailed: () -> Unit) {
+        val show = IosAdBridge.showAd
+        if (show != null) {
+            show(onRewarded, onFailed)
+        } else {
+            onFailed()
+        }
+    }
 }

@@ -245,89 +245,86 @@ fun PushPromptDialog(
     onAllow: () -> Unit,
     onDeny:  () -> Unit,
 ) {
-    androidx.compose.ui.window.Dialog(
-        onDismissRequest = onDeny,
-        properties = androidx.compose.ui.window.DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-        ),
+    // Не используем Dialog-обёртку: на iOS Compose Multiplatform Dialog создаёт отдельный
+    // UIWindow и иногда не закрывается при изменении состояния.
+    // Родитель (HoroscopeScreen) уже рендерит этот компонент через if(showPushPrompt),
+    // поэтому достаточно обычного Box-overlay поверх основного контента.
+    Box(
+        modifier = androidx.compose.ui.Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.80f))
+            .clickable(onClick = onDeny),  // клик по фону = «Позже»
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
+        Column(
             modifier = androidx.compose.ui.Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.80f))
-                .clickable(enabled = false) {},
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth(0.88f)
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                    Brush.linearGradient(listOf(Color(0xFF1A1525), Color(0xFF0D0D18)))
+                )
+                .border(1.dp, AppColors.AccentGold.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
+                .padding(24.dp)
+                .clickable(enabled = false) {},  // поглощаем клики внутри карточки, чтобы не триггерить onDeny
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(
+            // Witch image
+            Image(
+                painter = painterResource(Res.drawable.iruna),
+                contentDescription = null,
+                modifier = androidx.compose.ui.Modifier.size(100.dp),
+                contentScale = ContentScale.Fit,
+            )
+
+            // Title
+            Text(
+                text = str.push_prompt_title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppColors.AccentGold,
+                textAlign = TextAlign.Center,
+            )
+
+            // Body
+            Text(
+                text = str.push_prompt_body,
+                fontSize = 14.sp,
+                color = AppColors.TextSecondary,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp,
+            )
+
+            Spacer(androidx.compose.ui.Modifier.height(4.dp))
+
+            // Allow button
+            Box(
                 modifier = androidx.compose.ui.Modifier
-                    .fillMaxWidth(0.88f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        Brush.linearGradient(listOf(Color(0xFF1A1525), Color(0xFF0D0D18)))
-                    )
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.25f), RoundedCornerShape(24.dp))
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(AppColors.AccentGold)
+                    .clickable { onAllow() }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                // Witch image
-                Image(
-                    painter = painterResource(Res.drawable.iruna),
-                    contentDescription = null,
-                    modifier = androidx.compose.ui.Modifier.size(100.dp),
-                    contentScale = ContentScale.Fit,
-                )
-
-                // Title
                 Text(
-                    text = str.push_prompt_title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = AppColors.AccentGold,
-                    textAlign = TextAlign.Center,
-                )
-
-                // Body
-                Text(
-                    text = str.push_prompt_body,
-                    fontSize = 14.sp,
-                    color = AppColors.TextSecondary,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 20.sp,
-                )
-
-                Spacer(androidx.compose.ui.Modifier.height(4.dp))
-
-                // Allow button
-                Box(
-                    modifier = androidx.compose.ui.Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(AppColors.AccentGold)
-                        .clickable { onAllow() }
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = str.push_prompt_allow,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                    )
-                }
-
-                // Deny
-                Text(
-                    text = str.push_prompt_deny,
-                    fontSize = 13.sp,
-                    color = AppColors.TextDim,
-                    modifier = androidx.compose.ui.Modifier
-                        .clickable { onDeny() }
-                        .padding(8.dp),
-                    textAlign = TextAlign.Center,
+                    text = str.push_prompt_allow,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
                 )
             }
+
+            // Deny
+            Text(
+                text = str.push_prompt_deny,
+                fontSize = 13.sp,
+                color = AppColors.TextDim,
+                modifier = androidx.compose.ui.Modifier
+                    .clickable { onDeny() }
+                    .padding(8.dp),
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
