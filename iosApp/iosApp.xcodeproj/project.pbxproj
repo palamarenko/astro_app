@@ -7,12 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		56576F702FD826260011C04D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 56576F6F2FD826260011C04D /* Assets.xcassets */; };
+		56576F732FD82E220011C04D /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 56576F722FD82E220011C04D /* GoogleMobileAds */; };
 		7166A96C2CF048A4006B3356 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7166A96B2CF048A4006B3356 /* iOSApp.swift */; };
 		7166A96E2CF048A5006B3356 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7166A96D2CF048A5006B3356 /* ContentView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2C0E0B4C278DD052AE6AEBE5 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		56576F6F2FD826260011C04D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7166A96B2CF048A4006B3356 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		7166A96D2CF048A5006B3356 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -22,6 +25,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56576F732FD82E220011C04D /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +51,7 @@
 		EF76C243D6A1E84367BC74E8 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				56576F6F2FD826260011C04D /* Assets.xcassets */,
 				7166A96B2CF048A4006B3356 /* iOSApp.swift */,
 				7166A96D2CF048A5006B3356 /* ContentView.swift */,
 			);
@@ -60,6 +65,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A633191F35DE45FE0A416095 /* Build configuration list for PBXNativeTarget "iosApp" */;
 			buildPhases = (
+				C0FFEE0011223344556677AA /* Sync Local Properties */,
 				B459BD866AE313F574EF2881 /* Compile Kotlin Framework */,
 				A6B4D0A441D1655BC85966B9 /* Sources */,
 				ABBE6EE7F9F66ACA0447A648 /* Frameworks */,
@@ -82,7 +88,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					8E94DA2940DEC06CEC6A16E2 = {
 						CreatedOnToolsVersion = 16.2;
@@ -98,6 +104,9 @@
 				Base,
 			);
 			mainGroup = 7C2206F1D5A83C5BE12F0458;
+			packageReferences = (
+				56576F712FD82E210011C04D /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			productRefGroup = C6B6E2B8F89DE511B8B47D42 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -112,12 +121,28 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56576F702FD826260011C04D /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		C0FFEE0011223344556677AA /* Sync Local Properties */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Sync Local Properties";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "PROPS=\"$SRCROOT/../local.properties\"\nPLIST=\"$SRCROOT/iosApp/Info.plist\"\n\nif [ ! -f \"$PROPS\" ]; then\n  echo \"local.properties not found, skipping\"\n  exit 0\nfi\n\nget_prop() {\n  grep \"^$1=\" \"$PROPS\" | head -1 | cut -d'=' -f2-\n}\n\nset_plist() {\n  KEY=\"$1\"\n  VALUE=\"$2\"\n  if [ -z \"$VALUE\" ]; then\n    return\n  fi\n  /usr/libexec/PlistBuddy -c \"Set :$KEY $VALUE\" \"$PLIST\" 2>/dev/null \\\n    || /usr/libexec/PlistBuddy -c \"Add :$KEY string $VALUE\" \"$PLIST\"\n}\n\nUSE_TEST_ADS=$(get_prop ADMOB_USE_TEST_ADS)\nif [ \"$USE_TEST_ADS\" = \"true\" ]; then\n  ADMOB_APP_ID_KEY=\"ADMOB_APP_ID_IOS_TEST\"\n  ADMOB_REWARDED_KEY=\"ADMOB_REWARDED_AD_UNIT_ID_IOS_TEST\"\nelse\n  ADMOB_APP_ID_KEY=\"ADMOB_APP_ID_IOS\"\n  ADMOB_REWARDED_KEY=\"ADMOB_REWARDED_AD_UNIT_ID_IOS\"\nfi\n\nset_plist \"GADApplicationIdentifier\" \"$(get_prop $ADMOB_APP_ID_KEY)\"\nset_plist \"ADMOB_REWARDED_AD_UNIT_ID\" \"$(get_prop $ADMOB_REWARDED_KEY)\"\n";
+		};
 		B459BD866AE313F574EF2881 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -151,13 +176,11 @@
 		5D7D598A64B476938B962E33 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4374P4DK;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -214,6 +237,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5Z4374P4DK;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -235,6 +259,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iruna.app;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -275,6 +300,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 5Z4374P4DK;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -303,6 +329,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.iruna.app;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -311,13 +338,11 @@
 		EEE4FC55174618D407376E5C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 5Z4374P4DK;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iosApp/Info.plist;
@@ -361,6 +386,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		56576F712FD82E210011C04D /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		56576F722FD82E220011C04D /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 56576F712FD82E210011C04D /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D8DC7EE7840C368FC1BC3BDF /* Project object */;
 }
