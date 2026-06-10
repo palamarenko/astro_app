@@ -55,6 +55,11 @@ fun App() {
         if (profile != null && profile.language.isEmpty()) {
             UserStorage.save(profile.copy(language = LanguageManager.current.code))
         }
+        // Профиля ещё нет (самый первый запуск) — сохраняем определённый
+        // язык устройства, чтобы он не потерялся до завершения онбординга.
+        if (profile == null) {
+            UserStorage.save(UserProfile(language = LanguageManager.current.code))
+        }
     }
 
     val lang by LanguageManager.language.collectAsState()

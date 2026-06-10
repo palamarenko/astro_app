@@ -93,7 +93,7 @@ private fun ProfileUiState.toProfile(): UserProfile {
 class ProfileViewModel(private val api: AiGenerationService) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        UserStorage.load()?.toUiState() ?: ProfileUiState()
+        UserStorage.load()?.toUiState() ?: ProfileUiState(language = LanguageManager.current)
     )
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
 

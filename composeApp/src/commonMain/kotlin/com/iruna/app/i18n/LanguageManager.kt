@@ -39,7 +39,11 @@ object LanguageManager {
      * @param savedCode  сохранённый ISO-код или null/пусто → English (EN).
      */
     fun init(savedCode: String?) {
-        val lang = AppLanguage.fromCode(savedCode ?: "")
+        val lang = if (savedCode.isNullOrEmpty()) {
+            AppLanguage.deviceDefault()
+        } else {
+            AppLanguage.fromCode(savedCode)
+        }
         _language.value = lang
         applyLanguage(lang.code)
     }

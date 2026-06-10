@@ -49,6 +49,9 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
+        iosMain {
+            kotlin.srcDir(layout.buildDirectory.dir("generated/secrets/iosMain/kotlin"))
+        }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -98,12 +101,16 @@ android {
             "String", "GOOGLE_MAPS_API_KEY",
             "\"${localProps["GOOGLE_MAPS_API_KEY"] ?: ""}\""
         )
+        val useTestAds = localProps["ADMOB_USE_TEST_ADS"]?.toString()?.toBoolean() ?: false
+        val admobAppIdKey = if (useTestAds) "ADMOB_APP_ID_TEST" else "ADMOB_APP_ID"
+        val admobRewardedKey = if (useTestAds) "ADMOB_REWARDED_AD_UNIT_ID_TEST" else "ADMOB_REWARDED_AD_UNIT_ID"
+
         buildConfigField(
             "String", "ADMOB_REWARDED_AD_UNIT_ID",
-            "\"${localProps["ADMOB_REWARDED_AD_UNIT_ID"] ?: ""}\""
+            "\"${localProps[admobRewardedKey] ?: ""}\""
         )
         manifestPlaceholders["admobAppId"] =
-            localProps["ADMOB_APP_ID"] ?: ""
+            localProps[admobAppIdKey] ?: ""
     }
 
     buildFeatures {
@@ -150,4 +157,39 @@ android {
 dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+}
+
+// Генерирует GeneratedSecrets.kt для iosMain из local.properties.
+// Файл попадает в build/ (gitignored) и никогда не коммитится.
+val generateSecrets = tasks.register("generateSecrets") {
+    val outputDir = layout.buildDirectory.dir("generated/secrets/iosMain/kotlin")
+    outputs.dir(outputDir)
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val localProps = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }
+                ?.inputStream()?.use { load(it) }
+        }
+        val anthropicKey = localProps.getProperty("ANTHROPIC_API_KEY", "")
+        val mapsKey = localProps.getProperty("GOOGLE_MAPS_API_KEY", "")
+
+        val packageDir = outputDir.get().asFile.resolve("com/iruna/app")
+        packageDir.mkdirs()
+        packageDir.resolve("GeneratedSecrets.kt").writeText(
+            """
+            |package com.iruna.app
+            |
+            |// Auto-generated from local.properties at build time. Do not edit, do not commit.
+            |internal object GeneratedSecrets {
+            |    const val ANTHROPIC_API_KEY: String = "$anthropicKey"
+            |    const val GOOGLE_MAPS_API_KEY: String = "$mapsKey"
+            |}
+            |""".trimMargin()
+        )
+    }
+}
+
+tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
+    dependsOn(generateSecrets)
 }
