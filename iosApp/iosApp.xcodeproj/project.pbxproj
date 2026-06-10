@@ -128,21 +128,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		C0FFEE0011223344556677AA /* Sync Local Properties */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Sync Local Properties";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "PROPS=\"$SRCROOT/../local.properties\"\nPLIST=\"$SRCROOT/iosApp/Info.plist\"\n\nif [ ! -f \"$PROPS\" ]; then\n  echo \"local.properties not found, skipping\"\n  exit 0\nfi\n\nget_prop() {\n  grep \"^$1=\" \"$PROPS\" | head -1 | cut -d'=' -f2-\n}\n\nset_plist() {\n  KEY=\"$1\"\n  VALUE=\"$2\"\n  if [ -z \"$VALUE\" ]; then\n    return\n  fi\n  /usr/libexec/PlistBuddy -c \"Set :$KEY $VALUE\" \"$PLIST\" 2>/dev/null \\\n    || /usr/libexec/PlistBuddy -c \"Add :$KEY string $VALUE\" \"$PLIST\"\n}\n\nUSE_TEST_ADS=$(get_prop ADMOB_USE_TEST_ADS)\nif [ \"$USE_TEST_ADS\" = \"true\" ]; then\n  ADMOB_APP_ID_KEY=\"ADMOB_APP_ID_IOS_TEST\"\n  ADMOB_REWARDED_KEY=\"ADMOB_REWARDED_AD_UNIT_ID_IOS_TEST\"\nelse\n  ADMOB_APP_ID_KEY=\"ADMOB_APP_ID_IOS\"\n  ADMOB_REWARDED_KEY=\"ADMOB_REWARDED_AD_UNIT_ID_IOS\"\nfi\n\nset_plist \"GADApplicationIdentifier\" \"$(get_prop $ADMOB_APP_ID_KEY)\"\nset_plist \"ADMOB_REWARDED_AD_UNIT_ID\" \"$(get_prop $ADMOB_REWARDED_KEY)\"\n";
-		};
 		B459BD866AE313F574EF2881 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -157,6 +142,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/..\"\n./gradlew :composeApp:embedAndSignAppleFrameworkForXcode\n";
+		};
+		C0FFEE0011223344556677AA /* Sync Local Properties */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Sync Local Properties";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "PROPS=\"$SRCROOT/../local.properties\"\nPLIST=\"$SRCROOT/iosApp/Info.plist\"\n\nif [ ! -f \"$PROPS\" ]; then\n  echo \"local.properties not found, skipping\"\n  exit 0\nfi\n\nget_prop() {\n  grep \"^$1=\" \"$PROPS\" | head -1 | cut -d'=' -f2-\n}\n\nset_plist() {\n  KEY=\"$1\"\n  VALUE=\"$2\"\n  if [ -z \"$VALUE\" ]; then\n    return\n  fi\n  /usr/libexec/PlistBuddy -c \"Set :$KEY $VALUE\" \"$PLIST\" 2>/dev/null \\\n    || /usr/libexec/PlistBuddy -c \"Add :$KEY string $VALUE\" \"$PLIST\"\n}\n\nUSE_TEST_ADS=$(get_prop ADMOB_USE_TEST_ADS)\nif [ \"$USE_TEST_ADS\" = \"true\" ]; then\n  ADMOB_APP_ID_KEY=\"ADMOB_APP_ID_IOS_TEST\"\n  ADMOB_REWARDED_KEY=\"ADMOB_REWARDED_AD_UNIT_ID_IOS_TEST\"\nelse\n  ADMOB_APP_ID_KEY=\"ADMOB_APP_ID_IOS\"\n  ADMOB_REWARDED_KEY=\"ADMOB_REWARDED_AD_UNIT_ID_IOS\"\nfi\n\nset_plist \"GADApplicationIdentifier\" \"$(get_prop $ADMOB_APP_ID_KEY)\"\nset_plist \"ADMOB_REWARDED_AD_UNIT_ID\" \"$(get_prop $ADMOB_REWARDED_KEY)\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
