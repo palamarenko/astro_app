@@ -46,6 +46,21 @@ platform :android do
     UI.success("✅ Загружено в Internal Testing!")
   end
 
+  # ---- Beta (Open Testing) ----
+  desc "Собрать AAB и залить в Beta (Open Testing)"
+  lane :deploy_beta do
+    build_aab
+    upload_to_play_store(
+      track: "beta",
+      aab: "composeApp/build/outputs/bundle/release/composeApp-release.aab",
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+    )
+    UI.success("✅ Загружено в Beta!")
+  end
+
   # ---- Alpha ----
   desc "Собрать AAB и залить в Alpha"
   lane :deploy_alpha do

@@ -1,0 +1,71 @@
+name: Deploy Android → Play Store (Beta)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "versionCode (целое число, должно быть больше текущего в Store)"
+        required: true
+        type: number
+      track:
+        description: "Play Store track"
+        required: true
+        default: "beta"
+        type: choice
+        options:
+          - beta
+          - alpha
+          - internal
+
+jobs:
+  deploy:
+    name: Build & Upload AAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: gradle
+
+      # Декодируем keystore из base64-секрета
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "${{ runner.temp }}/release.jks"
+
+      # Пишем JSON-ключ сервисного аккаунта Play Store во временный файл
+      - name: Write Play Store JSON key
+        run: |
+          echo '${{ secrets.PLAY_STORE_JSON_KEY }}' > "${{ runner.temp }}/play-key.json"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true  # автоматически запускает bundle install и кэширует gems
+
+      - name: Deploy via Fastlane
+        env:
+          # Подпись
+          KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
+          # Play Store
+          PLAY_STORE_JSON_KEY: ${{ runner.temp }}/play-key.json
+          # Секреты приложения (для BuildConfig)
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+          ADMOB_REWARDED_AD_UNIT_ID: ${{ secrets.ADMOB_REWARDED_AD_UNIT_ID }}
+          # versionCode из input
+          VERSION_CODE: ${{ github.event.inputs.version_code }}
+        run: |
+          LANE="deploy_${{ github.event.inputs.track }}"
+          echo "Запускаем lane: $LANE (versionCode=$VERSION_CODE)"
+          bundle exec fastlane android $LANE

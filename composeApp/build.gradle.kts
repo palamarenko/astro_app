@@ -86,31 +86,25 @@ android {
         applicationId = "com.iruna.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 3
+        versionCode = (System.getenv("VERSION_CODE")?.toIntOrNull()) ?: 3
         versionName = "1.0"
 
         val localProps = Properties().apply {
             rootProject.file("local.properties").takeIf { it.exists() }
                 ?.inputStream()?.use { load(it) }
         }
-        buildConfigField(
-            "String", "ANTHROPIC_API_KEY",
-            "\"${localProps["ANTHROPIC_API_KEY"] ?: ""}\""
-        )
-        buildConfigField(
-            "String", "GOOGLE_MAPS_API_KEY",
-            "\"${localProps["GOOGLE_MAPS_API_KEY"] ?: ""}\""
-        )
-        val useTestAds = localProps["ADMOB_USE_TEST_ADS"]?.toString()?.toBoolean() ?: false
+        fun prop(key: String) = localProps[key]?.toString() ?: System.getenv(key) ?: ""
+
+        buildConfigField("String", "ANTHROPIC_API_KEY", "\"${prop("ANTHROPIC_API_KEY")}\"")
+        buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"${prop("GOOGLE_MAPS_API_KEY")}\"")
+
+        val useTestAds = (localProps["ADMOB_USE_TEST_ADS"]?.toString()
+            ?: System.getenv("ADMOB_USE_TEST_ADS"))?.toBoolean() ?: false
         val admobAppIdKey = if (useTestAds) "ADMOB_APP_ID_TEST" else "ADMOB_APP_ID"
         val admobRewardedKey = if (useTestAds) "ADMOB_REWARDED_AD_UNIT_ID_TEST" else "ADMOB_REWARDED_AD_UNIT_ID"
 
-        buildConfigField(
-            "String", "ADMOB_REWARDED_AD_UNIT_ID",
-            "\"${localProps[admobRewardedKey] ?: ""}\""
-        )
-        manifestPlaceholders["admobAppId"] =
-            localProps[admobAppIdKey] ?: ""
+        buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"${prop(admobRewardedKey)}\"")
+        manifestPlaceholders["admobAppId"] = prop(admobAppIdKey)
     }
 
     buildFeatures {
