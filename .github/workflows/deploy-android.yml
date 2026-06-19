@@ -40,8 +40,10 @@ jobs:
 
       # Пишем JSON-ключ сервисного аккаунта Play Store во временный файл
       - name: Write Play Store JSON key
+        env:
+          PLAY_STORE_JSON_KEY_CONTENT: ${{ secrets.PLAY_STORE_JSON_KEY }}
         run: |
-          echo '${{ secrets.PLAY_STORE_JSON_KEY }}' > "${{ runner.temp }}/play-key.json"
+          printf '%s' "$PLAY_STORE_JSON_KEY_CONTENT" > "${{ runner.temp }}/play-key.json"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
