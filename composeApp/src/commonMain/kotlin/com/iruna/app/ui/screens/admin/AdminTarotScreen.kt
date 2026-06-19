@@ -37,6 +37,7 @@ fun AdminTarotScreen(
     onNavigateToHoroscopes: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
 ) {
     // Автозагрузка при открытии экрана
     LaunchedEffect(Unit) { vm.load() }
@@ -98,6 +99,7 @@ fun AdminTarotScreen(
                 AdminTabItem("🃏 Tarot",      active = true,  onClick = {})
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
+                AdminTabItem("ℹ️ About",      active = false, onClick = onNavigateToAbout)
             }
 
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))

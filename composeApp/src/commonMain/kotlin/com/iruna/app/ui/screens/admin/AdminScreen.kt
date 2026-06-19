@@ -23,6 +23,7 @@ fun AdminScreen(
     onNavigateToTarot: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
     var subTab by remember { mutableStateOf(HoroscopeSubTab.EDIT) }
@@ -59,6 +60,7 @@ fun AdminScreen(
                 AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
+                AdminTabItem("ℹ️ About",      active = false, onClick = onNavigateToAbout)
             }
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
 

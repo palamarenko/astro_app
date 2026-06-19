@@ -22,6 +22,7 @@ fun AdminSettingsScreen(
     onNavigateToHoroscopes: () -> Unit = {},
     onNavigateToTarot: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
+    onNavigateToAbout: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
 
@@ -75,6 +76,7 @@ fun AdminSettingsScreen(
                 AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = true,  onClick = {})
+                AdminTabItem("ℹ️ About",      active = false, onClick = onNavigateToAbout)
             }
 
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
