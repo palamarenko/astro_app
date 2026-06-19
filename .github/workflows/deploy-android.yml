@@ -44,6 +44,9 @@ jobs:
           PLAY_STORE_JSON_KEY_CONTENT: ${{ secrets.PLAY_STORE_JSON_KEY }}
         run: |
           printf '%s' "$PLAY_STORE_JSON_KEY_CONTENT" > "${{ runner.temp }}/play-key.json"
+          echo "File size: $(wc -c < "${{ runner.temp }}/play-key.json") bytes"
+          echo "First char: $(head -c 1 "${{ runner.temp }}/play-key.json")"
+          python3 -c "import json; json.load(open('${{ runner.temp }}/play-key.json')); print('JSON is valid')" || echo "JSON is INVALID"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
