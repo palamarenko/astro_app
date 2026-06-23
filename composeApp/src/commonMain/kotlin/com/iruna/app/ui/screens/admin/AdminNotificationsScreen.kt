@@ -26,6 +26,7 @@ fun AdminNotificationsScreen(
     onNavigateToHoroscopes: () -> Unit = {},
     onNavigateToTarot: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToBilling: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
@@ -87,6 +88,7 @@ fun AdminNotificationsScreen(
                 AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
                 AdminTabItem("🔔 Push",       active = true,  onClick = {})
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
+                AdminTabItem("💳 Billing",    active = false, onClick = onNavigateToBilling)
                 AdminTabItem("ℹ️ About",      active = false, onClick = onNavigateToAbout)
             }
 

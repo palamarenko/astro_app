@@ -22,6 +22,7 @@ fun AdminAboutScreen(
     onNavigateToTarot: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToBilling: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -73,6 +74,7 @@ fun AdminAboutScreen(
                 AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
+                AdminTabItem("💳 Billing",    active = false, onClick = onNavigateToBilling)
                 AdminTabItem("ℹ️ About",      active = true,  onClick = {})
             }
 

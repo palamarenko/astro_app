@@ -1,6 +1,7 @@
 package com.iruna.app.ui.screens.admin
 
 import com.iruna.app.data.*
+import com.iruna.app.data.AnthropicUsageInfo
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -75,4 +76,8 @@ data class AdminUiState(
     val calendarLoading: Boolean = false,
     val backfillLoading: Boolean = false,
     val backfillResult: String? = null,
+    // ── Billing ───────────────────────────────────────────────────────────────
+    val billingLoading: Boolean = false,
+    val billingInfo: AnthropicUsageInfo? = null,
+    val billingError: String? = null,
 )

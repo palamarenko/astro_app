@@ -56,7 +56,23 @@ interface AiGenerationService {
         card: TarotCard,
         lang: String,
     ): TarotCardContent
+
+    /** Возвращает информацию об использовании API (токены, баланс). */
+    suspend fun getBillingInfo(): AnthropicUsageInfo
 }
+
+// ── Биллинг ───────────────────────────────────────────────────────────────────
+
+data class AnthropicUsageInfo(
+    val inputTokens: Long = 0,
+    val outputTokens: Long = 0,
+    val cacheReadTokens: Long = 0,
+    val cacheCreationTokens: Long = 0,
+    /** Примерная стоимость в USD на основе цен Claude Haiku */
+    val estimatedCostUsd: Double = 0.0,
+    /** Сырой JSON-ответ от API (для отладки) */
+    val rawResponse: String = "",
+)
 
 // ── Контекст пользователя для расклада Таро ───────────────────────────────────
 

@@ -37,6 +37,7 @@ fun AdminTarotScreen(
     onNavigateToHoroscopes: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToBilling: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
 ) {
     // Автозагрузка при открытии экрана
@@ -99,6 +100,7 @@ fun AdminTarotScreen(
                 AdminTabItem("🃏 Tarot",      active = true,  onClick = {})
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
+                AdminTabItem("💳 Billing",    active = false, onClick = onNavigateToBilling)
                 AdminTabItem("ℹ️ About",      active = false, onClick = onNavigateToAbout)
             }
 

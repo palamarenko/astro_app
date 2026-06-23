@@ -1,6 +1,7 @@
 package com.iruna.app.ui.screens.admin
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.iruna.app.data.*
 import com.iruna.app.notifications.PushAdminService
 import io.ktor.client.plugins.HttpTimeout
@@ -8,6 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -56,6 +58,21 @@ class AdminViewModel(internal val api: AiGenerationService) : ViewModel() {
         )
         load()
         loadPrompt()
+    }
+
+    fun loadBillingInfo() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(billingLoading = true, billingError = null)
+            try {
+                val info = api.getBillingInfo()
+                _state.value = _state.value.copy(billingLoading = false, billingInfo = info)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    billingLoading = false,
+                    billingError = e.message ?: "Неизвестная ошибка"
+                )
+            }
+        }
     }
 
     fun navigateDate(forward: Boolean) {

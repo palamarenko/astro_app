@@ -359,4 +359,51 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
         """.trimIndent()
         return json.decodeFromString(extractJson(complete(prompt, maxTokens = 200)))
     }
+
+    override suspend fun getBillingInfo(): AnthropicUsageInfo {
+        // Цены Claude Haiku 4.5 ($ за 1M токенов)
+        val inputPricePerMillion  = 0.80
+        val outputPricePerMillion = 4.00
+
+        val raw = try {
+            val resp = client.get("https://api.anthropic.com/v1/usage") {
+                header("x-api-key", apiKey)
+                header("anthropic-version", "2023-06-01")
+            }
+            resp.bodyAsText()
+        } catch (e: Exception) {
+            throw Exception("Ошибка подключения: ${e.message}")
+        }
+
+        // Пробуем распарсить ответ — Anthropic может вернуть разные форматы
+        return try {
+            val el = json.parseToJsonElement(raw)
+            if (el !is kotlinx.serialization.json.JsonObject) {
+                return AnthropicUsageInfo(rawResponse = raw)
+            }
+
+            // Ищем токены на верхнем уровне или внутри "usage"
+            val obj = (el["usage"] as? kotlinx.serialization.json.JsonObject) ?: el
+            val inputTokens        = obj["input_tokens"]?.let { json.decodeFromJsonElement(kotlinx.serialization.json.JsonElement.serializer(), it) }
+                ?.toString()?.toLongOrNull() ?: 0L
+            val outputTokens       = obj["output_tokens"]?.let { json.decodeFromJsonElement(kotlinx.serialization.json.JsonElement.serializer(), it) }
+                ?.toString()?.toLongOrNull() ?: 0L
+            val cacheReadTokens    = obj["cache_read_input_tokens"]?.toString()?.toLongOrNull() ?: 0L
+            val cacheCreationTokens = obj["cache_creation_input_tokens"]?.toString()?.toLongOrNull() ?: 0L
+
+            val costUsd = (inputTokens / 1_000_000.0) * inputPricePerMillion +
+                          (outputTokens / 1_000_000.0) * outputPricePerMillion
+
+            AnthropicUsageInfo(
+                inputTokens          = inputTokens,
+                outputTokens         = outputTokens,
+                cacheReadTokens      = cacheReadTokens,
+                cacheCreationTokens  = cacheCreationTokens,
+                estimatedCostUsd     = costUsd,
+                rawResponse          = raw,
+            )
+        } catch (_: Exception) {
+            AnthropicUsageInfo(rawResponse = raw)
+        }
+    }
 }

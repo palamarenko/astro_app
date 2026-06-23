@@ -23,6 +23,7 @@ fun AdminScreen(
     onNavigateToTarot: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToBilling: () -> Unit = {},
     onNavigateToAbout: () -> Unit = {},
 ) {
     val state by vm.state.collectAsState()
@@ -60,6 +61,7 @@ fun AdminScreen(
                 AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
+                AdminTabItem("💳 Billing",    active = false, onClick = onNavigateToBilling)
                 AdminTabItem("ℹ️ About",      active = false, onClick = onNavigateToAbout)
             }
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.Border))
