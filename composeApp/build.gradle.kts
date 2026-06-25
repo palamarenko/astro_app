@@ -4,19 +4,16 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.googleServices)
 }
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "11"
-                freeCompilerArgs += listOf(
-                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi"
-                )
-            }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            freeCompilerArgs.add("-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi")
         }
     }
 
@@ -29,12 +26,8 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
-        iosTarget.compilations.all {
-            kotlinOptions {
-                freeCompilerArgs += listOf(
-                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi"
-                )
-            }
+        iosTarget.compilerOptions {
+            freeCompilerArgs.add("-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi")
         }
     }
 
