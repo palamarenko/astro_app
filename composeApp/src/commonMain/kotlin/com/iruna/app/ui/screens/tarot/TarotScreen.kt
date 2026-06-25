@@ -32,7 +32,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import com.iruna.app.ads.rememberAdManager
+import com.iruna.app.ads.AdManager
 import com.iruna.app.data.HoroscopePeriod
 import com.iruna.app.data.TarotCard
 import com.iruna.app.data.TarotReadingResponse
@@ -47,9 +47,8 @@ import kotlin.math.*
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 @Composable
-fun TarotReadingScreen(vm: TarotViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val state by vm.state.collectAsState()
-    val adManager = rememberAdManager()
     val adNotReadyMsg = str.tarot_ad_not_ready
     val positions = listOf(str.tarot_position_past, str.tarot_position_present, str.tarot_position_future)
     val cardTexts = listOf(state.reading?.past, state.reading?.present, state.reading?.future)

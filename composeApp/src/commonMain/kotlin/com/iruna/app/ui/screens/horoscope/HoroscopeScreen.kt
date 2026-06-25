@@ -31,7 +31,6 @@ import androidx.compose.ui.window.DialogProperties
 import iruna.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
 import com.iruna.app.ads.AdManager
-import com.iruna.app.ads.rememberAdManager
 import com.iruna.app.data.ALL_SIGNS
 import com.iruna.app.data.HoroscopePeriod
 import com.iruna.app.data.HoroscopeResponse
@@ -60,6 +59,7 @@ private val ScoreEnergy = Color(0xFF7A8A9A)   // стальной
 @Composable
 fun HoroscopeScreen(
     vm: HoroscopeViewModel,
+    adManager: AdManager,
     onSignSelected: (com.iruna.app.data.ZodiacSign) -> Unit = {},
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -68,7 +68,6 @@ fun HoroscopeScreen(
     val sign = state.selectedSign
     val elementColor =
         if (sign != null) AppColors.elementColor(sign.element) else AppColors.AccentGold
-    val adManager = rememberAdManager()
     val density = LocalDensity.current
 
     // ── Scroll state ──────────────────────────────────────────────────────────

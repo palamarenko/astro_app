@@ -26,6 +26,7 @@ import com.iruna.app.ui.components.DreamNavIcon
 import com.iruna.app.ui.components.HoroscopeNavIcon
 import com.iruna.app.ui.components.StarfieldBackground
 import com.iruna.app.ui.components.TarotNavIcon
+import com.iruna.app.ads.rememberAdManager
 import com.iruna.app.ui.screens.*
 import com.iruna.app.ui.screens.horoscope.*
 import com.iruna.app.ui.screens.tarot.*
@@ -101,6 +102,9 @@ private fun AppContent(
     adminVm:      AdminViewModel,
     adminTarotVm: AdminTarotViewModel,
 ) {
+    // Создаём один экземпляр AdManager для всего приложения — реклама начинает
+    // загружаться при старте и успевает загрузиться к тому моменту, когда она нужна.
+    val adManager = rememberAdManager()
 
     var activeTab    by remember { mutableStateOf(BottomTab.HOROSCOPE) }
     // На главной сразу открыт детальный гороскоп выбранного знака
@@ -231,6 +235,7 @@ private fun AppContent(
                     BottomTab.HOROSCOPE -> {
                         HoroscopeScreen(
                             vm = horoscopeVm,
+                            adManager = adManager,
                             onSignSelected = { /* карусель не меняет профиль */ },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -248,6 +253,7 @@ private fun AppContent(
                         } else {
                             TarotReadingScreen(
                                 vm = tarotVm,
+                                adManager = adManager,
                                 onBack = {
                                     tarotVm.clearPeriod()
                                     tarotPeriod = null
