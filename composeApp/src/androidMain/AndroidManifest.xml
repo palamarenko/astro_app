@@ -21,6 +21,11 @@
             TODO: Замените тестовый AdMob App ID на ваш реальный из AdMob консоли:
             https://apps.admob.com → Настройки приложения → App ID
         -->
+        <!-- 16 KB page size compatibility for Android 15+ -->
+        <property
+            android:name="android.pageSizeCompat"
+            android:value="true" />
+
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}"/>
