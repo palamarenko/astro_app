@@ -4,7 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.iruna.app.data.*
 import com.iruna.app.notifications.sendLocalTestPush
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
