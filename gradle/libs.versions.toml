@@ -1,5 +1,5 @@
 [versions]
-agp = "8.3.2"
+agp = "8.7.3"
 firebase-bom = "33.7.0"
 google-services = "4.4.2"
 kotlin = "1.9.23"
@@ -41,7 +41,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.6.1" }
 
 # Google Mobile Ads (AdMob)
-play-services-ads = { module = "com.google.android.gms:play-services-ads", version = "23.6.0" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version = "24.3.0" }
 
 # Firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
