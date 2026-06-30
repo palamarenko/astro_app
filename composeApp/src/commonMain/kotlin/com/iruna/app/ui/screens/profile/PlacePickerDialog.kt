@@ -22,7 +22,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
-import coil3.network.ktor2.KtorNetworkFetcherFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
 import com.iruna.app.googleMapsApiKey
 import com.iruna.app.i18n.str
 import com.iruna.app.ui.theme.*
