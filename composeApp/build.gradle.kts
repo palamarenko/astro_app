@@ -78,8 +78,8 @@ android {
         applicationId = "com.iruna.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = (System.getenv("VERSION_CODE")?.toIntOrNull()) ?: 3
-        versionName = "1.0"
+        versionCode = (System.getenv("VERSION_CODE")?.toIntOrNull()) ?: 4
+        versionName = "1.1"
 
         val localProps = Properties().apply {
             rootProject.file("local.properties").takeIf { it.exists() }
