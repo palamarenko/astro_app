@@ -1,3 +1,6 @@
+require 'base64'
+require 'fileutils'
+
 default_platform(:android)
 
 # ──────────────────────────────────────────────
@@ -126,6 +129,97 @@ platform :android do
       release_status: "draft"
     )
     UI.success("✅ versionCode #{new_version_code} загружен в Internal Testing!")
+  end
+
+end
+
+# ──────────────────────────────────────────────
+#  Платформа iOS
+# ──────────────────────────────────────────────
+
+platform :ios do
+
+  # Общий хелпер: импортирует сертификат и provisioning profile из base64-секретов
+  def setup_ios_signing
+    setup_ci(force: true)
+
+    # Декодируем .p12 из base64
+    cert_path = "#{ENV['RUNNER_TEMP']}/apple_cert.p12"
+    File.binwrite(cert_path, Base64.decode64(ensure_env("APPLE_CERTIFICATE_P12")))
+
+    import_certificate(
+      certificate_path:     cert_path,
+      certificate_password: ensure_env("APPLE_CERTIFICATE_PASSWORD"),
+      keychain_name:        ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_password:    ENV["MATCH_KEYCHAIN_PASSWORD"]
+    )
+
+    # Декодируем .mobileprovision из base64
+    profile_dir = "#{Dir.home}/Library/MobileDevice/Provisioning Profiles"
+    FileUtils.mkdir_p(profile_dir)
+    profile_path = "#{profile_dir}/release.mobileprovision"
+    File.binwrite(profile_path, Base64.decode64(ensure_env("APPLE_PROVISIONING_PROFILE")))
+
+    profile_path
+  end
+
+  # ---- TestFlight ----
+  desc "Собрать IPA и загрузить в TestFlight"
+  lane :deploy_testflight do
+    profile_path = setup_ios_signing
+
+    # App Store Connect API key — избавляет от 2FA
+    api_key = app_store_connect_api_key(
+      key_id:                ensure_env("APP_STORE_CONNECT_KEY_ID"),
+      issuer_id:             ensure_env("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content:           ensure_env("APP_STORE_CONNECT_API_KEY"),
+      is_key_content_base64: true
+    )
+
+    # Поднимаем build number из переменной CI
+    build_number = ENV["BUILD_NUMBER"]
+    unless build_number.nil? || build_number.empty?
+      increment_build_number(
+        build_number: build_number,
+        xcodeproj:    "iosApp/iosApp.xcodeproj"
+      )
+    end
+
+    build_app(
+      project:       "iosApp/iosApp.xcodeproj",
+      scheme:        "iosApp",
+      configuration: "Release",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.iruna.app" => profile_path
+        }
+      },
+      xcargs: "CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER='release'"
+    )
+
+    upload_to_testflight(
+      api_key:                           api_key,
+      skip_waiting_for_build_processing: true
+    )
+
+    UI.success("✅ Загружено в TestFlight!")
+  end
+
+  # ---- Только сборка (без загрузки) ----
+  desc "Только собрать IPA, без загрузки в TestFlight"
+  lane :build_only_ios do
+    setup_ios_signing
+
+    build_app(
+      project:          "iosApp/iosApp.xcodeproj",
+      scheme:           "iosApp",
+      configuration:    "Release",
+      export_method:    "app-store",
+      skip_package_ipa: true
+    )
+
+    UI.success("✅ iOS фреймворк собран!")
   end
 
 end
