@@ -1,0 +1,68 @@
+name: Deploy iOS → TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (CFBundleVersion, должен быть больше текущего в TestFlight)"
+        required: true
+        type: number
+      track:
+        description: "Трек загрузки"
+        required: true
+        default: "testflight"
+        type: choice
+        options:
+          - testflight
+
+jobs:
+  deploy:
+    name: Build & Upload IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: gradle
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install CocoaPods
+        run: |
+          cd iosApp
+          pod install --repo-update
+
+      # Создаём local.properties — Xcode build phase "Sync Local Properties"
+      # читает этот файл и прописывает AdMob ID в Info.plist перед сборкой
+      - name: Create local.properties
+        run: |
+          cat > local.properties << 'EOF'
+          ADMOB_APP_ID_IOS=${{ secrets.ADMOB_APP_ID_IOS }}
+          ADMOB_REWARDED_AD_UNIT_ID_IOS=${{ secrets.ADMOB_REWARDED_AD_UNIT_ID_IOS }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
+          EOF
+
+      - name: Deploy via Fastlane
+        env:
+          # Apple подпись
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_PROVISIONING_PROFILE: ${{ secrets.APPLE_PROVISIONING_PROFILE }}
+          # App Store Connect API (для загрузки без 2FA)
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          # Номер сборки из input
+          BUILD_NUMBER: ${{ github.event.inputs.build_number }}
+        run: bundle exec fastlane ios deploy_testflight
