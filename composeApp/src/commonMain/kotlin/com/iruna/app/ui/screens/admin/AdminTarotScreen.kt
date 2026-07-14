@@ -133,20 +133,24 @@ fun TarotAdminContent(vm: AdminTarotViewModel) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.xl, vertical = Spacing.l)) {
             Text("Язык", color = AppColors.TextDim, fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.8.sp)
             Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("ru" to "RU", "uk" to "UK").forEach { (code, label) ->
-                    Box(
-                        modifier = Modifier.clip(RoundedCornerShape(Radius.full))
-                            .background(if (state.lang == code) AppColors.AccentGold else AppColors.Surface)
-                            .clickable { vm.setLang(code) }
-                            .padding(horizontal = 16.dp, vertical = 7.dp)
-                    ) {
-                        Text(
-                            label,
-                            color = if (state.lang == code) Color(0xFF0A0A0F) else AppColors.TextMuted,
-                            fontWeight = if (state.lang == code) FontWeight.Medium else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ALL_GEN_LANG_LABELS.chunked(4).forEach { rowLangs ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowLangs.forEach { (code, label) ->
+                            Box(
+                                modifier = Modifier.clip(RoundedCornerShape(Radius.full))
+                                    .background(if (state.lang == code) AppColors.AccentGold else AppColors.Surface)
+                                    .clickable { vm.setLang(code) }
+                                    .padding(horizontal = 16.dp, vertical = 7.dp)
+                            ) {
+                                Text(
+                                    label,
+                                    color = if (state.lang == code) Color(0xFF0A0A0F) else AppColors.TextMuted,
+                                    fontWeight = if (state.lang == code) FontWeight.Medium else FontWeight.Normal,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
                     }
                 }
             }

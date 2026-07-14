@@ -60,45 +60,10 @@ internal fun CalendarTab(
     onNavigateToEdit: (LocalDate) -> Unit,
 ) {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-    var deleteTarget by remember { mutableStateOf<String?>(null) }
 
-    // ── Delete confirmation dialog ────────────────────────────────────────────
-    deleteTarget?.let { target ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            containerColor   = AppColors.CardDark,
-            shape            = RoundedCornerShape(Radius.m),
-            title = { Text("Delete period?", color = AppColors.TextPrimary, fontWeight = FontWeight.Medium, fontSize = 15.sp) },
-            text  = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(target, color = Color(0xFFEB5757), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Text(
-                        "All horoscopes for this period will be removed across all languages (RU, UK, EN, ES, DE, FR). This cannot be undone.",
-                        color = AppColors.TextDim, fontSize = 12.sp, lineHeight = 17.sp,
-                    )
-                }
-            },
-            confirmButton = {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(Color(0xFFEB5757).copy(alpha = 0.15f))
-                        .border(1.dp, Color(0xFFEB5757).copy(alpha = 0.55f), RoundedCornerShape(Radius.s))
-                        .clickable { vm.deletePeriod(target); deleteTarget = null }
-                        .padding(horizontal = 18.dp, vertical = 9.dp)
-                ) { Text("Delete", color = Color(0xFFEB5757), fontSize = 13.sp, fontWeight = FontWeight.Medium) }
-            },
-            dismissButton = {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(Radius.s))
-                        .background(AppColors.Surface)
-                        .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s))
-                        .clickable { deleteTarget = null }
-                        .padding(horizontal = 18.dp, vertical = 9.dp)
-                ) { Text("Cancel", color = AppColors.TextMuted, fontSize = 13.sp) }
-            },
-        )
+    // ── Cell details popup (languages, status, per-language delete) ────────────
+    state.calendarPopupKey?.let { key ->
+        CalendarCellPopup(state = state, vm = vm, dateKey = key, onNavigateToEdit = onNavigateToEdit)
     }
 
     Column(
@@ -159,22 +124,22 @@ internal fun CalendarTab(
             }
         } else {
             when (state.calendarPeriod) {
-                HoroscopePeriod.DAILY   -> DailyCalendarView(state, today, vm, onNavigateToEdit, onLongClick = { deleteTarget = it })
-                HoroscopePeriod.WEEKLY  -> WeeklyCalendarView(state, today, vm, onNavigateToEdit, onLongClick = { deleteTarget = it })
-                HoroscopePeriod.MONTHLY -> MonthlyCalendarView(state, today, vm, onNavigateToEdit, onLongClick = { deleteTarget = it })
+                HoroscopePeriod.DAILY   -> DailyCalendarView(state, today, vm, onNavigateToEdit)
+                HoroscopePeriod.WEEKLY  -> WeeklyCalendarView(state, today, vm, onNavigateToEdit)
+                HoroscopePeriod.MONTHLY -> MonthlyCalendarView(state, today, vm, onNavigateToEdit)
             }
         }
 
         // ── Legend ────────────────────────────────────────────────────────────
         Spacer(Modifier.height(Spacing.l))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            CalLegendItem(Color(0xFF6FCF97).copy(alpha = 0.2f), Color(0xFF6FCF97).copy(alpha = 0.5f), "Full (72/72)")
+            CalLegendItem(Color(0xFF6FCF97).copy(alpha = 0.2f), Color(0xFF6FCF97).copy(alpha = 0.5f), "Full ($CALENDAR_FULL_COUNT/$CALENDAR_FULL_COUNT)")
             CalLegendItem(Color(0xFFF2994A).copy(alpha = 0.2f), Color(0xFFF2994A).copy(alpha = 0.5f), "Partial")
             CalLegendItem(AppColors.Surface, AppColors.Border, "Empty")
             CalLegendItem(AppColors.AccentGold.copy(alpha = 0.15f), AppColors.AccentGold.copy(alpha = 0.7f), "Today")
         }
         Spacer(Modifier.height(6.dp))
-        Text("Long press on a cell to delete that period", color = AppColors.TextDim, fontSize = 10.sp)
+        Text("Tap a cell for details & per-language delete · long-press to open the editor", color = AppColors.TextDim, fontSize = 10.sp)
         Spacer(Modifier.height(48.dp))
     }
 }
@@ -196,7 +161,6 @@ private fun DailyCalendarView(
     today: LocalDate,
     vm: AdminViewModel,
     onNavigateToEdit: (LocalDate) -> Unit,
-    onLongClick: (String) -> Unit,
 ) {
     val year  = state.calendarViewYear
     val month = state.calendarViewMonth
@@ -211,8 +175,8 @@ private fun DailyCalendarView(
 
     Spacer(Modifier.height(6.dp))
     val monthPrefix  = "$year-${month.toString().padStart(2, '0')}-"
-    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v >= 72 }
-    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v in 1..71 }
+    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v >= CALENDAR_FULL_COUNT }
+    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith(monthPrefix) && v in 1 until CALENDAR_FULL_COUNT }
     val totalDays    = daysInMonth(year, month)
     Text(
         buildString {
@@ -247,8 +211,8 @@ private fun DailyCalendarView(
                     } else {
                         val dateKey   = "$year-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}"
                         val count     = state.calendarMeta[dateKey] ?: 0
-                        val isFull    = count >= 72
-                        val isPartial = count in 1..71
+                        val isFull    = count >= CALENDAR_FULL_COUNT
+                        val isPartial = count in 1 until CALENDAR_FULL_COUNT
                         val isToday   = today.year == year && today.monthNumber == month && today.dayOfMonth == day
                         Box(
                             modifier = Modifier
@@ -256,7 +220,7 @@ private fun DailyCalendarView(
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(when { isFull -> Color(0xFF6FCF97).copy(alpha = 0.18f); isPartial -> Color(0xFFF2994A).copy(alpha = 0.18f); isToday -> AppColors.AccentGold.copy(alpha = 0.12f); else -> AppColors.Surface })
                                 .border(1.dp, when { isToday -> AppColors.AccentGold.copy(alpha = 0.65f); isFull -> Color(0xFF6FCF97).copy(alpha = 0.45f); isPartial -> Color(0xFFF2994A).copy(alpha = 0.5f); else -> AppColors.Border }, RoundedCornerShape(5.dp))
-                                .combinedClickable(onClick = { onNavigateToEdit(LocalDate(year, month, day)) }, onLongClick = { onLongClick(dateKey) }),
+                                .combinedClickable(onClick = { vm.openCalendarPopup(dateKey) }, onLongClick = { onNavigateToEdit(LocalDate(year, month, day)) }),
                             contentAlignment = Alignment.Center,
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -266,8 +230,8 @@ private fun DailyCalendarView(
                                     fontSize = 11.sp,
                                     fontWeight = if (isToday || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                                 )
-                                if (isFull)    Text("$count/72", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
-                                if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
+                                if (isFull)    Text("$count/$CALENDAR_FULL_COUNT", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
+                                if (isPartial) Text("$count/$CALENDAR_FULL_COUNT", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 7.sp, lineHeight = 8.sp)
                             }
                         }
                     }
@@ -286,7 +250,6 @@ private fun WeeklyCalendarView(
     today: LocalDate,
     vm: AdminViewModel,
     onNavigateToEdit: (LocalDate) -> Unit,
-    onLongClick: (String) -> Unit,
 ) {
     val year       = state.calendarViewYear
     val daysInYear = if (isLeapYear(year)) 366 else 365
@@ -302,8 +265,8 @@ private fun WeeklyCalendarView(
     }
 
     Spacer(Modifier.height(6.dp))
-    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v >= 72 }
-    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v in 1..71 }
+    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v >= CALENDAR_FULL_COUNT }
+    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-W") && v in 1 until CALENDAR_FULL_COUNT }
     Text(buildString { append("$fullCount / $maxWeek full"); if (partialCount > 0) append("  ·  $partialCount partial") }, color = AppColors.TextDim, fontSize = 11.sp)
     Spacer(Modifier.height(Spacing.m))
 
@@ -313,8 +276,8 @@ private fun WeeklyCalendarView(
                 row.forEach { week ->
                     val weekKey   = "$year-W${week.toString().padStart(2, '0')}"
                     val count     = state.calendarMeta[weekKey] ?: 0
-                    val isFull    = count >= 72
-                    val isPartial = count in 1..71
+                    val isFull    = count >= CALENDAR_FULL_COUNT
+                    val isPartial = count in 1 until CALENDAR_FULL_COUNT
                     val isCurrent = week == todayWeek
                     val firstDay  = dayOfYearToDate(year, (week - 1) * 7 + 1)
                     Box(
@@ -323,7 +286,7 @@ private fun WeeklyCalendarView(
                             .clip(RoundedCornerShape(6.dp))
                             .background(when { isFull -> Color(0xFF6FCF97).copy(alpha = 0.18f); isPartial -> Color(0xFFF2994A).copy(alpha = 0.18f); isCurrent -> AppColors.AccentGold.copy(alpha = 0.12f); else -> AppColors.Surface })
                             .border(1.dp, when { isCurrent -> AppColors.AccentGold.copy(alpha = 0.65f); isFull -> Color(0xFF6FCF97).copy(alpha = 0.45f); isPartial -> Color(0xFFF2994A).copy(alpha = 0.5f); else -> AppColors.Border }, RoundedCornerShape(6.dp))
-                            .combinedClickable(onClick = { firstDay?.let(onNavigateToEdit) }, onLongClick = { onLongClick(weekKey) })
+                            .combinedClickable(onClick = { vm.openCalendarPopup(weekKey) }, onLongClick = { firstDay?.let(onNavigateToEdit) })
                             .heightIn(min = 52.dp)
                             .padding(vertical = 14.dp),
                         contentAlignment = Alignment.Center,
@@ -335,8 +298,8 @@ private fun WeeklyCalendarView(
                                 fontSize = 11.sp,
                                 fontWeight = if (isCurrent || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                             )
-                            if (isFull)    Text("$count/72", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
-                            if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
+                            if (isFull)    Text("$count/$CALENDAR_FULL_COUNT", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
+                            if (isPartial) Text("$count/$CALENDAR_FULL_COUNT", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 8.sp, lineHeight = 9.sp)
                         }
                     }
                 }
@@ -355,7 +318,6 @@ private fun MonthlyCalendarView(
     today: LocalDate,
     vm: AdminViewModel,
     onNavigateToEdit: (LocalDate) -> Unit,
-    onLongClick: (String) -> Unit,
 ) {
     val year = state.calendarViewYear
 
@@ -368,8 +330,8 @@ private fun MonthlyCalendarView(
     }
 
     Spacer(Modifier.height(6.dp))
-    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v >= 72 }
-    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v in 1..71 }
+    val fullCount    = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v >= CALENDAR_FULL_COUNT }
+    val partialCount = state.calendarMeta.count { (k, v) -> k.startsWith("$year-") && v in 1 until CALENDAR_FULL_COUNT }
     Text(buildString { append("$fullCount / 12 full"); if (partialCount > 0) append("  ·  $partialCount partial") }, color = AppColors.TextDim, fontSize = 11.sp)
     Spacer(Modifier.height(Spacing.m))
 
@@ -379,8 +341,8 @@ private fun MonthlyCalendarView(
                 row.forEach { month ->
                     val monthKey  = "$year-${month.toString().padStart(2, '0')}"
                     val count     = state.calendarMeta[monthKey] ?: 0
-                    val isFull    = count >= 72
-                    val isPartial = count in 1..71
+                    val isFull    = count >= CALENDAR_FULL_COUNT
+                    val isPartial = count in 1 until CALENDAR_FULL_COUNT
                     val isCurrent = today.year == year && today.monthNumber == month
                     Box(
                         modifier = Modifier
@@ -388,7 +350,7 @@ private fun MonthlyCalendarView(
                             .clip(RoundedCornerShape(8.dp))
                             .background(when { isFull -> Color(0xFF6FCF97).copy(alpha = 0.18f); isPartial -> Color(0xFFF2994A).copy(alpha = 0.18f); isCurrent -> AppColors.AccentGold.copy(alpha = 0.12f); else -> AppColors.Surface })
                             .border(1.dp, when { isCurrent -> AppColors.AccentGold.copy(alpha = 0.65f); isFull -> Color(0xFF6FCF97).copy(alpha = 0.45f); isPartial -> Color(0xFFF2994A).copy(alpha = 0.5f); else -> AppColors.Border }, RoundedCornerShape(8.dp))
-                            .combinedClickable(onClick = { onNavigateToEdit(LocalDate(year, month, 1)) }, onLongClick = { onLongClick(monthKey) })
+                            .combinedClickable(onClick = { vm.openCalendarPopup(monthKey) }, onLongClick = { onNavigateToEdit(LocalDate(year, month, 1)) })
                             .heightIn(min = 62.dp)
                             .padding(vertical = 18.dp),
                         contentAlignment = Alignment.Center,
@@ -400,12 +362,138 @@ private fun MonthlyCalendarView(
                                 fontSize = 12.sp,
                                 fontWeight = if (isCurrent || isFull || isPartial) FontWeight.Medium else FontWeight.Normal,
                             )
-                            if (isFull)    Text("$count/72", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
-                            if (isPartial) Text("$count/72", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
+                            if (isFull)    Text("$count/$CALENDAR_FULL_COUNT", color = Color(0xFF6FCF97).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
+                            if (isPartial) Text("$count/$CALENDAR_FULL_COUNT", color = Color(0xFFF2994A).copy(alpha = 0.8f), fontSize = 10.sp, lineHeight = 12.sp)
                         }
                     }
                 }
             }
         }
     }
+}
+
+// ── Cell details popup ──────────────────────────────────────────────────────────
+
+/** Преобразует dateKey (день/неделя/месяц) в дату для перехода в редактор. */
+private fun dateKeyToEditDate(period: HoroscopePeriod, dateKey: String): LocalDate? = try {
+    when (period) {
+        HoroscopePeriod.DAILY -> {
+            val p = dateKey.split("-"); LocalDate(p[0].toInt(), p[1].toInt(), p[2].toInt())
+        }
+        HoroscopePeriod.WEEKLY -> {
+            val y = dateKey.substringBefore("-W").toInt()
+            val w = dateKey.substringAfter("-W").toInt()
+            dayOfYearToDate(y, (w - 1) * 7 + 1)
+        }
+        HoroscopePeriod.MONTHLY -> {
+            val p = dateKey.split("-"); LocalDate(p[0].toInt(), p[1].toInt(), 1)
+        }
+    }
+} catch (e: Exception) { null }
+
+@Composable
+private fun CalendarCellPopup(
+    state: AdminUiState,
+    vm: AdminViewModel,
+    dateKey: String,
+    onNavigateToEdit: (LocalDate) -> Unit,
+) {
+    val perLang = ALL_GEN_LANG_LABELS.map { (code, label) ->
+        Triple(code, label, state.calendarMetaByLang[code]?.get(dateKey) ?: 0)
+    }
+    val total     = perLang.sumOf { it.third }
+    val busy      = state.calendarLangDeleting != null
+    val isFull    = total >= CALENDAR_FULL_COUNT
+    val isPartial = total in 1 until CALENDAR_FULL_COUNT
+    val statusText  = when { isFull -> "Fully generated"; isPartial -> "Partially generated"; else -> "Not generated" }
+    val statusColor = when { isFull -> Color(0xFF6FCF97); isPartial -> Color(0xFFF2994A); else -> AppColors.TextDim }
+    var confirmAll by remember(dateKey) { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { if (!busy) vm.closeCalendarPopup() },
+        containerColor   = AppColors.CardDark,
+        shape            = RoundedCornerShape(Radius.m),
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(dateKey, color = AppColors.TextPrimary, fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                Box(
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(statusColor.copy(alpha = 0.15f)).padding(horizontal = 8.dp, vertical = 3.dp),
+                ) {
+                    Text("$statusText · $total/$CALENDAR_FULL_COUNT", color = statusColor, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ControlLabel("LANGUAGES")
+                perLang.forEach { (code, label, count) ->
+                    val langFull  = count >= 12
+                    val langColor = when { langFull -> Color(0xFF6FCF97); count > 0 -> Color(0xFFF2994A); else -> AppColors.TextDim }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).background(AppColors.Surface).padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(label, color = AppColors.TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.width(34.dp))
+                        Text("$count/12", color = langColor, fontSize = 12.sp)
+                        Spacer(Modifier.weight(1f))
+                        when {
+                            state.calendarLangDeleting == code ->
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color(0xFFEB5757), strokeWidth = 2.dp)
+                            count > 0 ->
+                                Box(
+                                    modifier = Modifier.clip(RoundedCornerShape(5.dp)).background(Color(0xFFEB5757).copy(alpha = 0.12f)).border(1.dp, Color(0xFFEB5757).copy(alpha = 0.4f), RoundedCornerShape(5.dp))
+                                        .clickable(enabled = !busy) { vm.deleteCalendarLang(dateKey, code) }.padding(horizontal = 10.dp, vertical = 4.dp),
+                                ) { Text("Delete", color = Color(0xFFEB5757), fontSize = 11.sp) }
+                            else ->
+                                Text("—", color = AppColors.TextDim, fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                if (total > 0) {
+                    Spacer(Modifier.height(2.dp))
+                    if (!confirmAll) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).border(1.dp, Color(0xFFEB5757).copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                .clickable(enabled = !busy) { confirmAll = true }.padding(vertical = 9.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text("Delete all languages", color = Color(0xFFEB5757), fontSize = 12.sp, fontWeight = FontWeight.Medium) }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Delete all $total horoscopes for $dateKey? This cannot be undone.", color = AppColors.TextDim, fontSize = 11.sp, lineHeight = 15.sp)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Box(
+                                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(6.dp)).background(Color(0xFFEB5757).copy(alpha = 0.15f)).border(1.dp, Color(0xFFEB5757).copy(alpha = 0.55f), RoundedCornerShape(6.dp))
+                                        .clickable(enabled = !busy) { vm.deletePeriod(dateKey) }.padding(vertical = 9.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (state.calendarLangDeleting == "ALL")
+                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color(0xFFEB5757), strokeWidth = 2.dp)
+                                    else Text("Confirm", color = Color(0xFFEB5757), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                }
+                                Box(
+                                    modifier = Modifier.weight(1f).clip(RoundedCornerShape(6.dp)).background(AppColors.Surface).border(1.dp, AppColors.Border, RoundedCornerShape(6.dp))
+                                        .clickable(enabled = !busy) { confirmAll = false }.padding(vertical = 9.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) { Text("Cancel", color = AppColors.TextMuted, fontSize = 12.sp) }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            val editDate = dateKeyToEditDate(state.calendarPeriod, dateKey)
+            Box(
+                modifier = Modifier.clip(RoundedCornerShape(Radius.s)).background(Color(0xFF9B6DFF).copy(alpha = 0.15f)).border(1.dp, Color(0xFF9B6DFF).copy(alpha = 0.5f), RoundedCornerShape(Radius.s))
+                    .clickable(enabled = !busy && editDate != null) { editDate?.let { vm.closeCalendarPopup(); onNavigateToEdit(it) } }.padding(horizontal = 16.dp, vertical = 9.dp),
+            ) { Text("Open editor", color = Color(0xFFB89EFF), fontSize = 12.sp) }
+        },
+        dismissButton = {
+            Box(
+                modifier = Modifier.clip(RoundedCornerShape(Radius.s)).background(AppColors.Surface).border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s))
+                    .clickable(enabled = !busy) { vm.closeCalendarPopup() }.padding(horizontal = 16.dp, vertical = 9.dp),
+            ) { Text("Close", color = AppColors.TextMuted, fontSize = 12.sp) }
+        },
+    )
 }

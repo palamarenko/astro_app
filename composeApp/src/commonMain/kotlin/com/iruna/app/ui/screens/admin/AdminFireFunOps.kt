@@ -54,6 +54,12 @@ fun AdminViewModel.clearPushResult() {
 
 // ── Generate All Languages ────────────────────────────────────────────────────
 
+fun AdminViewModel.toggleGenAllLang(lang: String) {
+    val current = _state.value.genAllLangsSelected.toMutableSet()
+    if (current.contains(lang)) current.remove(lang) else current.add(lang)
+    _state.value = _state.value.copy(genAllLangsSelected = current, genAllLangsResult = null)
+}
+
 fun AdminViewModel.setGenAllLangsPeriod(period: HoroscopePeriod) {
     _state.value = _state.value.copy(genAllLangsPeriod = period, genAllLangsResult = null)
 }
@@ -83,7 +89,13 @@ fun AdminViewModel.generateAllLanguages() {
     val date    = _state.value.genAllLangsDate
     val dateKey = computeDateKey(period, date)
     val startMs = Clock.System.now().toEpochMilliseconds()
-    val allLangs = listOf("ru", "uk", "en", "es", "de", "fr")
+    // Только выбранные языки, в каноническом порядке
+    val allLangs = ALL_GEN_LANGS.filter { it in _state.value.genAllLangsSelected }
+
+    if (allLangs.isEmpty()) {
+        _state.value = _state.value.copy(genAllLangsResult = "⚠ Select at least one language")
+        return
+    }
 
     viewModelScope.launch {
         _state.value = _state.value.copy(

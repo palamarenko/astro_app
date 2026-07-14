@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.compose.foundation.Image
@@ -79,16 +80,21 @@ fun App() {
 
     // key(lang) заставляет Compose полностью пересоздать AppContent() при смене языка,
     // чтобы все str.xxx вызовы вернули строки нового языка.
+    // LocalLayoutDirection переключает всю раскладку в RTL для арабского (и других
+    // языков с письмом справа налево) — работает на всех платформах.
+    val layoutDirection = if (lang.isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     key(lang) {
-        AppContent(
-            horoscopeVm  = horoscopeVm,
-            tarotVm      = tarotVm,
-            compatVm     = compatVm,
-            dreamVm      = dreamVm,
-            profileVm    = profileVm,
-            adminVm      = adminVm,
-            adminTarotVm = adminTarotVm,
-        )
+        CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+            AppContent(
+                horoscopeVm  = horoscopeVm,
+                tarotVm      = tarotVm,
+                compatVm     = compatVm,
+                dreamVm      = dreamVm,
+                profileVm    = profileVm,
+                adminVm      = adminVm,
+                adminTarotVm = adminTarotVm,
+            )
+        }
     }
 }
 
@@ -387,6 +393,8 @@ private fun BottomNav(
             .background(AppColors.NavBackground)
             .border(1.dp, AppColors.BorderDark, RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp))
     ) {
+        // Нижний бар всегда LTR — порядок кнопок фиксирован и не зависит от языка (в т.ч. RTL).
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceEvenly) {
             navItems.forEach { item ->
                 val isActive = item.tab == activeTab
@@ -429,6 +437,7 @@ private fun BottomNav(
                     )
                 }
             }
+        }
         }
     }
 }

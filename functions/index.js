@@ -30,7 +30,7 @@ const SIGNS = [
   { id: "pisces",      name: "Pisces",      element: "Water", planet: "Neptune" },
 ];
 
-const LANGUAGES = ["ru", "uk", "en", "es", "de", "fr"];
+const LANGUAGES = ["ru", "uk", "en", "es", "de", "fr", "ar"];
 
 // Default prompt template. Variables: {date}, {lang}
 // The signs list is injected automatically by the function.
@@ -49,7 +49,9 @@ const LANG_QUALITY =
   "— German: write in clear, warm, modern German. Avoid bureaucratic or overly formal tone. " +
   "Use natural sentence structures and accessible vocabulary, as if speaking to a friend.\n" +
   "— French: write in elegant, natural French. Avoid anglicisms and overly complex constructions. " +
-  "The tone should feel warm and literary, like a trusted advisor speaking to you directly.";
+  "The tone should feel warm and literary, like a trusted advisor speaking to you directly.\n" +
+  "— Arabic: write in natural, eloquent Modern Standard Arabic (فصحى) that reads fluently to a native speaker. " +
+  "Use warm, accessible phrasing — not stiff or overly classical. Avoid word-for-word translation from English.";
 
 const DEFAULT_STYLES = {
   daily:
@@ -171,7 +173,9 @@ async function generateAllForLang(lang, period, dateKey, apiKey, styleInstructio
                  : lang === "es" ? "Spanish"
                  : lang === "de" ? "German"
                  : lang === "fr" ? "French"
-                 : "Russian";
+                 : lang === "ru" ? "Russian"
+                 : lang === "ar" ? "Arabic"
+                 : "English";
   const signsDesc = buildSignsDesc();
   const periodWord = period === "weekly" ? "weekly" : period === "monthly" ? "monthly" : "daily";
   const periodDesc = period === "weekly" ? "week (" + dateKey + ")"

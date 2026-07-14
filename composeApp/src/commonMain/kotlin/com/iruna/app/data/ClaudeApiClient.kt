@@ -41,7 +41,9 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
         "es" -> "Spanish"
         "de" -> "German"
         "fr" -> "French"
-        else -> "Russian"
+        "ar" -> "Arabic"
+        "ru" -> "Russian"
+        else -> "English"
     }
 
     /** Убирает опциональные ```json … ``` обёртки. */
@@ -147,7 +149,9 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
             "es" -> listOf("Pasado", "Presente", "Futuro")
             "de" -> listOf("Vergangenheit", "Gegenwart", "Zukunft")
             "fr" -> listOf("Passé", "Présent", "Futur")
-            else -> listOf("Прошлое", "Настоящее", "Будущее")
+            "ar" -> listOf("الماضي", "الحاضر", "المستقبل")
+            "ru" -> listOf("Прошлое", "Настоящее", "Будущее")
+            else -> listOf("Past", "Present", "Future")
         }
         val reversedLabel = when (lang) {
             "uk" -> "перевернута"
@@ -155,7 +159,9 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
             "es" -> "invertida"
             "de" -> "umgekehrt"
             "fr" -> "renversé"
-            else -> "перевёрнутая"
+            "ar" -> "معكوسة"
+            "ru" -> "перевёрнутая"
+            else -> "reversed"
         }
 
         val cardDesc = cards.mapIndexed { i, c ->
@@ -170,7 +176,9 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
                 "es" -> "Género: masculino — dirígete al consultante usando formas masculinas."
                 "de" -> "Geschlecht: männlich — verwende männliche Anredeformen."
                 "fr" -> "Genre: masculin — adresse-toi au consultant en utilisant des formes masculines."
-                else -> "Пол: мужской — обращайся к человеку в мужском роде."
+                "ar" -> "الجنس: ذكر — خاطب السائل بصيغة المذكّر."
+                "ru" -> "Пол: мужской — обращайся к человеку в мужском роде."
+                else -> "Gender: male — address the seeker using masculine forms."
             }
             "female" -> when (lang) {
                 "uk" -> "Стать: жіноча — використовуй жіночий рід у зверненні."
@@ -178,7 +186,9 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
                 "es" -> "Género: femenino — dirígete a la consultante usando formas femeninas."
                 "de" -> "Geschlecht: weiblich — verwende weibliche Anredeformen."
                 "fr" -> "Genre: féminin — adresse-toi à la consultante en utilisant des formes féminines."
-                else -> "Пол: женский — обращайся к человеку в женском роде."
+                "ar" -> "الجنس: أنثى — خاطب السائلة بصيغة المؤنّث."
+                "ru" -> "Пол: женский — обращайся к человеку в женском роде."
+                else -> "Gender: female — address the seeker using feminine forms."
             }
             else -> ""
         }
@@ -332,7 +342,9 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
             "es" -> "Write exclusively in Spanish. Use natural, warm Spanish that feels native."
             "de" -> "Write exclusively in German. Use clear, warm, modern German."
             "fr" -> "Write exclusively in French. Use elegant, natural French with a warm literary tone."
-            else -> "Write exclusively in Russian."
+            "ar" -> "Write exclusively in Modern Standard Arabic (فصحى). Use natural, warm, eloquent Arabic that reads fluently to a native speaker."
+            "ru" -> "Write exclusively in Russian. Use expressive literary Russian."
+            else -> "Write exclusively in English. Use poetic but accessible English."
         }
         val prompt = """
             You are a dream interpreter who combines symbolism, psychology, and mystical insight.

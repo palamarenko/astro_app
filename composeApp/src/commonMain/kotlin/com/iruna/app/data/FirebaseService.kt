@@ -14,6 +14,9 @@ class FirebaseService {
 
     private val baseUrl = "https://zodiac-b23ce-default-rtdb.europe-west1.firebasedatabase.app"
 
+    /** Все языки генерации гороскопов. */
+    private val allLangs = listOf("ru", "uk", "en", "es", "de", "fr", "ar")
+
     // ── Horoscopes: read single sign ──────────────────────────────────────────
     suspend fun getHoroscope(lang: String, period: String, date: String, signId: String): HoroscopeResponse? {
         return try {
@@ -125,12 +128,23 @@ class FirebaseService {
         }
     }
 
-    /** Удаляет все гороскопы для указанного dateKey во всех языках (ru, uk, en). */
+    /** Удаляет все гороскопы для указанного dateKey во всех языках. */
     suspend fun deleteAllLangsDateKey(period: String, dateKey: String): Boolean {
         return try {
-            listOf("ru", "uk", "en").forEach { lang ->
+            allLangs.forEach { lang ->
                 client.delete("$baseUrl/horoscopes/$lang/$period/$dateKey.json")
             }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Удаляет гороскопы и мету одного языка для указанного dateKey. */
+    suspend fun deleteLangDateKey(lang: String, period: String, dateKey: String): Boolean {
+        return try {
+            client.delete("$baseUrl/horoscopes/$lang/$period/$dateKey.json")
+            client.delete("$baseUrl/meta/$lang/$period/$dateKey.json")
             true
         } catch (e: Exception) {
             false
@@ -163,7 +177,7 @@ class FirebaseService {
     /** Удаляет метадату для dateKey во всех языках. */
     suspend fun deleteHoroscopeMeta(period: String, dateKey: String): Boolean {
         return try {
-            listOf("ru", "uk", "en").forEach { lang ->
+            allLangs.forEach { lang ->
                 client.delete("$baseUrl/meta/$lang/$period/$dateKey.json")
             }
             true

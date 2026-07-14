@@ -32,6 +32,7 @@ object LanguageManager {
             AppLanguage.ES -> StringsEs
             AppLanguage.DE -> StringsDe
             AppLanguage.FR -> StringsFr
+            AppLanguage.AR -> StringsAr
         }
 
     /**

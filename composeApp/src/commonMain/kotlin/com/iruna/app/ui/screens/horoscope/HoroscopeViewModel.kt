@@ -54,6 +54,7 @@ class HoroscopeViewModel(
             AppLanguage.ES -> "es"
             AppLanguage.DE -> "de"
             AppLanguage.FR -> "fr"
+            AppLanguage.AR -> "ar"
         }
 
     init {

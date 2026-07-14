@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.iruna.app.data.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
@@ -30,20 +31,53 @@ fun AdminViewModel.navigateCalendarYear(forward: Boolean) {
     _state.value = st.copy(calendarViewYear = if (forward) st.calendarViewYear + 1 else st.calendarViewYear - 1)
 }
 
+/** Грузит мету по каждому языку и возвращает (суммарная_мета, мета_по_языкам). */
+private suspend fun AdminViewModel.fetchCalendarMeta(): Pair<Map<String, Int>, Map<String, Map<String, Int>>> =
+    coroutineScope {
+        val period = _state.value.calendarPeriod.id
+        // lang → (dateKey → count)
+        val metaByLang: Map<String, Map<String, Int>> = ALL_GEN_LANGS
+            .map { lang -> async { lang to firebase.getHoroscopeMeta(lang, period) } }
+            .awaitAll()
+            .toMap()
+        // Суммарно по всем языкам: max = 12 знаков × число языков
+        val allKeys = metaByLang.values.flatMap { it.keys }.toSet()
+        val merged  = allKeys.associateWith { key -> metaByLang.values.sumOf { it[key] ?: 0 } }
+        merged to metaByLang
+    }
+
 fun AdminViewModel.loadCalendarData() {
     viewModelScope.launch {
         _state.value = _state.value.copy(calendarLoading = true)
-        val period = _state.value.calendarPeriod.id
-        val allLangs = listOf("ru", "uk", "en", "es", "de", "fr")
-        val metaByLang = allLangs
-            .map { lang -> async { firebase.getHoroscopeMeta(lang, period) } }
-            .map { it.await() }
-        // Суммируем по всем 6 языкам: max = 72 (12 знаков × 6 языков)
-        val allKeys = metaByLang.flatMap { it.keys }.toSet()
-        val merged  = allKeys.associateWith { key ->
-            metaByLang.sumOf { it[key] ?: 0 }
-        }
-        _state.value = _state.value.copy(calendarMeta = merged, calendarLoading = false)
+        val (merged, byLang) = fetchCalendarMeta()
+        _state.value = _state.value.copy(
+            calendarMeta = merged,
+            calendarMetaByLang = byLang,
+            calendarLoading = false,
+        )
+    }
+}
+
+fun AdminViewModel.openCalendarPopup(dateKey: String) {
+    _state.value = _state.value.copy(calendarPopupKey = dateKey)
+}
+
+fun AdminViewModel.closeCalendarPopup() {
+    _state.value = _state.value.copy(calendarPopupKey = null)
+}
+
+/** Удаляет один язык для указанного dateKey и обновляет мету. */
+fun AdminViewModel.deleteCalendarLang(dateKey: String, lang: String) {
+    if (_state.value.calendarLangDeleting != null) return
+    viewModelScope.launch {
+        _state.value = _state.value.copy(calendarLangDeleting = lang)
+        firebase.deleteLangDateKey(lang, _state.value.calendarPeriod.id, dateKey)
+        val (merged, byLang) = fetchCalendarMeta()
+        _state.value = _state.value.copy(
+            calendarMeta = merged,
+            calendarMetaByLang = byLang,
+            calendarLangDeleting = null,
+        )
     }
 }
 
@@ -59,11 +93,18 @@ fun AdminViewModel.setDateAbsolute(date: LocalDate, period: HoroscopePeriod) {
 }
 
 fun AdminViewModel.deletePeriod(dateKey: String) {
+    if (_state.value.calendarLangDeleting != null) return
     viewModelScope.launch {
-        _state.value = _state.value.copy(calendarLoading = true)
+        _state.value = _state.value.copy(calendarLangDeleting = "ALL")
         firebase.deleteAllLangsDateKey(_state.value.calendarPeriod.id, dateKey)
         firebase.deleteHoroscopeMeta(_state.value.calendarPeriod.id, dateKey)
-        loadCalendarData()
+        val (merged, byLang) = fetchCalendarMeta()
+        _state.value = _state.value.copy(
+            calendarMeta = merged,
+            calendarMetaByLang = byLang,
+            calendarLangDeleting = null,
+            calendarPopupKey = null,
+        )
     }
 }
 

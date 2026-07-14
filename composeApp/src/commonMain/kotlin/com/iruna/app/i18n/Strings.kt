@@ -13,13 +13,16 @@ enum class AppLanguage(
     val code: String,
     /** Название на родном языке — всегда отображается без перевода. */
     val nativeName: String,
+    /** Язык с письмом справа налево (например, арабский). */
+    val isRtl: Boolean = false,
 ) {
     EN("en", "English"),
     ES("es", "Español"),
     DE("de", "Deutsch"),
     FR("fr", "Français"),
     RU("ru", "Русский"),
-    UK("uk", "Українська");
+    UK("uk", "Українська"),
+    AR("ar", "العربية", isRtl = true);
 
     companion object {
         /** Найти язык по ISO-коду (первые 2 символа). По умолчанию — EN. */

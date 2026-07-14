@@ -31,6 +31,7 @@ class DreamViewModel(private val api: AiGenerationService) : ViewModel() {
             AppLanguage.ES -> "es"
             AppLanguage.DE -> "de"
             AppLanguage.FR -> "fr"
+            AppLanguage.AR -> "ar"
         }
 
     fun onDreamTextChanged(text: String) {

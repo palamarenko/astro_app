@@ -47,6 +47,32 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
         }
 
         Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ControlLabel("LANGUAGES")
+            Spacer(Modifier.weight(1f))
+            Text(
+                if (state.genAllLangsSelected.size == ALL_GEN_LANGS.size) "Deselect all" else "Select all",
+                color = Color(0xFFB89EFF), fontSize = 10.sp,
+                modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable {
+                    ALL_GEN_LANGS.forEach { code ->
+                        val all = state.genAllLangsSelected.size == ALL_GEN_LANGS.size
+                        if (all == (code in state.genAllLangsSelected)) vm.toggleGenAllLang(code)
+                    }
+                }.padding(horizontal = 6.dp, vertical = 3.dp),
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ALL_GEN_LANG_LABELS.chunked(3).forEach { rowLangs ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    rowLangs.forEach { (code, label) ->
+                        ChipButton(label = label, selected = code in state.genAllLangsSelected, onClick = { vm.toggleGenAllLang(code) })
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
         ControlLabel("DATE / KEY")
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
@@ -70,7 +96,7 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
         }
 
         Spacer(Modifier.height(10.dp))
-        val genEnabled = !state.genAllLangsLoading && state.functionUrl.isNotBlank() && state.adminSecret.isNotBlank()
+        val genEnabled = !state.genAllLangsLoading && state.functionUrl.isNotBlank() && state.adminSecret.isNotBlank() && state.genAllLangsSelected.isNotEmpty()
         Box(
             modifier = Modifier.fillMaxWidth()
                 .clip(RoundedCornerShape(Radius.s))
@@ -87,7 +113,7 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color(0xFFB89EFF), strokeWidth = 2.dp)
                     val langLabel = state.genAllLangsCurrentLang?.uppercase() ?: "…"
-                    Text("Generating $langLabel  ·  ${state.genAllLangsDone} / 6", color = Color(0xFFB89EFF), fontSize = 12.sp)
+                    Text("Generating $langLabel  ·  ${state.genAllLangsDone} / ${state.genAllLangsSelected.size}", color = Color(0xFFB89EFF), fontSize = 12.sp)
                 }
             } else {
                 Text("🌍 Generate · ${state.genAllLangsPeriod.label}", color = if (genEnabled) Color(0xFFB89EFF) else AppColors.TextDim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
@@ -102,7 +128,7 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
                 val color   = when { isOk -> Color(0xFF6FCF97); isWarn -> AppColors.AccentGold; else -> Color(0xFFEB5757) }
                 val display = if (isOk) {
                     val parts = result.removePrefix("ok:").split(" ")
-                    if (parts.size > 1) "✓ Generated ${parts[0]}  ${parts[1]}" else "✓ Generated ${parts[0]} / 72"
+                    if (parts.size > 1) "✓ Generated ${parts[0]}  ${parts[1]}" else "✓ Generated ${parts[0]} / ${state.genAllLangsSelected.size * 12}"
                 } else result
                 Spacer(Modifier.height(6.dp))
                 Row(
