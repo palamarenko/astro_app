@@ -32,6 +32,7 @@ import iruna.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
 import com.iruna.app.ads.AdManager
 import com.iruna.app.data.ALL_SIGNS
+import com.iruna.app.data.Track
 import com.iruna.app.data.HoroscopePeriod
 import com.iruna.app.data.HoroscopeResponse
 import com.iruna.app.data.ZodiacSign
@@ -1118,9 +1119,16 @@ private fun WizardModal(
                         elementColor = elementColor,
                         onWatch = {
                             adError = false
+                            Track.adRewardedRequest("horoscope_wizard")
                             adManager.showRewardedAd(
-                                onRewarded = { onComplete() },
-                                onFailed = { adError = true },
+                                onRewarded = {
+                                    Track.adRewardedCompleted("horoscope_wizard")
+                                    onComplete()
+                                },
+                                onFailed = {
+                                    Track.adRewardedFailed("horoscope_wizard", "not_ready")
+                                    adError = true
+                                },
                             )
                         },
                         onDismiss = onDismiss,

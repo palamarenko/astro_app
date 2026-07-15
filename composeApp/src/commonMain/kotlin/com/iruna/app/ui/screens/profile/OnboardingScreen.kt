@@ -24,6 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.iruna.app.data.Analytics
+import com.iruna.app.data.AnalyticsUserProp
+import com.iruna.app.data.Track
 import com.iruna.app.i18n.format
 import iruna.composeapp.generated.resources.*
 import com.iruna.app.i18n.iconSmallPainter
@@ -45,6 +48,17 @@ import com.iruna.app.ui.theme.*
  *  6 — Финальный экран
  */
 private const val ONBOARDING_TOTAL_STEPS = 7
+
+/** Имя шага онбординга для аналитики. */
+private fun onboardingStepName(step: Int): String = when (step) {
+    0 -> "welcome"
+    1 -> "name"
+    2 -> "gender"
+    3 -> "date"
+    4 -> "time"
+    5 -> "place"
+    else -> "final"
+}
 
 @Composable
 private fun monthNames(): List<String> = listOf(
@@ -89,10 +103,23 @@ fun OnboardingScreen(
 ) {
     val state by vm.state.collectAsState()
 
+    LaunchedEffect(Unit) { Track.onboardingStart() }
+
     // Текущий шаг = тот, на котором остановился пользователь, но в пределах [0, TOTAL-1]
     var step by remember { mutableStateOf(state.onboardingStep.coerceIn(0, ONBOARDING_TOTAL_STEPS - 1)) }
     // Направление перехода для AnimatedContent
     var direction by remember { mutableStateOf(1) }
+
+    fun onboardingComplete() {
+        Analytics.setUserProperty(AnalyticsUserProp.ONBOARDING_COMPLETED, "true")
+        Track.onboardingComplete(
+            hasName = state.name.isNotBlank(),
+            gender = state.gender,
+            hasBirthTime = state.birthHour >= 0,
+            hasBirthPlace = state.birthPlace.isNotBlank(),
+            zodiacSign = state.sign.id,
+        )
+    }
 
     // Сохраняем шаг в storage при каждом изменении
     LaunchedEffect(step) {
@@ -100,10 +127,12 @@ fun OnboardingScreen(
     }
 
     fun goNext() {
+        Track.onboardingStepComplete(onboardingStepName(step))
         if (step < ONBOARDING_TOTAL_STEPS - 1) {
             direction = 1
             step += 1
         } else {
+            onboardingComplete()
             vm.finishOnboarding()
             onFinished()
         }
@@ -117,6 +146,7 @@ fun OnboardingScreen(
     }
 
     fun finishAll() {
+        Track.onboardingSkip(onboardingStepName(step))
         vm.finishOnboarding()
         onFinished()
     }

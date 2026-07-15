@@ -3,12 +3,14 @@ package com.iruna.app.ui.screens.dream
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iruna.app.data.AiGenerationService
+import com.iruna.app.data.Track
 import com.iruna.app.i18n.AppLanguage
 import com.iruna.app.i18n.LanguageManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
 
 data class DreamUiState(
     val dreamText: String = "",
@@ -53,14 +55,21 @@ class DreamViewModel(private val api: AiGenerationService) : ViewModel() {
         val text = _state.value.dreamText.trim()
         if (text.isBlank()) return
 
+        Track.dreamDecodeClick(text.length)
         _state.value = _state.value.copy(isLoading = true, error = null, interpretation = null)
 
         viewModelScope.launch {
+            Track.aiGenerationRequest("dream", lang)
+            val t0 = TimeSource.Monotonic.markNow()
             val result = try {
-                api.getDreamInterpretation(text, lang)
+                val r = api.getDreamInterpretation(text, lang)
+                Track.aiGenerationSuccess("dream", lang, t0.elapsedNow().inWholeMilliseconds)
+                r
             } catch (e: Exception) {
+                Track.aiGenerationError("dream", lang, e.message ?: "error")
                 getFallbackInterpretation(lang)
             }
+            Track.dreamResultView()
             _state.value = _state.value.copy(
                 interpretation = result,
                 isLoading = false,
@@ -69,6 +78,7 @@ class DreamViewModel(private val api: AiGenerationService) : ViewModel() {
     }
 
     fun reset() {
+        Track.dreamNew()
         _state.value = DreamUiState()
     }
 }

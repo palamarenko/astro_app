@@ -175,6 +175,8 @@ private fun AppContent(
 
     // При возврате на вкладку гороскопа сбрасываем карусель на знак профиля
     LaunchedEffect(activeTab) {
+        Track.screen(activeTab.name.lowercase())
+        if (activeTab == BottomTab.COMPATIBILITY) Track.compatibilityOpen()
         if (activeTab == BottomTab.HOROSCOPE) {
             horoscopeVm.selectSign(selectedSign)
         }

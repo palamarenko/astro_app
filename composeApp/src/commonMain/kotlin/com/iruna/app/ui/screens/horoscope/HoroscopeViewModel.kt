@@ -75,6 +75,7 @@ class HoroscopeViewModel(
     fun checkPushPrompt() {
         val profile = UserStorage.load() ?: return
         if (!profile.pushNotificationsAsked) {
+            Track.pushPromptShown()
             _state.value = _state.value.copy(showPushPrompt = true)
         }
     }
@@ -85,12 +86,14 @@ class HoroscopeViewModel(
      * промпт снова появился.
      */
     fun dismissPushPromptForSession() {
+        Track.pushPromptDismiss()
         _state.value = _state.value.copy(showPushPrompt = false)
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
 
     fun selectSign(sign: ZodiacSign) {
+        Track.horoscopeSignSelect(sign.id)
         // Reset all caches when sign changes, keep push prompt state
         val pushPrompt = _state.value.showPushPrompt
         _state.value = HoroscopeUiState(selectedSign = sign, showPushPrompt = pushPrompt)
@@ -99,6 +102,8 @@ class HoroscopeViewModel(
 
     /** Вызывается после того, как пользователь ответил на push-промпт. */
     fun onPushPromptResult(enabled: Boolean) {
+        Track.pushPermissionResult(enabled)
+        Analytics.setUserProperty(AnalyticsUserProp.NOTIFICATIONS_ENABLED, enabled.toString())
         val profile = UserStorage.load() ?: UserProfile()
         UserStorage.save(profile.copy(
             pushNotificationsAsked   = true,
@@ -106,18 +111,23 @@ class HoroscopeViewModel(
         ))
         _state.value = _state.value.copy(showPushPrompt = false)
         // Подписываемся на FCM-топик, чтобы можно было слать всем сразу
-        if (enabled) subscribeToFcmTopic()
+        if (enabled) {
+            Track.pushTopicSubscribe("all")
+            subscribeToFcmTopic()
+        }
     }
 
     /** expect/actual — на Android вызывает FirebaseMessaging.subscribeToTopic() */
     private fun subscribeToFcmTopic() = subscribeToPushTopic()
 
     fun setPeriod(period: HoroscopePeriod) {
+        Track.horoscopePeriodSelect(period.id)
         _state.value = _state.value.copy(period = period)
         _state.value.selectedSign?.let { loadCurrentIfNeeded(it, period) }
     }
 
     fun showWizard() {
+        _state.value.selectedSign?.let { Track.horoscopeWizardCtaClick(it.id, _state.value.period.id) }
         _state.value = _state.value.copy(showWizard = true)
     }
 
@@ -126,6 +136,7 @@ class HoroscopeViewModel(
     }
 
     fun unlockAndLoadFuture(period: HoroscopePeriod) {
+       _state.value.selectedSign?.let { Track.horoscopeWizardGenerated(it.id, period.id) }
        viewModelScope.launch {
            delay(5000)
            val newUnlocked = _state.value.unlocked.toMutableMap().also { it[period] = true }
@@ -144,6 +155,7 @@ class HoroscopeViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(loadingCurrent = true, error = null)
             val result = fetchHoroscope(sign, period, future = false)
+            if (result != null) Track.horoscopeView(sign.id, period.id)
             val newCurrent = _state.value.current.toMutableMap().also { it[period] = result }
             _state.value = _state.value.copy(current = newCurrent, loadingCurrent = false,
                 error = if (result == null) "Данные не найдены" else null)

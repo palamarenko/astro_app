@@ -107,6 +107,8 @@ class ProfileViewModel(private val api: AiGenerationService) : ViewModel() {
     }
 
     fun setGender(gender: String) {
+        Track.profileEdit("gender")
+        Analytics.setUserProperty(AnalyticsUserProp.GENDER, gender.ifBlank { null })
         update(_state.value.copy(gender = gender))
     }
 
@@ -115,18 +117,25 @@ class ProfileViewModel(private val api: AiGenerationService) : ViewModel() {
     }
 
     fun setBirthDate(day: Int, month: Int, year: Int) {
+        Track.profileEdit("birthdate")
+        val newSign = zodiacFromDate(month, day)
+        Analytics.setUserProperty(AnalyticsUserProp.ZODIAC_SIGN, newSign.id)
         update(_state.value.copy(
             birthDay = day, birthMonth = month, birthYear = year,
-            sign = zodiacFromDate(month, day),
+            sign = newSign,
             showDatePicker = false
         ))
     }
 
     fun setBirthTime(hour: Int, minute: Int) {
+        Track.profileEdit("birthtime")
+        Analytics.setUserProperty(AnalyticsUserProp.HAS_BIRTH_TIME, "true")
         update(_state.value.copy(birthHour = hour, birthMinute = minute, showTimePicker = false))
     }
 
     fun setPlace(name: String, lat: Double = 0.0, lng: Double = 0.0) {
+        Track.profileEdit("birthplace")
+        Analytics.setUserProperty(AnalyticsUserProp.HAS_BIRTH_PLACE, name.isNotBlank().toString())
         update(_state.value.copy(birthPlace = name, birthLat = lat, birthLng = lng, showPlacePicker = false))
     }
 
@@ -149,6 +158,9 @@ class ProfileViewModel(private val api: AiGenerationService) : ViewModel() {
     }
 
     fun setLanguage(lang: AppLanguage) {
+        val from = _state.value.language.code
+        Track.languageChange(from, lang.code)
+        Analytics.setUserProperty(AnalyticsUserProp.APP_LANGUAGE, lang.code)
         LanguageManager.setLanguage(lang) { code ->
             update(_state.value.copy(language = lang))
         }

@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import com.iruna.app.ads.AdManager
 import com.iruna.app.data.HoroscopePeriod
+import com.iruna.app.data.Track
 import com.iruna.app.data.TarotCard
 import com.iruna.app.data.TarotReadingResponse
 import com.iruna.app.i18n.*
@@ -175,6 +176,8 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                     period      = state.currentPeriod,
                     showAdBadge = true,
                     onClick     = {
+                        Track.tarotWizardCtaClick(state.currentPeriod?.id ?: "unknown")
+                        Track.adRewardedRequest("tarot_wizard")
                         adManager.showRewardedAd(
                             onRewarded = { vm.onAdRewarded() },
                             onFailed   = { vm.onAdFailed(adNotReadyMsg) }

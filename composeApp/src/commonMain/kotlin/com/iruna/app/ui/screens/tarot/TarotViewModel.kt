@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import kotlin.time.TimeSource
 
 data class TarotUiState(
     val cards: List<TarotCard> = emptyList(),
@@ -239,6 +240,7 @@ class TarotViewModel(private val api: AiGenerationService) : ViewModel() {
 
     /** Выбирает период: если есть актуальное сохранение — восстанавливает, иначе пустой экран. */
     fun selectPeriod(period: HoroscopePeriod) {
+        Track.tarotPeriodSelect(period.id)
         val saved = TarotStorage.loadPeriod(period.id)
         val snapshots = _state.value.periodSnapshots
 
@@ -270,6 +272,7 @@ class TarotViewModel(private val api: AiGenerationService) : ViewModel() {
 
     fun drawCards() {
         val period = _state.value.currentPeriod
+        Track.tarotDraw(period?.id ?: "unknown")
         val snapshots = _state.value.periodSnapshots
         val picked = ALL_TAROT.shuffled().take(3).map { card ->
             card.copy(reversed = (0..9).random() > 6)
@@ -294,9 +297,14 @@ class TarotViewModel(private val api: AiGenerationService) : ViewModel() {
 
                 val profile = UserStorage.load()
                 val context = buildPersonalContext(profile)
+                Track.aiGenerationRequest("tarot", lang)
+                val t0 = TimeSource.Monotonic.markNow()
                 val summary = try {
-                    api.getTarotSummary(picked, context, lang)
+                    val s = api.getTarotSummary(picked, context, lang)
+                    Track.aiGenerationSuccess("tarot", lang, t0.elapsedNow().inWholeMilliseconds)
+                    s
                 } catch (e: Exception) {
+                    Track.aiGenerationError("tarot", lang, e.message ?: "error")
                     mock.summary
                 }
 
@@ -310,6 +318,7 @@ class TarotViewModel(private val api: AiGenerationService) : ViewModel() {
                 (MOCK_READINGS[lang] ?: MOCK_READINGS["en"]!!).random()
             }
 
+            Track.tarotReadingGenerated(period?.id ?: "unknown", picked.size)
             // Сохраняем расклад в хранилище для текущего периода
             if (period != null) {
                 val dateKey = periodCurrentKey(period)
@@ -339,10 +348,12 @@ class TarotViewModel(private val api: AiGenerationService) : ViewModel() {
     }
 
     fun onAdRewarded() {
+        Track.adRewardedCompleted("tarot_wizard")
         drawCards()
     }
 
     fun onAdFailed(message: String) {
+        Track.adRewardedFailed("tarot_wizard", "not_ready")
         // Реклама недоступна — всё равно делаем расклад, чтобы не блокировать пользователя
         drawCards()
     }
