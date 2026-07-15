@@ -12,6 +12,7 @@ const CLAUDE_API_KEY = defineSecret("CLAUDE_API_KEY");
 
 const SCHEDULE_DOC       = "admin_config/push_schedule";
 const GEN_SCHEDULE_DOC   = "admin_config/gen_schedule";
+const GEN_LANGS_DOC      = "admin_config/gen_langs";  // языки авто-генерации
 const PROMPT_DOC_PREFIX  = "admin_config/prompt_";   // + "daily" | "weekly" | "monthly"
 const FIREBASE_DB_URL    = "https://zodiac-b23ce-default-rtdb.europe-west1.firebasedatabase.app";
 
@@ -305,6 +306,18 @@ exports.adminApi = onRequest(
         await db.doc(GEN_SCHEDULE_DOC).set({ localHours: localHours, updatedAt: Date.now() });
         res.json({ success: true });
 
+      } else if (action === "getGenLangs") {
+        // Языки, включённые для авто-генерации. Пусто/не задано → все LANGUAGES.
+        const langs = await getEnabledLangs(db);
+        res.json({ langs: langs, all: LANGUAGES });
+
+      } else if (action === "setGenLangs") {
+        const raw = (req.body && Array.isArray(req.body.langs)) ? req.body.langs : [];
+        // Оставляем только валидные коды в каноническом порядке.
+        const langs = LANGUAGES.filter(function(l) { return raw.indexOf(l) !== -1; });
+        await db.doc(GEN_LANGS_DOC).set({ langs: langs, updatedAt: Date.now() });
+        res.json({ success: true, langs: langs });
+
       } else if (action === "generateHoroscopes") {
         const dateKey = (req.body && req.body.date) ? req.body.date : utcDateKey(1);
         const period  = (req.body && req.body.period) ? req.body.period : "daily";
@@ -399,11 +412,32 @@ async function isLangComplete(lang, period, dateKey) {
 }
 
 /**
- * Returns array of language codes that are NOT yet fully generated for the given period/dateKey.
+ * Возвращает список языков, включённых для авто-генерации (из Firestore).
+ * Если настройка не задана или пуста — по умолчанию все LANGUAGES.
+ * Порядок и валидность кодов приводятся к каноническому LANGUAGES.
  */
-async function getMissingLangs(period, dateKey) {
+async function getEnabledLangs(db) {
+  try {
+    const doc = await db.doc(GEN_LANGS_DOC).get();
+    const langs = doc.exists ? doc.data().langs : null;
+    if (Array.isArray(langs) && langs.length > 0) {
+      const filtered = LANGUAGES.filter(function(l) { return langs.indexOf(l) !== -1; });
+      if (filtered.length > 0) return filtered;
+    }
+  } catch (e) {
+    console.warn("getEnabledLangs failed: " + e.message);
+  }
+  return LANGUAGES;
+}
+
+/**
+ * Returns array of language codes that are NOT yet fully generated for the given period/dateKey.
+ * [enabledLangs] — необязательный список языков; по умолчанию все LANGUAGES.
+ */
+async function getMissingLangs(period, dateKey, enabledLangs) {
+  const targetLangs = (Array.isArray(enabledLangs) && enabledLangs.length > 0) ? enabledLangs : LANGUAGES;
   const checks = await Promise.all(
-    LANGUAGES.map(function(lang) {
+    targetLangs.map(function(lang) {
       return isLangComplete(lang, period, dateKey).then(function(done) {
         return done ? null : lang;
       });
@@ -430,11 +464,13 @@ async function saveHoroscopeMeta(lang, period, dateKey) {
 // ─── Generate one period/dateKey with logging ─────────────────────────────────
 
 async function generatePeriodDate(apiKey, db, period, dateKey) {
-  // Check each language individually — only generate the missing ones
-  const missingLangs = await getMissingLangs(period, dateKey);
+  // Языки, включённые админом для авто-генерации (по умолчанию все).
+  const enabledLangs = await getEnabledLangs(db);
+  // Check each enabled language individually — only generate the missing ones
+  const missingLangs = await getMissingLangs(period, dateKey, enabledLangs);
 
   if (missingLangs.length === 0) {
-    console.log(period + " " + dateKey + ": all 6 languages complete, skipping");
+    console.log(period + " " + dateKey + ": all enabled languages [" + enabledLangs.join(", ") + "] complete, skipping");
     return;
   }
 

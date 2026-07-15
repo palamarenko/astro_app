@@ -244,6 +244,57 @@ internal fun FireFunTab(state: AdminUiState, vm: AdminViewModel) {
 
         FireFunDivider()
 
+        // ── 3b. Auto-generation languages ─────────────────────────────────────
+        SectionHeader("🌐 Auto-Generation Languages")
+        Spacer(Modifier.height(4.dp))
+        Text("Languages generated automatically by the schedule above", color = AppColors.TextDim, fontSize = 11.sp)
+        Spacer(Modifier.height(10.dp))
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ControlLabel("LANGUAGES")
+            Spacer(Modifier.weight(1f))
+            Text(
+                if (state.genLangsEnabled.size == ALL_GEN_LANGS.size) "Deselect all" else "Select all",
+                color = Color(0xFFB89EFF), fontSize = 10.sp,
+                modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable {
+                    ALL_GEN_LANGS.forEach { code ->
+                        val all = state.genLangsEnabled.size == ALL_GEN_LANGS.size
+                        if (all == (code in state.genLangsEnabled)) vm.toggleGenLang(code)
+                    }
+                }.padding(horizontal = 6.dp, vertical = 3.dp),
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            ALL_GEN_LANG_LABELS.chunked(3).forEach { rowLangs ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    rowLangs.forEach { (code, label) ->
+                        ChipButton(label = label, selected = code in state.genLangsEnabled, onClick = { vm.toggleGenLang(code) })
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.m)) {
+            val canSave = !state.genLangsSaving && !state.genLangsLoading && state.genLangsEnabled.isNotEmpty()
+            Box(modifier = Modifier.clip(RoundedCornerShape(Radius.s)).background(if (canSave) Color(0xFF9B6DFF).copy(alpha = 0.18f) else AppColors.Surface).border(1.dp, Color(0xFF9B6DFF).copy(alpha = if (canSave) 0.5f else 0.2f), RoundedCornerShape(Radius.s)).clickable(enabled = canSave) { vm.saveGenLangs() }.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(if (state.genLangsSaving) "Saving…" else "Save languages", color = if (canSave) Color(0xFFB89EFF) else AppColors.TextDim, fontSize = 12.sp)
+            }
+            Box(modifier = Modifier.clip(RoundedCornerShape(Radius.s)).background(AppColors.Surface).border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s)).clickable { vm.loadGenLangs() }.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("↺ Reload", color = AppColors.TextMuted, fontSize = 12.sp)
+            }
+            if (state.genLangsSaved) Text("✓ Saved", color = Color(0xFF6FCF97), fontSize = 11.sp)
+            state.genLangsError?.let { Text("✗ $it", color = Color(0xFFEB5757), fontSize = 11.sp) }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Auto-generating: ${ALL_GEN_LANGS.filter { it in state.genLangsEnabled }.joinToString(", ") { it.uppercase() }}",
+            color = Color(0xFF9B6DFF).copy(alpha = 0.8f), fontSize = 11.sp,
+        )
+
+        FireFunDivider()
+
         // ── 4. Generation log ─────────────────────────────────────────────────
         Row(verticalAlignment = Alignment.CenterVertically) {
             SectionHeader("📋 Generation Log")

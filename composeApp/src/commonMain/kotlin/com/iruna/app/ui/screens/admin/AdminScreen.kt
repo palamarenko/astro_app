@@ -76,6 +76,7 @@ fun AdminScreen(
                     subTab = HoroscopeSubTab.FIREFUN
                     vm.loadGenerationLogs()
                     vm.loadGenSchedule()
+                    vm.loadGenLangs()
                     vm.loadPrompt()
                 })
                 SubTabButton("📅 Calendar", active = subTab == HoroscopeSubTab.CALENDAR, onClick = {

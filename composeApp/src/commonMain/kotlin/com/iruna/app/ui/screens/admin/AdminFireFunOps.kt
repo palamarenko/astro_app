@@ -295,6 +295,48 @@ fun AdminViewModel.saveGenSchedule() {
     }
 }
 
+// ── Auto-generation languages ─────────────────────────────────────────────────
+
+fun AdminViewModel.loadGenLangs() {
+    val url    = _state.value.functionUrl.trim()
+    val secret = _state.value.adminSecret.trim()
+    if (url.isEmpty() || secret.isEmpty()) return
+    viewModelScope.launch {
+        _state.value = _state.value.copy(genLangsLoading = true, genLangsError = null)
+        val result = pushService.getGenLangs(functionUrl = url, adminSecret = secret)
+        _state.value = _state.value.copy(
+            genLangsLoading = false,
+            genLangsEnabled = result.getOrNull() ?: _state.value.genLangsEnabled,
+            genLangsError   = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+        )
+    }
+}
+
+fun AdminViewModel.toggleGenLang(lang: String) {
+    val current = _state.value.genLangsEnabled.toMutableSet()
+    if (current.contains(lang)) current.remove(lang) else current.add(lang)
+    _state.value = _state.value.copy(genLangsEnabled = current, genLangsSaved = false)
+}
+
+fun AdminViewModel.saveGenLangs() {
+    val url    = _state.value.functionUrl.trim()
+    val secret = _state.value.adminSecret.trim()
+    if (url.isEmpty() || secret.isEmpty()) return
+    if (_state.value.genLangsEnabled.isEmpty()) {
+        _state.value = _state.value.copy(genLangsError = "Select at least one language")
+        return
+    }
+    viewModelScope.launch {
+        _state.value = _state.value.copy(genLangsSaving = true, genLangsError = null, genLangsSaved = false)
+        val result = pushService.setGenLangs(functionUrl = url, adminSecret = secret, langs = _state.value.genLangsEnabled)
+        _state.value = _state.value.copy(
+            genLangsSaving = false,
+            genLangsSaved  = result.isSuccess,
+            genLangsError  = if (result.isFailure) (result.exceptionOrNull()?.message ?: "Error") else null,
+        )
+    }
+}
+
 // ── Generation logs ───────────────────────────────────────────────────────────
 
 fun AdminViewModel.loadGenerationLogs() {

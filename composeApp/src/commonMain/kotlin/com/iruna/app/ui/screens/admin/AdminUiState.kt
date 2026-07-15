@@ -77,6 +77,13 @@ data class AdminUiState(
     val genScheduleSaving: Boolean = false,
     val genScheduleSaved: Boolean = false,
     val genScheduleError: String? = null,
+    // ── Auto-generation languages ─────────────────────────────────────────────
+    /** Языки, включённые для авто-генерации по расписанию. По умолчанию все. */
+    val genLangsEnabled: Set<String> = ALL_GEN_LANGS.toSet(),
+    val genLangsLoading: Boolean = false,
+    val genLangsSaving: Boolean = false,
+    val genLangsSaved: Boolean = false,
+    val genLangsError: String? = null,
     // ── Generation logs ───────────────────────────────────────────────────────
     val generationLogs: List<GenerationLogEntry> = emptyList(),
     val logsLoading: Boolean = false,

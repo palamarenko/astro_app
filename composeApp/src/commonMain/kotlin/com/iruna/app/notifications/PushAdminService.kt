@@ -189,4 +189,42 @@ class PushAdminService(private val client: HttpClient) {
             error("Function error ${response.status.value}: ${response.bodyAsText()}")
         }
     }
+
+    /** Загружает языки, включённые для авто-генерации. */
+    suspend fun getGenLangs(
+        functionUrl: String,
+        adminSecret: String,
+    ): Result<Set<String>> = runCatching {
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"getGenLangs"}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
+        body["langs"]
+            ?.jsonArray
+            ?.map { it.jsonPrimitive.content }
+            ?.toSet()
+            ?: emptySet()
+    }
+
+    /** Сохраняет языки, включённые для авто-генерации. */
+    suspend fun setGenLangs(
+        functionUrl: String,
+        adminSecret: String,
+        langs: Set<String>,
+    ): Result<Unit> = runCatching {
+        val langsJson = langs.joinToString(",") { "\"$it\"" }
+        val response = client.post(functionUrl) {
+            header("x-admin-secret", adminSecret)
+            contentType(ContentType.Application.Json)
+            setBody("""{"action":"setGenLangs","langs":[$langsJson]}""")
+        }
+        if (!response.status.isSuccess()) {
+            error("Function error ${response.status.value}: ${response.bodyAsText()}")
+        }
+    }
 }
