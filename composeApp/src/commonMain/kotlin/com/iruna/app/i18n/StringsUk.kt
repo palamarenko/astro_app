@@ -52,6 +52,10 @@ object StringsUk : AppStrings {
     override val tarot_already_drawn_hint  = "Поверніться завтра — карти відкриваються раз на день"
     override val tarot_summary_label       = "✦ ЗАГАЛЬНИЙ ВИСНОВОК ✦"
     override val tarot_reversed            = "ПЕРЕВЕРНУТА"
+    override val tarot_share_btn            = "Поділитися розкладом"
+    override val tarot_share_tagline        = "Твій розклад Таро"
+    override val daycard_label               = "Карта дня"
+    override val daycard_soon                = "Карта дня незабаром"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label            = "СОЮЗ ЗІРОК"

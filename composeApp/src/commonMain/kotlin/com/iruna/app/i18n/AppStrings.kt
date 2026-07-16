@@ -55,6 +55,10 @@ interface AppStrings {
     val tarot_already_drawn_hint: String
     val tarot_summary_label: String
     val tarot_reversed: String
+    val tarot_share_btn: String
+    val tarot_share_tagline: String
+    val daycard_label: String
+    val daycard_soon: String
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     val compat_label: String

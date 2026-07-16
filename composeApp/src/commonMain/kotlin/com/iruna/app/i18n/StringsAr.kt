@@ -52,6 +52,10 @@ object StringsAr : AppStrings {
     override val tarot_already_drawn_hint  = "عُد غدًا — تكشف البطاقات عن نفسها مرة واحدة يوميًا"
     override val tarot_summary_label       = "✦ القراءة الإجمالية ✦"
     override val tarot_reversed            = "معكوسة"
+    override val tarot_share_btn            = "مشاركة القراءة"
+    override val tarot_share_tagline        = "قراءة التاروت الخاصة بك"
+    override val daycard_label               = "بطاقة اليوم"
+    override val daycard_soon                = "بطاقة اليوم قادمة قريبًا"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label            = "اتحاد النجوم"

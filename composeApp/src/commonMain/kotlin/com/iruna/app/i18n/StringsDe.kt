@@ -52,6 +52,10 @@ object StringsDe : AppStrings {
     override val tarot_already_drawn_hint  = "Komm morgen wieder — die Karten offenbaren sich einmal täglich"
     override val tarot_summary_label       = "✦ GESAMTLESUNG ✦"
     override val tarot_reversed            = "UMGEKEHRT"
+    override val tarot_share_btn            = "Legung teilen"
+    override val tarot_share_tagline        = "Deine Tarot-Legung"
+    override val daycard_label               = "Karte des Tages"
+    override val daycard_soon                = "Karte des Tages kommt bald"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label            = "STERNENBUND"

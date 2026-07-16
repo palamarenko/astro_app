@@ -52,6 +52,10 @@ object StringsRu : AppStrings {
     override val tarot_already_drawn_hint  = "Возвращайтесь завтра — карты раскрываются раз в день"
     override val tarot_summary_label       = "✦ ОБЩИЙ ВЫВОД ✦"
     override val tarot_reversed            = "ПЕРЕВЁРН."
+    override val tarot_share_btn            = "Поделиться раскладом"
+    override val tarot_share_tagline        = "Твой расклад Таро"
+    override val daycard_label               = "Карта дня"
+    override val daycard_soon                = "Карта дня скоро появится"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label           = "СОЮЗ ЗВЁЗД"

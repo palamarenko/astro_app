@@ -81,6 +81,15 @@ fun HoroscopeScreen(
     var stikiTabPositions by remember { mutableStateOf(0f) }
     var diffScroll by remember { mutableStateOf(0f) }
 
+    // ── «Карта дня» — будущий функционал ─────────────────────────────────────
+    var showDayCardSoon by remember { mutableStateOf(false) }
+    LaunchedEffect(showDayCardSoon) {
+        if (showDayCardSoon) {
+            kotlinx.coroutines.delay(2200)
+            showDayCardSoon = false
+        }
+    }
+
     // ── Parallax: hero sinks down as content scrolls up ───────────────────────
     val heroHeightPx = with(density) { 320.dp.toPx() }
     val heroAlpha = (1f - scrollOffsetPx / (heroHeightPx * 0.70f)).coerceIn(0f, 1f)
@@ -299,13 +308,25 @@ fun HoroscopeScreen(
                 stickyHeaderHeightPx = coords.size.height
             }) {
                 Spacer(Modifier.height(Spacing.xxl))
-                Text(
-                    text = str.nav_horoscope,
-                    fontSize = AppType.h2,
-                    fontWeight = FontWeight.Normal,
-                    color = AppColors.TextPrimary,
-                    modifier = Modifier.padding(horizontal = Spacing.xl),
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Spacing.xl),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Text(
+                        text = str.nav_horoscope,
+                        fontSize = AppType.h2,
+                        fontWeight = FontWeight.Normal,
+                        color = AppColors.TextPrimary,
+                    )
+                    // ── «Карта дня» — кнопка в правом верхнем углу ────────────
+                    DayCardButton(
+                        onClick = { showDayCardSoon = true },
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        size = 54.dp,
+                    )
+                }
                 Spacer(Modifier.height(Spacing.l))
                 SignCarousel(
                     selected = sign,
@@ -351,6 +372,30 @@ fun HoroscopeScreen(
                 onAllow = { vm.onPushPromptResult(enabled = true) },
                 onDeny = { vm.dismissPushPromptForSession() },
             )
+        }
+
+        // ── «Карта дня» — уведомление «скоро появится» ────────────────────────
+        AnimatedVisibility(
+            visible = showDayCardSoon,
+            enter = fadeIn(tween(200)) + slideInVertically(tween(260)) { it / 2 },
+            exit = fadeOut(tween(200)),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 120.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(Radius.full))
+                    .background(AppColors.Surface)
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.40f), RoundedCornerShape(Radius.full))
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
+            ) {
+                Text(
+                    text = str.daycard_soon,
+                    fontSize = AppType.body,
+                    color = AppColors.TextPrimary,
+                )
+            }
         }
     }
 }

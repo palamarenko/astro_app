@@ -12,8 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +56,12 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
     val adNotReadyMsg = str.tarot_ad_not_ready
     val positions = listOf(str.tarot_position_past, str.tarot_position_present, str.tarot_position_future)
     val cardTexts = listOf(state.reading?.past, state.reading?.present, state.reading?.future)
+
+    // ── Шеринг расклада картинкой ─────────────────────────────────────────────
+    val sharer      = rememberImageSharer()
+    val shareLayer  = rememberGraphicsLayer()
+    val shareTitle  = str.tarot_share_tagline
+    var capturing   by remember { mutableStateOf(false) }
 
     val periodTitle = when (state.currentPeriod) {
         HoroscopePeriod.DAILY   -> str.tarot_period_day_title
@@ -113,6 +122,41 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                                 join      = StrokeJoin.Round
                             )
                         )
+                    }
+                }
+
+                // Кнопка «поделиться» — прибита к правому краю, когда расклад готов
+                if (state.reading?.summary?.isNotBlank() == true) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(AppColors.Card)
+                            .border(1.dp, AppColors.Border, CircleShape)
+                            .clickable(enabled = !capturing) { capturing = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Canvas(modifier = Modifier.size(17.dp)) {
+                            val w = size.width
+                            val h = size.height
+                            val gold = AppColors.AccentGold
+                            val arrow = Path().apply {
+                                moveTo(w * 0.5f, h * 0.06f)
+                                lineTo(w * 0.5f, h * 0.60f)
+                                moveTo(w * 0.28f, h * 0.28f)
+                                lineTo(w * 0.5f, h * 0.06f)
+                                lineTo(w * 0.72f, h * 0.28f)
+                            }
+                            drawPath(arrow, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                            val tray = Path().apply {
+                                moveTo(w * 0.20f, h * 0.48f)
+                                lineTo(w * 0.20f, h * 0.94f)
+                                lineTo(w * 0.80f, h * 0.94f)
+                                lineTo(w * 0.80f, h * 0.48f)
+                            }
+                            drawPath(tray, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                        }
                     }
                 }
             }
@@ -215,6 +259,42 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                 }
             }
             Spacer(Modifier.height(100.dp))
+        }
+
+        // ── Offscreen-поверхность: рендер картинки для шеринга ─────────────────
+        // Рисуется за пределами экрана (offset), захватывается в ImageBitmap
+        // через graphicsLayer, после чего отдаётся системному share-листу.
+        if (capturing) {
+            val readingForShare = state.reading
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = 5000.dp)
+                    .width(340.dp)
+                    .drawWithContent {
+                        shareLayer.record { this@drawWithContent.drawContent() }
+                        drawLayer(shareLayer)
+                    }
+            ) {
+                if (readingForShare != null) {
+                    ShareReadingCard(
+                        cards     = state.cards,
+                        reading   = readingForShare,
+                        positions = positions,
+                        period    = periodTitle,
+                        tagline   = shareTitle,
+                    )
+                }
+            }
+            LaunchedEffect(Unit) {
+                // Ждём пару кадров, чтобы контент отрисовался и карты подтянулись из кэша
+                withFrameNanos {}
+                withFrameNanos {}
+                kotlinx.coroutines.delay(280)
+                val bmp = shareLayer.toImageBitmap()
+                sharer.share(bmp, shareTitle)
+                capturing = false
+            }
         }
     }
 }
@@ -990,6 +1070,258 @@ private fun ReadingSummaryCard(reading: TarotReadingResponse, cards: List<TarotC
                 color = AppColors.TextSecondary,
                 lineHeight = TextUnit(1.75f * 15f, TextUnitType.Sp)
             )
+        }
+    }
+}
+
+// ── Share image card (рендерится offscreen для генерации картинки) ─────────────
+
+@Composable
+private fun ShareReadingCard(
+    cards:     List<TarotCard>,
+    reading:   TarotReadingResponse,
+    positions: List<String>,
+    period:    String,
+    tagline:   String,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.l))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF0B0B13),
+                        Color(0xFF13110B),
+                        Color(0xFF0A0A11),
+                    )
+                )
+            )
+            .border(1.dp, AppColors.AccentGold.copy(alpha = 0.30f), RoundedCornerShape(Radius.l))
+    ) {
+        // ── Декоративные звёзды (как на экране Таро) ──────────────────────────
+        Image(
+            painter = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(66.dp)
+                .offset(x = (-10).dp, y = 12.dp)
+                .graphicsLayer { alpha = 0.16f },
+        )
+        Image(
+            painter = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(15.dp)
+                .offset(x = 18.dp, y = 72.dp)
+                .graphicsLayer { alpha = 0.14f },
+        )
+        Image(
+            painter = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .size(22.dp)
+                .offset(x = 16.dp, y = (-26).dp)
+                .graphicsLayer { alpha = 0.10f },
+        )
+
+      Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 22.dp)
+      ) {
+        // ── Заголовок ─────────────────────────────────────────────────────────
+        Text(
+            text = tagline,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Light,
+            color = AppColors.TextPrimary,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = period,
+            fontSize = 13.sp,
+            fontStyle = FontStyle.Italic,
+            color = AppColors.AccentGold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        // ── Три карты ─────────────────────────────────────────────────────────
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            for (i in 0..2) {
+                val card = cards.getOrNull(i)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = positions.getOrElse(i) { "" },
+                        fontSize = TextUnit(9f, TextUnitType.Sp),
+                        color = AppColors.TextMuted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    if (card != null) {
+                        ShareCardFront(card = card)
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(2f / 3f)
+                                .clip(RoundedCornerShape(Radius.s))
+                                .background(AppColors.Card)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // ── Текст расклада в закруглённой рамке ───────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Radius.m))
+                .background(AppColors.Card.copy(alpha = 0.6f))
+                .border(1.dp, AppColors.AccentGold.copy(alpha = 0.28f), RoundedCornerShape(Radius.m))
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
+            Text(
+                text = reading.summary,
+                fontSize = 13.sp,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.Light,
+                color = AppColors.TextSecondary,
+                textAlign = TextAlign.Center,
+                lineHeight = TextUnit(20f, TextUnitType.Sp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        Spacer(Modifier.height(22.dp))
+
+        // ── Разделитель ───────────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(AppColors.AccentGold.copy(alpha = 0.18f))
+        )
+        Spacer(Modifier.height(14.dp))
+
+        // ── Брендинг: логотип + название ──────────────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Image(
+                painter = painterResource(Res.drawable.iruna),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(44.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "Iruna: Tarot & Horoscope",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = AppColors.TextPrimary,
+                letterSpacing = TextUnit(0.04f, TextUnitType.Em),
+            )
+        }
+      }
+    }
+}
+
+@Composable
+private fun ShareCardFront(card: TarotCard) {
+    val painter = when (card.resourceKey) {
+        "fool"             -> painterResource(Res.drawable.tarot_fool)
+        "magician"         -> painterResource(Res.drawable.tarot_magician)
+        "high_priestess"   -> painterResource(Res.drawable.tarot_high_priestess)
+        "empress"          -> painterResource(Res.drawable.tarot_empress)
+        "emperor"          -> painterResource(Res.drawable.tarot_emperor)
+        "hierophant"       -> painterResource(Res.drawable.tarot_hierophant)
+        "lovers"           -> painterResource(Res.drawable.tarot_lovers)
+        "chariot"          -> painterResource(Res.drawable.tarot_chariot)
+        "strength"         -> painterResource(Res.drawable.tarot_strength)
+        "hermit"           -> painterResource(Res.drawable.tarot_hermit)
+        "wheel_of_fortune" -> painterResource(Res.drawable.tarot_wheel_of_fortune)
+        "justice"          -> painterResource(Res.drawable.tarot_justice)
+        "hanged_man"       -> painterResource(Res.drawable.tarot_hanged_man)
+        "death"            -> painterResource(Res.drawable.tarot_death)
+        "temperance"       -> painterResource(Res.drawable.tarot_temperance)
+        "devil"            -> painterResource(Res.drawable.tarot_devil)
+        "tower"            -> painterResource(Res.drawable.tarot_tower)
+        "star"             -> painterResource(Res.drawable.tarot_star)
+        "moon"             -> painterResource(Res.drawable.tarot_moon)
+        "sun"              -> painterResource(Res.drawable.tarot_sun)
+        "judgment"         -> painterResource(Res.drawable.tarot_judgment)
+        else               -> painterResource(Res.drawable.tarot_world)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(2f / 3f)
+            .clip(RoundedCornerShape(Radius.s))
+            .border(1.dp, AppColors.AccentGold.copy(alpha = 0.55f), RoundedCornerShape(Radius.s))
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = card.localizedName(),
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { if (card.reversed) rotationZ = 180f },
+            contentScale = ContentScale.Crop
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0f to Color.Transparent,
+                            0.30f to Color.Black.copy(alpha = 0.50f),
+                            1f to Color.Black.copy(alpha = 0.92f)
+                        )
+                    )
+                )
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = card.number,
+                    fontSize = TextUnit(7f, TextUnitType.Sp),
+                    color = AppColors.AccentGold,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = card.localizedName(),
+                    fontSize = TextUnit(8f, TextUnitType.Sp),
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
