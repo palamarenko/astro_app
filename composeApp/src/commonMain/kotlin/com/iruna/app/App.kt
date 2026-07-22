@@ -54,6 +54,7 @@ fun App() {
     remember {
         val profile = UserStorage.load()
         LanguageManager.init(profile?.language)
+        com.iruna.app.ui.components.HapticsManager.init(profile?.hapticsEnabled ?: true)
         if (profile != null && profile.language.isEmpty()) {
             UserStorage.save(profile.copy(language = LanguageManager.current.code))
         }
@@ -77,6 +78,7 @@ fun App() {
     val profileVm    = remember { ProfileViewModel(api) }
     val adminVm      = remember { AdminViewModel(api) }
     val adminTarotVm = remember { AdminTarotViewModel(api) }
+    val adminDayCardVm = remember { AdminDayCardViewModel(api) }
 
     // key(lang) заставляет Compose полностью пересоздать AppContent() при смене языка,
     // чтобы все str.xxx вызовы вернули строки нового языка.
@@ -93,6 +95,7 @@ fun App() {
                 profileVm    = profileVm,
                 adminVm      = adminVm,
                 adminTarotVm = adminTarotVm,
+                adminDayCardVm = adminDayCardVm,
             )
         }
     }
@@ -107,6 +110,7 @@ private fun AppContent(
     profileVm:    ProfileViewModel,
     adminVm:      AdminViewModel,
     adminTarotVm: AdminTarotViewModel,
+    adminDayCardVm: AdminDayCardViewModel,
 ) {
     // Создаём один экземпляр AdManager для всего приложения — реклама начинает
     // загружаться при старте и успевает загрузиться к тому моменту, когда она нужна.
@@ -117,6 +121,7 @@ private fun AppContent(
     var showDetail      by remember { mutableStateOf(true) }
     var showAdmin              by remember { mutableStateOf(false) }
     var showAdminTarot         by remember { mutableStateOf(false) }
+    var showAdminDayCard       by remember { mutableStateOf(false) }
     var showAdminNotifications by remember { mutableStateOf(false) }
     var showAdminSettings      by remember { mutableStateOf(false) }
     var showAdminBilling       by remember { mutableStateOf(false) }
@@ -128,7 +133,7 @@ private fun AppContent(
     // • Таро-расклад           → список таро
     // • Любой другой экран     → гороскоп
     // • Гороскоп (главный)     → не перехватываем (приложение закрывается)
-    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot && !showAdminNotifications && !showAdminSettings && !showAdminBilling && !showAdminAbout
+    val onHoroscope = activeTab == BottomTab.HOROSCOPE && showDetail && !showAdmin && !showAdminTarot && !showAdminDayCard && !showAdminNotifications && !showAdminSettings && !showAdminBilling && !showAdminAbout
     AppBackHandler(enabled = !onHoroscope) {
         when {
             // Таро-расклад → список
@@ -146,6 +151,8 @@ private fun AppContent(
             showAdminNotifications -> { showAdminNotifications = false }
             // Админ-панель таро → назад
             showAdminTarot -> { showAdminTarot = false }
+            // Админ-панель «Карта дня» → назад
+            showAdminDayCard -> { showAdminDayCard = false }
             // Главная админ-панель → назад
             showAdmin -> { showAdmin = false }
             // Все остальные экраны → гороскоп
@@ -154,6 +161,7 @@ private fun AppContent(
                 showDetail = true
                 showAdmin = false
                 showAdminTarot = false
+                showAdminDayCard = false
                 showAdminNotifications = false
                 showAdminSettings = false
                 showAdminBilling = false
@@ -283,6 +291,7 @@ private fun AppContent(
                                 onNavigateBack = { showAdminAbout = false },
                                 onNavigateToHoroscopes = { showAdminAbout = false; showAdmin = true },
                                 onNavigateToTarot = { showAdminAbout = false; showAdminTarot = true },
+                                onNavigateToDayCard = { showAdminAbout = false; showAdminDayCard = true },
                                 onNavigateToNotifications = { showAdminAbout = false; showAdminNotifications = true },
                                 onNavigateToSettings = { showAdminAbout = false; showAdminSettings = true },
                                 onNavigateToBilling = { showAdminAbout = false; showAdminBilling = true },
@@ -292,6 +301,7 @@ private fun AppContent(
                                 onNavigateBack = { showAdminBilling = false },
                                 onNavigateToHoroscopes = { showAdminBilling = false; showAdmin = true },
                                 onNavigateToTarot = { showAdminBilling = false; showAdminTarot = true },
+                                onNavigateToDayCard = { showAdminBilling = false; showAdminDayCard = true },
                                 onNavigateToNotifications = { showAdminBilling = false; showAdminNotifications = true },
                                 onNavigateToSettings = { showAdminBilling = false; showAdminSettings = true },
                                 onNavigateToAbout = { showAdminBilling = false; showAdminAbout = true },
@@ -301,6 +311,7 @@ private fun AppContent(
                                 onNavigateBack = { showAdminSettings = false },
                                 onNavigateToHoroscopes = { showAdminSettings = false; showAdmin = true },
                                 onNavigateToTarot = { showAdminSettings = false; showAdminTarot = true },
+                                onNavigateToDayCard = { showAdminSettings = false; showAdminDayCard = true },
                                 onNavigateToNotifications = { showAdminSettings = false; showAdminNotifications = true },
                                 onNavigateToBilling = { showAdminSettings = false; showAdminBilling = true },
                                 onNavigateToAbout = { showAdminSettings = false; showAdminAbout = true },
@@ -310,6 +321,7 @@ private fun AppContent(
                                 onNavigateBack = { showAdminNotifications = false },
                                 onNavigateToHoroscopes = { showAdminNotifications = false; showAdmin = true },
                                 onNavigateToTarot = { showAdminNotifications = false; showAdminTarot = true },
+                                onNavigateToDayCard = { showAdminNotifications = false; showAdminDayCard = true },
                                 onNavigateToSettings = { showAdminNotifications = false; showAdminSettings = true },
                                 onNavigateToBilling = { showAdminNotifications = false; showAdminBilling = true },
                                 onNavigateToAbout = { showAdminNotifications = false; showAdminAbout = true },
@@ -319,15 +331,27 @@ private fun AppContent(
                                 adminVm = adminVm,
                                 onNavigateBack = { showAdminTarot = false },
                                 onNavigateToHoroscopes = { showAdminTarot = false; showAdmin = true },
+                                onNavigateToDayCard = { showAdminTarot = false; showAdminDayCard = true },
                                 onNavigateToNotifications = { showAdminTarot = false; showAdminNotifications = true },
                                 onNavigateToSettings = { showAdminTarot = false; showAdminSettings = true },
                                 onNavigateToBilling = { showAdminTarot = false; showAdminBilling = true },
                                 onNavigateToAbout = { showAdminTarot = false; showAdminAbout = true },
                             )
+                            showAdminDayCard -> AdminDayCardScreen(
+                                vm = adminDayCardVm,
+                                onNavigateBack = { showAdminDayCard = false },
+                                onNavigateToHoroscopes = { showAdminDayCard = false; showAdmin = true },
+                                onNavigateToTarot = { showAdminDayCard = false; showAdminTarot = true },
+                                onNavigateToNotifications = { showAdminDayCard = false; showAdminNotifications = true },
+                                onNavigateToSettings = { showAdminDayCard = false; showAdminSettings = true },
+                                onNavigateToBilling = { showAdminDayCard = false; showAdminBilling = true },
+                                onNavigateToAbout = { showAdminDayCard = false; showAdminAbout = true },
+                            )
                             showAdmin -> AdminScreen(
                                 vm = adminVm,
                                 onNavigateBack = { showAdmin = false },
                                 onNavigateToTarot = { showAdmin = false; showAdminTarot = true },
+                                onNavigateToDayCard = { showAdmin = false; showAdminDayCard = true },
                                 onNavigateToNotifications = { showAdmin = false; showAdminNotifications = true },
                                 onNavigateToSettings = { showAdmin = false; showAdminSettings = true },
                                 onNavigateToBilling = { showAdmin = false; showAdminBilling = true },
@@ -351,7 +375,7 @@ private fun AppContent(
             selectedSign = selectedSign,
             onTabSelected = { tab ->
                 if (tab == BottomTab.HOROSCOPE) showDetail = true
-                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false; showAdminNotifications = false; showAdminSettings = false; showAdminBilling = false; showAdminAbout = false }
+                if (tab != BottomTab.PROFILE) { showAdmin = false; showAdminTarot = false; showAdminDayCard = false; showAdminNotifications = false; showAdminSettings = false; showAdminBilling = false; showAdminAbout = false }
                 if (tab != BottomTab.TAROT) { tarotPeriod = null; tarotVm.clearPeriod() }
                 activeTab = tab
             },

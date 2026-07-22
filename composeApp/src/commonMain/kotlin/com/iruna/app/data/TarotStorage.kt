@@ -50,6 +50,14 @@ expect object TarotStorage {
     /** Сохранить снимок (legacy). */
     fun save(state: TarotPersistState)
 
+    /** Дата (YYYY-MM-DD), для которой уже проигрывалась анимация раскрытия
+     *  «Карты дня», или null. Используется, чтобы флип показывался только
+     *  при первом открытии карты в этот день. */
+    fun dayCardRevealedDate(): String?
+
+    /** Запоминает дату, для которой анимация раскрытия «Карты дня» показана. */
+    fun setDayCardRevealedDate(date: String)
+
     /** Очистить все сохранённые расклады. */
     fun clear()
 }

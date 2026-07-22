@@ -31,6 +31,12 @@ data class HoroscopeUiState(
     val showWizard: Boolean = false,
     // Push notifications prompt — показываем один раз при первом заходе
     val showPushPrompt: Boolean = false,
+    // ── «Карта дня» ────────────────────────────────────────────────────────────
+    val showDayCard: Boolean = false,
+    val dayCard: TarotCard? = null,       // выбранная по дате карта
+    val dayCardText: String? = null,      // прогноз (null = ещё грузится / отсутствует)
+    val dayCardLoading: Boolean = false,
+    val dayCardReveal: Boolean = false,   // true = проиграть анимацию раскрытия (флип) — только при первом открытии за день
 ) {
     val currentForecast: HoroscopeResponse? get() = current[period]
     val futureForecast:  HoroscopeResponse? get() = future[period]
@@ -124,6 +130,75 @@ class HoroscopeViewModel(
         Track.horoscopePeriodSelect(period.id)
         _state.value = _state.value.copy(period = period)
         _state.value.selectedSign?.let { loadCurrentIfNeeded(it, period) }
+    }
+
+    // ── «Карта дня» ─────────────────────────────────────────────────────────────
+
+    /** Кеш текста «Карты дня» в рамках сессии: ключ "lang:cardKey" → текст (null = прогноза нет).
+     *  Позволяет при повторном открытии показать текст сразу, без запроса к серверу. */
+    private val dayCardTextCache = mutableMapOf<String, String?>()
+
+    /** Открывает попап «Карты дня». Карта детерминирована датой (одна на день
+     *  для всех пользователей), текст-прогноз подгружается из Firebase и кешируется
+     *  на сессию. */
+    fun openDayCard() {
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val idx = today.toEpochDays().toInt().mod(ALL_TAROT.size)
+        val card = ALL_TAROT[idx]
+        Track.screen("day_card")
+
+        // Анимацию раскрытия (флип рубашкой вверх) показываем только при первом
+        // открытии карты в этот день. Дальше — карта сразу лицом вверх.
+        val todayKey = TarotStorage.todayKey()
+        val reveal = TarotStorage.dayCardRevealedDate() != todayKey
+        if (reveal) TarotStorage.setDayCardRevealedDate(todayKey)
+
+        // Кеш-хит — показываем текст сразу, без обращения к серверу.
+        val cacheKey = "$lang:${card.resourceKey}"
+        if (dayCardTextCache.containsKey(cacheKey)) {
+            _state.value = _state.value.copy(
+                showDayCard = true,
+                dayCard = card,
+                dayCardText = dayCardTextCache[cacheKey],
+                dayCardLoading = false,
+                dayCardReveal = reveal,
+            )
+            return
+        }
+
+        _state.value = _state.value.copy(
+            showDayCard = true,
+            dayCard = card,
+            dayCardText = null,
+            dayCardLoading = true,
+            dayCardReveal = reveal,
+        )
+        viewModelScope.launch {
+            val text = try {
+                val cards = firebase.getAllDayCards(lang)
+                var t = cards?.get(card.resourceKey)?.text
+                // Фолбэк на английский, если на текущем языке текста нет
+                if (t.isNullOrBlank() && lang != "en") {
+                    t = firebase.getAllDayCards("en")?.get(card.resourceKey)?.text
+                }
+                t
+            } catch (_: Exception) {
+                null
+            }
+            val resolved = text?.takeIf { it.isNotBlank() }
+            dayCardTextCache[cacheKey] = resolved
+            // Пользователь мог закрыть попап пока грузилось — не перетираем состояние
+            if (_state.value.showDayCard && _state.value.dayCard?.resourceKey == card.resourceKey) {
+                _state.value = _state.value.copy(
+                    dayCardText = resolved,
+                    dayCardLoading = false,
+                )
+            }
+        }
+    }
+
+    fun dismissDayCard() {
+        _state.value = _state.value.copy(showDayCard = false)
     }
 
     fun showWizard() {

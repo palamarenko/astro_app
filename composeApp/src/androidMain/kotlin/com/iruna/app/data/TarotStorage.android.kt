@@ -25,6 +25,7 @@ object TarotStorageInitializer {
 actual object TarotStorage {
     private const val PREFS = "tarot_prefs"
     private const val KEY_STATE = "state_json"
+    private const val KEY_DAYCARD_REVEALED = "daycard_revealed_date"
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -66,6 +67,13 @@ actual object TarotStorage {
 
     actual fun save(state: TarotPersistState) {
         prefs()?.edit()?.putString(KEY_STATE, json.encodeToString(state))?.apply()
+    }
+
+    actual fun dayCardRevealedDate(): String? =
+        prefs()?.getString(KEY_DAYCARD_REVEALED, null)
+
+    actual fun setDayCardRevealedDate(date: String) {
+        prefs()?.edit()?.putString(KEY_DAYCARD_REVEALED, date)?.apply()
     }
 
     actual fun clear() {

@@ -56,6 +56,9 @@ object StringsUk : AppStrings {
     override val tarot_share_tagline        = "Твій розклад Таро"
     override val daycard_label               = "Карта дня"
     override val daycard_soon                = "Карта дня незабаром"
+    override val daycard_subtitle            = "Ваша карта на сьогодні"
+    override val daycard_empty               = "Прогноз для цієї карти скоро з'явиться"
+    override val daycard_close               = "Зрозуміло"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label            = "СОЮЗ ЗІРОК"
@@ -84,6 +87,8 @@ object StringsUk : AppStrings {
     override val profile_field_place_label      = "Місце народження"
     override val profile_field_place_pick       = "Обрати місце →"
     override val profile_field_language_label   = "Мова"
+    override val profile_field_haptics_label   = "Вібрація"
+    override val profile_haptics_toggle         = "Вібровідгук"
     override val profile_dialog_cancel          = "Скасувати"
     override val profile_dialog_confirm         = "Готово"
     override val profile_dialog_date_title      = "Дата народження"

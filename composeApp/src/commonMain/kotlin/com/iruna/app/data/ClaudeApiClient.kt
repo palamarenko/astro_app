@@ -372,6 +372,19 @@ class AnthropicAiProvider(private val apiKey: String) : AiGenerationService {
         return json.decodeFromString(extractJson(complete(prompt, maxTokens = 200)))
     }
 
+    override suspend fun generateAdminDayCard(card: TarotCard, lang: String): DayCardContent {
+        val langName = langName(lang)
+        val prompt = """
+            Write a short "Card of the Day" message for the Major Arcana tarot card "${card.name}" (${card.number}), keywords: ${card.keywords}.
+            This is a warm, inspiring forecast for the reader's day ahead, drawn from the energy of this card.
+            Language: $langName. Style: poetic, mystical, personal, uplifting — like a wise friend.
+            Length: 2–3 sentences, ~40 words. Address the reader directly. Do NOT repeat keywords verbatim, do NOT mention the card name.
+            Respond ONLY with valid JSON, no markdown:
+            {"text":"..."}
+        """.trimIndent()
+        return json.decodeFromString(extractJson(complete(prompt, maxTokens = 250)))
+    }
+
     override suspend fun getBillingInfo(): AnthropicUsageInfo {
         // Цены Claude Haiku 4.5 ($ за 1M токенов)
         val inputPricePerMillion  = 0.80

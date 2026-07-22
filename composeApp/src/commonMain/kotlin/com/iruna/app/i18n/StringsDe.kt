@@ -56,6 +56,9 @@ object StringsDe : AppStrings {
     override val tarot_share_tagline        = "Deine Tarot-Legung"
     override val daycard_label               = "Karte des Tages"
     override val daycard_soon                = "Karte des Tages kommt bald"
+    override val daycard_subtitle            = "Deine Karte für heute"
+    override val daycard_empty               = "Eine Deutung für diese Karte folgt bald"
+    override val daycard_close               = "Verstanden"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label            = "STERNENBUND"
@@ -84,6 +87,8 @@ object StringsDe : AppStrings {
     override val profile_field_place_label      = "Geburtsort"
     override val profile_field_place_pick       = "Ort wählen →"
     override val profile_field_language_label   = "Sprache"
+    override val profile_field_haptics_label   = "Vibration"
+    override val profile_haptics_toggle         = "Haptisches Feedback"
     override val profile_dialog_cancel          = "Abbrechen"
     override val profile_dialog_confirm         = "Fertig"
     override val profile_dialog_date_title      = "Geburtsdatum"

@@ -59,6 +59,9 @@ interface AppStrings {
     val tarot_share_tagline: String
     val daycard_label: String
     val daycard_soon: String
+    val daycard_subtitle: String
+    val daycard_empty: String
+    val daycard_close: String
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     val compat_label: String
@@ -88,6 +91,8 @@ interface AppStrings {
     val profile_field_place_label: String
     val profile_field_place_pick: String
     val profile_field_language_label: String
+    val profile_field_haptics_label: String
+    val profile_haptics_toggle: String
     val profile_dialog_cancel: String
     val profile_dialog_confirm: String
     val profile_dialog_date_title: String

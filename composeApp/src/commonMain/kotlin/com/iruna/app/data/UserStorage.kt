@@ -36,6 +36,10 @@ data class UserProfile(
     /** true — пользователь разрешил уведомления. */
     val pushNotificationsEnabled: Boolean = false,
 
+    // ── Haptics ───────────────────────────────────────────────────────────────
+    /** true — тактильный отклик (вибрация) включён. */
+    val hapticsEnabled: Boolean = true,
+
     // ── Admin settings ────────────────────────────────────────────────────────
     val adminFunctionUrl: String = "",
     val adminSecret: String = "",

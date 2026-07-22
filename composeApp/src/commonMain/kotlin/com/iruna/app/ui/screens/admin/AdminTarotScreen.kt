@@ -35,6 +35,7 @@ fun AdminTarotScreen(
     adminVm: AdminViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToHoroscopes: () -> Unit = {},
+    onNavigateToDayCard: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToBilling: () -> Unit = {},
@@ -98,6 +99,7 @@ fun AdminTarotScreen(
             ) {
                 AdminTabItem("🌙 Horoscopes", active = false, onClick = onNavigateToHoroscopes)
                 AdminTabItem("🃏 Tarot",      active = true,  onClick = {})
+                AdminTabItem("☀️ Карта дня",  active = false, onClick = onNavigateToDayCard)
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
                 AdminTabItem("💳 Billing",    active = false, onClick = onNavigateToBilling)

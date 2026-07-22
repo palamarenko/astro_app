@@ -23,6 +23,7 @@ data class ProfileUiState(
     val birthLat: Double = 0.0,
     val birthLng: Double = 0.0,
     val language: AppLanguage = AppLanguage.EN,
+    val hapticsEnabled: Boolean = true,
     val isLoading: Boolean = false,
     val showDatePicker: Boolean = false,
     val showTimePicker: Boolean = false,
@@ -62,6 +63,7 @@ private fun UserProfile.toUiState(): ProfileUiState {
         birthLat = birthLat,
         birthLng = birthLng,
         language = AppLanguage.fromCode(language),
+        hapticsEnabled = hapticsEnabled,
         onboardingStep = onboardingStep,
         onboardingFinished = onboardingFinished,
     )
@@ -85,6 +87,7 @@ private fun ProfileUiState.toProfile(): UserProfile {
         birthLat = birthLat,
         birthLng = birthLng,
         language = language.code,
+        hapticsEnabled = hapticsEnabled,
         onboardingStep = onboardingStep,
         onboardingFinished = onboardingFinished,
     )
@@ -155,6 +158,11 @@ class ProfileViewModel(private val api: AiGenerationService) : ViewModel() {
     /** Полное завершение/пропуск онбординга — больше не показываем. */
     fun finishOnboarding() {
         update(_state.value.copy(onboardingFinished = true))
+    }
+
+    fun setHapticsEnabled(enabled: Boolean) {
+        com.iruna.app.ui.components.HapticsManager.set(enabled)
+        update(_state.value.copy(hapticsEnabled = enabled))
     }
 
     fun setLanguage(lang: AppLanguage) {

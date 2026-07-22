@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
@@ -82,6 +83,16 @@ fun DayCardButton(
     val pressed by interaction.collectIsPressedAsState()
     val pressScale by animateFloatAsState(if (pressed) 0.94f else 1f, tween(180), label = "press")
 
+    // Кольцевой градиент не зависит от анимации (вращение делает rotate()),
+    // поэтому кэшируем его вместо пересоздания в DrawScope каждый кадр.
+    val sizePx = with(LocalDensity.current) { size.toPx() }
+    val ringBrush = remember(sizePx, gold, purple) {
+        Brush.sweepGradient(
+            listOf(gold, purple, gold, purple, gold),
+            center = Offset(sizePx / 2f, sizePx / 2f),
+        )
+    }
+
     Box(
         modifier = modifier
             .size(size)
@@ -114,10 +125,7 @@ fun DayCardButton(
 
             rotate(ringAngle, pivot = c) {
                 drawCircle(
-                    brush  = Brush.sweepGradient(
-                        listOf(gold, purple, gold, purple, gold),
-                        center = c,
-                    ),
+                    brush  = ringBrush,
                     radius = ringRadius,
                     center = c,
                     style  = Stroke(width = ringStroke),

@@ -71,6 +71,9 @@ fun HoroscopeScreen(
         if (sign != null) AppColors.elementColor(sign.element) else AppColors.AccentGold
     val density = LocalDensity.current
 
+    // ── Тактильный отклик (листание знаков / выбор периода) ───────────────────
+    val selectionHaptic = rememberSelectionHaptic()
+
     // ── Scroll state ──────────────────────────────────────────────────────────
     val scrollState = rememberScrollState()
     val scrollOffsetPx = scrollState.value.toFloat()
@@ -80,15 +83,6 @@ fun HoroscopeScreen(
     var tabPositions by remember { mutableStateOf(0f) }
     var stikiTabPositions by remember { mutableStateOf(0f) }
     var diffScroll by remember { mutableStateOf(0f) }
-
-    // ── «Карта дня» — будущий функционал ─────────────────────────────────────
-    var showDayCardSoon by remember { mutableStateOf(false) }
-    LaunchedEffect(showDayCardSoon) {
-        if (showDayCardSoon) {
-            kotlinx.coroutines.delay(2200)
-            showDayCardSoon = false
-        }
-    }
 
     // ── Parallax: hero sinks down as content scrolls up ───────────────────────
     val heroHeightPx = with(density) { 320.dp.toPx() }
@@ -121,11 +115,13 @@ fun HoroscopeScreen(
                         when {
                             accX < -swipeThresholdPx && idx < ALL_SIGNS.size - 1 -> {
                                 slideDir = 1
+                                selectionHaptic()
                                 vm.selectSign(ALL_SIGNS[idx + 1])
                             }
 
                             accX > swipeThresholdPx && idx > 0 -> {
                                 slideDir = -1
+                                selectionHaptic()
                                 vm.selectSign(ALL_SIGNS[idx - 1])
                             }
                         }
@@ -322,7 +318,7 @@ fun HoroscopeScreen(
                     )
                     // ── «Карта дня» — кнопка в правом верхнем углу ────────────
                     DayCardButton(
-                        onClick = { showDayCardSoon = true },
+                        onClick = { vm.openDayCard() },
                         modifier = Modifier.align(Alignment.CenterEnd),
                         size = 54.dp,
                     )
@@ -332,6 +328,7 @@ fun HoroscopeScreen(
                     selected = sign,
                     onSelect = { s ->
                         val newIdx = ALL_SIGNS.indexOfFirst { it.id == s.id }
+                        if (newIdx != signIndexState.value) selectionHaptic()
                         slideDir = if (newIdx > signIndexState.value) 1 else -1
                         vm.selectSign(s)
                         onSignSelected(s)
@@ -374,28 +371,15 @@ fun HoroscopeScreen(
             )
         }
 
-        // ── «Карта дня» — уведомление «скоро появится» ────────────────────────
-        AnimatedVisibility(
-            visible = showDayCardSoon,
-            enter = fadeIn(tween(200)) + slideInVertically(tween(260)) { it / 2 },
-            exit = fadeOut(tween(200)),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 120.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(Radius.full))
-                    .background(AppColors.Surface)
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.40f), RoundedCornerShape(Radius.full))
-                    .padding(horizontal = 18.dp, vertical = 10.dp),
-            ) {
-                Text(
-                    text = str.daycard_soon,
-                    fontSize = AppType.body,
-                    color = AppColors.TextPrimary,
-                )
-            }
+        // ── «Карта дня» — попап ───────────────────────────────────────────────
+        if (state.showDayCard && state.dayCard != null) {
+            DayCardDialog(
+                card = state.dayCard!!,
+                text = state.dayCardText,
+                loading = state.dayCardLoading,
+                reveal = state.dayCardReveal,
+                onDismiss = { vm.dismissDayCard() },
+            )
         }
     }
 }
@@ -514,7 +498,7 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
         infiniteRepeatable(tween(5000, easing = FastOutSlowInEasing), RepeatMode.Reverse), "float"
     )
 
-    // 6 sparkle particles with stagger
+    // 3 sparkle particles with stagger (сокращено с 6 для снижения нагрузки на RenderThread)
     val sp0 by inf.animateFloat(
         0f,
         1f,
@@ -524,34 +508,29 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
     val sp1 by inf.animateFloat(
         0f,
         1f,
-        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(800)),
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(1200)),
         "sp1"
     )
     val sp2 by inf.animateFloat(
         0f,
         1f,
-        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(1600)),
+        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(2400)),
         "sp2"
     )
-    val sp3 by inf.animateFloat(
-        0f,
-        1f,
-        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(2400)),
-        "sp3"
-    )
-    val sp4 by inf.animateFloat(
-        0f,
-        1f,
-        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(3200)),
-        "sp4"
-    )
-    val sp5 by inf.animateFloat(
-        0f,
-        1f,
-        infiniteRepeatable(tween(3500), RepeatMode.Reverse, StartOffset(4000)),
-        "sp5"
-    )
-    val sparkles = listOf(sp0, sp1, sp2, sp3, sp4, sp5)
+    val sparkles = listOf(sp0, sp1, sp2)
+
+    // Пунктирные PathEffect'ы не зависят от анимации — кэшируем один раз,
+    // иначе они пересоздавались бы в DrawScope каждый кадр (~60/сек).
+    val heroDensity = LocalDensity.current
+    val dashCoarse = remember(heroDensity) {
+        PathEffect.dashPathEffect(with(heroDensity) { floatArrayOf(3.dp.toPx(), 10.dp.toPx()) })
+    }
+    val dashFine = remember(heroDensity) {
+        PathEffect.dashPathEffect(with(heroDensity) { floatArrayOf(2.dp.toPx(), 5.dp.toPx()) })
+    }
+    val dashRare = remember(heroDensity) {
+        PathEffect.dashPathEffect(with(heroDensity) { floatArrayOf(1.5.dp.toPx(), 8.dp.toPx()) })
+    }
 
     Box(
         modifier = Modifier
@@ -608,12 +587,7 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
                     center = Offset(cx, cy),
                     style = Stroke(
                         width = 0.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(
-                            floatArrayOf(
-                                3.dp.toPx(),
-                                10.dp.toPx()
-                            )
-                        ),
+                        pathEffect = dashCoarse,
                     ),
                 )
             }
@@ -627,12 +601,7 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
                     center = Offset(cx, cy),
                     style = Stroke(
                         width = 0.5.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(
-                            floatArrayOf(
-                                2.dp.toPx(),
-                                5.dp.toPx()
-                            )
-                        ),
+                        pathEffect = dashFine,
                     ),
                 )
                 // 3 маркера
@@ -666,12 +635,7 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
                     center = Offset(cx, cy),
                     style = Stroke(
                         width = 0.6.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(
-                            floatArrayOf(
-                                1.5.dp.toPx(),
-                                8.dp.toPx()
-                            )
-                        ),
+                        pathEffect = dashRare,
                     ),
                 )
                 // 12 меток — тихие, кардинальные чуть крупнее
@@ -691,9 +655,6 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
                 Offset(cx + 140.dp.toPx(), cy - 70.dp.toPx()),
                 Offset(cx - 135.dp.toPx(), cy + 50.dp.toPx()),
                 Offset(cx + 90.dp.toPx(), cy + 130.dp.toPx()),
-                Offset(cx - 110.dp.toPx(), cy - 100.dp.toPx()),
-                Offset(cx + 30.dp.toPx(), cy - 148.dp.toPx()),
-                Offset(cx - 50.dp.toPx(), cy + 145.dp.toPx()),
             )
             sparklePts.forEachIndexed { i, pt ->
                 val a = sparkles[i]
@@ -726,8 +687,9 @@ private fun CosmicHero(sign: ZodiacSign, elementColor: Color) {
             modifier = Modifier
                 .size(280.dp)
                 .graphicsLayer {
+                    // shadowElevation убран: реальная тень на картинке 280.dp
+                    // перерисовывалась каждый кадр и грузила RenderThread.
                     translationY = symbolFloat * density
-                    shadowElevation = 24.dp.toPx()
                 },
         )
     }
@@ -741,6 +703,7 @@ private fun PeriodTabsNew(
     onSelect: (HoroscopePeriod) -> Unit,
     elementColor: Color,
 ) {
+    val selectionHaptic = rememberSelectionHaptic()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -772,7 +735,10 @@ private fun PeriodTabsNew(
                             RoundedCornerShape(9.dp)
                         ) else Modifier
                     )
-                    .clickable { onSelect(period) }
+                    .clickable {
+                        if (!isActive) selectionHaptic()
+                        onSelect(period)
+                    }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
             ) {

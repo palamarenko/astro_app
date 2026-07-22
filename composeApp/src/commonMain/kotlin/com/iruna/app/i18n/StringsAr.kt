@@ -56,6 +56,9 @@ object StringsAr : AppStrings {
     override val tarot_share_tagline        = "قراءة التاروت الخاصة بك"
     override val daycard_label               = "بطاقة اليوم"
     override val daycard_soon                = "بطاقة اليوم قادمة قريبًا"
+    override val daycard_subtitle            = "بطاقتك لهذا اليوم"
+    override val daycard_empty               = "توقّع هذه البطاقة سيظهر قريبًا"
+    override val daycard_close               = "حسنًا"
 
     // ── Compatibility ─────────────────────────────────────────────────────────
     override val compat_label            = "اتحاد النجوم"
@@ -84,6 +87,8 @@ object StringsAr : AppStrings {
     override val profile_field_place_label      = "مكان الميلاد"
     override val profile_field_place_pick       = "اختر المكان ←"
     override val profile_field_language_label   = "اللغة"
+    override val profile_field_haptics_label   = "الاهتزاز"
+    override val profile_haptics_toggle         = "الاستجابة اللمسية"
     override val profile_dialog_cancel          = "إلغاء"
     override val profile_dialog_confirm         = "تم"
     override val profile_dialog_date_title      = "تاريخ الميلاد"

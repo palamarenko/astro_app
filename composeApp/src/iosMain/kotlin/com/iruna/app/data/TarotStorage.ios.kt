@@ -12,6 +12,7 @@ import platform.Foundation.localeWithLocaleIdentifier
 
 actual object TarotStorage {
     private const val KEY_STATE = "tarot_state_json"
+    private const val KEY_DAYCARD_REVEALED = "tarot_daycard_revealed_date"
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -62,6 +63,13 @@ actual object TarotStorage {
 
     actual fun save(state: TarotPersistState) {
         NSUserDefaults.standardUserDefaults.setObject(json.encodeToString(state), KEY_STATE)
+    }
+
+    actual fun dayCardRevealedDate(): String? =
+        NSUserDefaults.standardUserDefaults.stringForKey(KEY_DAYCARD_REVEALED)
+
+    actual fun setDayCardRevealedDate(date: String) {
+        NSUserDefaults.standardUserDefaults.setObject(date, KEY_DAYCARD_REVEALED)
     }
 
     actual fun clear() {

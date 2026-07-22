@@ -57,6 +57,12 @@ interface AiGenerationService {
         lang: String,
     ): TarotCardContent
 
+    /** Генерирует прогноз «Карты дня» для одной таро-карты. */
+    suspend fun generateAdminDayCard(
+        card: TarotCard,
+        lang: String,
+    ): DayCardContent
+
     /** Возвращает информацию об использовании API (токены, баланс). */
     suspend fun getBillingInfo(): AnthropicUsageInfo
 }

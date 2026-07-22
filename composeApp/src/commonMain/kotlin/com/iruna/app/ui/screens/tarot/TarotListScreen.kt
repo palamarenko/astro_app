@@ -24,6 +24,7 @@ import com.iruna.app.data.TarotCard
 import com.iruna.app.data.ALL_TAROT
 import com.iruna.app.i18n.str
 import com.iruna.app.ui.components.SectionLabel
+import com.iruna.app.ui.components.rememberSelectionHaptic
 import com.iruna.app.ui.theme.*
 import org.jetbrains.compose.resources.painterResource
 
@@ -67,6 +68,7 @@ fun TarotListScreen(
     modifier: Modifier = Modifier,
 ) {
     val state by vm.state.collectAsState()
+    val haptic = rememberSelectionHaptic()
 
     Box(
         modifier = modifier
@@ -231,7 +233,7 @@ fun TarotListScreen(
                         title      = title,
                         desc       = desc,
                         savedCards = savedCards,
-                        onClick    = { onPeriodSelected(period) },
+                        onClick    = { haptic(); onPeriodSelected(period) },
                     )
                 }
             }

@@ -57,6 +57,22 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
     val positions = listOf(str.tarot_position_past, str.tarot_position_present, str.tarot_position_future)
     val cardTexts = listOf(state.reading?.past, state.reading?.present, state.reading?.future)
 
+    // Тактильный отклик на нажатия
+    val haptic = rememberSelectionHaptic()
+
+    // ── Вибрация во время тряски карт (рубашками вверх, пока идёт загрузка) ────
+    // Пока state.isLoading — карты дрожат рубашками вверх. Всё это время
+    // повторяем мягкие тики; как только загрузка завершилась и карты начинают
+    // переворачиваться — вибрация прекращается (корутина отменяется).
+    LaunchedEffect(state.isLoading) {
+        if (state.isLoading && HapticsManager.enabled) {
+            while (true) {
+                haptic()
+                kotlinx.coroutines.delay(90L)
+            }
+        }
+    }
+
     // ── Шеринг расклада картинкой ─────────────────────────────────────────────
     val sharer      = rememberImageSharer()
     val shareLayer  = rememberGraphicsLayer()
@@ -102,7 +118,7 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                         .clip(CircleShape)
                         .background(AppColors.Card)
                         .border(1.dp, AppColors.Border, CircleShape)
-                        .clickable { onBack() },
+                        .clickable { haptic(); onBack() },
                     contentAlignment = Alignment.Center
                 ) {
                     Canvas(modifier = Modifier.size(18.dp)) {
@@ -134,7 +150,7 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                             .clip(CircleShape)
                             .background(AppColors.Card)
                             .border(1.dp, AppColors.Border, CircleShape)
-                            .clickable(enabled = !capturing) { capturing = true },
+                            .clickable(enabled = !capturing) { haptic(); capturing = true },
                         contentAlignment = Alignment.Center
                     ) {
                         Canvas(modifier = Modifier.size(17.dp)) {
@@ -220,6 +236,7 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                     period      = state.currentPeriod,
                     showAdBadge = true,
                     onClick     = {
+                        haptic()
                         Track.tarotWizardCtaClick(state.currentPeriod?.id ?: "unknown")
                         Track.adRewardedRequest("tarot_wizard")
                         adManager.showRewardedAd(
@@ -230,7 +247,7 @@ fun TarotReadingScreen(vm: TarotViewModel, adManager: AdManager, onBack: () -> U
                 )
                 else -> TarotWizardCta(
                     period  = state.currentPeriod,
-                    onClick = { vm.drawCards() }
+                    onClick = { haptic(); vm.drawCards() }
                 )
             }
             // Сообщение о статусе рекламы

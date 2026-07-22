@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Тактильный отклик (виброотклик при листании/выборе) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Уведомления: обязательно для Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Рекламный идентификатор: обязательно для Android 13+ при использовании AdMob -->

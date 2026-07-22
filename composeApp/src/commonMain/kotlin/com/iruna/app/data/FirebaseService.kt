@@ -78,6 +78,30 @@ class FirebaseService {
         }
     }
 
+    // ── Card of the Day: read all cards for a language ────────────────────────
+    suspend fun getAllDayCards(lang: String): Map<String, DayCardContent>? {
+        return try {
+            val url = "$baseUrl/day_card/$lang.json"
+            client.get(url).body<Map<String, DayCardContent>?>()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // ── Card of the Day: write one card ───────────────────────────────────────
+    suspend fun saveDayCard(lang: String, cardKey: String, content: DayCardContent): Boolean {
+        return try {
+            val url = "$baseUrl/day_card/$lang/$cardKey.json"
+            val response = client.put(url) {
+                contentType(ContentType.Application.Json)
+                setBody(content)
+            }
+            response.status.value in 200..299
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // ── Generation logs ───────────────────────────────────────────────────────
 
     /** Сохраняет запись лога генерации. Ключ = timestamp. */

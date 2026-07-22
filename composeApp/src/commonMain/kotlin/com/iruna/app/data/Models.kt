@@ -70,6 +70,16 @@ data class TarotCardContent(
     val future: String = "",
 )
 
+/**
+ * Контент «Карты дня» для одной таро-карты на конкретном языке.
+ *  - [text] — короткий прогноз/послание на сегодня по этой карте.
+ * Хранится в Firebase по пути /day_card/{lang}/{cardKey}.
+ */
+@Serializable
+data class DayCardContent(
+    val text: String = "",
+)
+
 @Serializable
 data class HoroscopeResponse(
     val text: String,

@@ -233,7 +233,7 @@ fun StarfieldBackground(modifier: Modifier = Modifier) {
     val rng = remember { kotlin.random.Random(kotlin.random.Random.nextInt()) }
 
     val stars = remember {
-        List(55) {
+        List(30) {
             val tier = rng.nextFloat()
             LiveStar(
                 radiusDp = when { tier > 0.93f -> 1.8f; tier > 0.78f -> 1.2f; else -> 0.7f },
@@ -260,7 +260,9 @@ fun StarfieldBackground(modifier: Modifier = Modifier) {
                     ),
                 )
                 // ── Горит ────────────────────────────────────────────────────
-                delay(700L + rng.nextInt(2200).toLong())
+                // Дольше «держим» звезду: пока alpha не меняется, Canvas не
+                // инвалидируется → меньше полноэкранных перерисовок на RenderThread.
+                delay(1400L + rng.nextInt(3200).toLong())
                 // ── Угасание ─────────────────────────────────────────────────
                 star.alpha.animateTo(
                     targetValue   = 0f,
@@ -272,7 +274,7 @@ fun StarfieldBackground(modifier: Modifier = Modifier) {
                 // ── Прыжок в новое место (пока невидима) ─────────────────────
                 star.x.value = rng.nextFloat()
                 star.y.value = rng.nextFloat()
-                delay(100L + rng.nextInt(600).toLong())
+                delay(500L + rng.nextInt(1600).toLong())
             }
         }
     }

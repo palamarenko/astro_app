@@ -20,6 +20,7 @@ fun AdminAboutScreen(
     onNavigateBack: () -> Unit,
     onNavigateToHoroscopes: () -> Unit = {},
     onNavigateToTarot: () -> Unit = {},
+    onNavigateToDayCard: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToBilling: () -> Unit = {},
@@ -72,6 +73,7 @@ fun AdminAboutScreen(
             ) {
                 AdminTabItem("🌙 Horoscopes", active = false, onClick = onNavigateToHoroscopes)
                 AdminTabItem("🃏 Tarot",      active = false, onClick = onNavigateToTarot)
+                AdminTabItem("☀️ Карта дня",  active = false, onClick = onNavigateToDayCard)
                 AdminTabItem("🔔 Push",       active = false, onClick = onNavigateToNotifications)
                 AdminTabItem("⚙️ Settings",   active = false, onClick = onNavigateToSettings)
                 AdminTabItem("💳 Billing",    active = false, onClick = onNavigateToBilling)

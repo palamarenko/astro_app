@@ -239,6 +239,14 @@ fun ProfileScreen(
                         onSelect = { vm.setLanguage(it) },
                     )
                 }
+
+                // Вибрация
+                ProfileCard(icon = "≈", label = str.profile_field_haptics_label) {
+                    HapticsToggleRow(
+                        enabled  = state.hapticsEnabled,
+                        onToggle = { vm.setHapticsEnabled(it) },
+                    )
+                }
             }
 
             Spacer(Modifier.height(Spacing.xl))
@@ -335,6 +343,56 @@ private fun ProfileCard(
         }
         Spacer(Modifier.height(10.dp))
         content()
+    }
+}
+
+// ── Haptics toggle row ──────────────────────────────────────────────────────
+
+@Composable
+private fun HapticsToggleRow(enabled: Boolean, onToggle: (Boolean) -> Unit) {
+    val haptic = rememberSelectionHaptic()
+    val trackColor by animateColorAsState(
+        if (enabled) AppColors.AccentGold.copy(alpha = 0.55f) else AppColors.Border,
+        tween(220), label = "track"
+    )
+    val knobOffset by animateDpAsState(
+        if (enabled) 20.dp else 2.dp, tween(220), label = "knob"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.s))
+            .clickable {
+                val next = !enabled
+                onToggle(next)
+                if (next) haptic() // отклик при включении, чтобы сразу почувствовать
+            }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text     = str.profile_haptics_toggle,
+            color    = AppColors.TextPrimary,
+            fontSize = 14.sp,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            modifier = Modifier
+                .width(44.dp)
+                .height(26.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(trackColor)
+                .border(1.dp, AppColors.AccentGold.copy(alpha = if (enabled) 0.5f else 0.15f), RoundedCornerShape(13.dp)),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Box(
+                modifier = Modifier
+                    .offset(x = knobOffset)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(if (enabled) AppColors.AccentGold else AppColors.TextMuted),
+            )
+        }
     }
 }
 
