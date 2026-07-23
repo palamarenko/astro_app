@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_code:
-        description: "versionCode (целое число, должно быть больше текущего в Store)"
-        required: true
-        type: number
+        description: "versionCode (оставь пустым — поднимется автоматически на +1 от Play Store)"
+        required: false
+        type: string
       track:
         description: "Play Store track"
         required: true

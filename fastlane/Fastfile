@@ -13,7 +13,37 @@ def ensure_env(key)
   value
 end
 
+# Определяет следующий versionCode.
+#   1. Если VERSION_CODE задан вручную (env) — уважаем его.
+#   2. Иначе берём максимальный versionCode по всем трекам Play Store и +1.
+#   3. Если Play Store недоступен — возвращаем nil (сборка возьмёт дефолт из build.gradle.kts).
+def next_version_code
+  manual = ENV["VERSION_CODE"]
+  return manual.to_i unless manual.nil? || manual.empty?
+
+  tracks = %w[production beta alpha internal]
+  codes = tracks.flat_map do |track|
+    begin
+      google_play_track_version_codes(track: track) || []
+    rescue => e
+      UI.important("Трек '#{track}': не удалось прочитать versionCode (#{e.message})")
+      []
+    end
+  end
+  return nil if codes.empty?
+
+  (codes.max || 0) + 1
+end
+
 def build_aab
+  code = next_version_code
+  if code
+    ENV["VERSION_CODE"] = code.to_s
+    UI.message("versionCode для сборки: #{code} (авто-инкремент)")
+  else
+    UI.important("versionCode не задан и не получен из Play Store — используется значение по умолчанию из build.gradle.kts")
+  end
+
   gradle(
     task: ":composeApp:bundle",
     build_type: "Release",
