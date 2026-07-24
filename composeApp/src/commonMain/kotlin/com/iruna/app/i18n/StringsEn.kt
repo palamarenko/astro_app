@@ -54,6 +54,7 @@ object StringsEn : AppStrings {
     override val tarot_reversed            = "REVERSED"
     override val tarot_share_btn            = "Share reading"
     override val tarot_share_tagline        = "Your Tarot reading"
+    override val horoscope_share_tagline    = "Your horoscope"
     override val daycard_label               = "Card of the Day"
     override val daycard_soon                = "Card of the Day is coming soon"
     override val daycard_subtitle            = "Your card for today"

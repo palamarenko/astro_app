@@ -57,6 +57,7 @@ interface AppStrings {
     val tarot_reversed: String
     val tarot_share_btn: String
     val tarot_share_tagline: String
+    val horoscope_share_tagline: String
     val daycard_label: String
     val daycard_soon: String
     val daycard_subtitle: String

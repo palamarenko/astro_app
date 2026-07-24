@@ -2,6 +2,7 @@
 
 package com.iruna.app.ui.screens.admin
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -177,6 +179,46 @@ private fun DayCardAdminContent(vm: AdminDayCardViewModel) {
                     state.isLoaded -> Text("✓ Loaded", color = Color(0xFF6FCF97), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     state.loadError != null -> Text("✗ ${state.loadError}", color = Color(0xFFEB5757), fontSize = 12.sp)
                 }
+            }
+
+            Spacer(Modifier.height(Spacing.l))
+
+            // ── Generate all cards ────────────────────────────────────────────
+            Text("СГЕНЕРИРОВАТЬ ВСЕ КАРТЫ", color = AppColors.TextDim, fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.8.sp)
+            Spacer(Modifier.height(6.dp))
+            val total         = ALL_TAROT.size
+            val remaining     = state.generatingCardKeys.size
+            val genAllEnabled = !state.isGeneratingAll && !state.isLoading && !state.isSaving
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(Radius.s))
+                    .background(
+                        if (genAllEnabled) Brush.horizontalGradient(listOf(AppColors.AccentGold.copy(alpha = 0.14f), AppColors.AccentGold.copy(alpha = 0.07f)))
+                        else Brush.horizontalGradient(listOf(AppColors.Surface, AppColors.Surface))
+                    )
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = if (genAllEnabled) 0.5f else 0.2f), RoundedCornerShape(Radius.s))
+                    .clickable(enabled = genAllEnabled) { vm.generateAllCards() }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    if (state.isGeneratingAll) "✦ Генерация… (${total - remaining}/$total)" else "✦ Сгенерировать все карты",
+                    color = if (genAllEnabled) AppColors.AccentGold else AppColors.TextDim,
+                    fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                )
+            }
+            AnimatedVisibility(visible = state.isGeneratingAll) {
+                Column {
+                    Spacer(Modifier.height(6.dp))
+                    val progress = if (total > 0) (total - remaining).toFloat() / total else 0f
+                    Box(modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(1.dp)).background(AppColors.Surface)) {
+                        Box(modifier = Modifier.fillMaxWidth(progress).fillMaxHeight().background(Brush.horizontalGradient(listOf(AppColors.AccentGold.copy(alpha = 0.7f), AppColors.AccentGold))))
+                    }
+                }
+            }
+            state.generateError?.let { err ->
+                Spacer(Modifier.height(6.dp))
+                Text("✗ $err", color = Color(0xFFEB5757), fontSize = 11.sp)
             }
         }
 

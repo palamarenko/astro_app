@@ -79,7 +79,8 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = (System.getenv("VERSION_CODE")?.toIntOrNull()) ?: 4
-        versionName = "1.1"
+        // versionName = базовая версия "1.1" + код версии, напр. "1.1.42"
+        versionName = "1.1.$versionCode"
 
         val localProps = Properties().apply {
             rootProject.file("local.properties").takeIf { it.exists() }

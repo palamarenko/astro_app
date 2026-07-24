@@ -14,6 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
@@ -73,6 +76,14 @@ fun HoroscopeScreen(
 
     // ── Тактильный отклик (листание знаков / выбор периода) ───────────────────
     val selectionHaptic = rememberSelectionHaptic()
+
+    // ── Шеринг гороскопа картинкой ────────────────────────────────────────────
+    // Рисуем карточку за пределами экрана, захватываем в ImageBitmap через
+    // graphicsLayer и отдаём системному share-листу (как на экране Таро).
+    val sharer       = rememberImageSharer()
+    val shareLayer   = rememberGraphicsLayer()
+    val shareTagline = str.horoscope_share_tagline
+    var shareForecast by remember { mutableStateOf<HoroscopeResponse?>(null) }
 
     // ── Scroll state ──────────────────────────────────────────────────────────
     val scrollState = rememberScrollState()
@@ -252,7 +263,15 @@ fun HoroscopeScreen(
                         when {
                             loading -> LoadingPlaceholder()
                             forecast != null -> Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                                ForecastCard(forecast = forecast, elementColor = elementColor)
+                                ForecastCard(
+                                    forecast = forecast,
+                                    elementColor = elementColor,
+                                    onShare = {
+                                        selectionHaptic()
+                                        sign?.let { Track.horoscopeView(it.id, state.period.id) }
+                                        shareForecast = forecast
+                                    },
+                                )
                                 ScoreGaugesRow(forecast = forecast)
                             }
 
@@ -380,6 +399,39 @@ fun HoroscopeScreen(
                 reveal = state.dayCardReveal,
                 onDismiss = { vm.dismissDayCard() },
             )
+        }
+
+        // ── Offscreen-поверхность: рендер картинки для шеринга ─────────────────
+        // Рисуется за пределами экрана (offset), захватывается в ImageBitmap
+        // через graphicsLayer, после чего отдаётся системному share-листу.
+        val forecastForShare = shareForecast
+        if (forecastForShare != null && sign != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = 5000.dp)
+                    .width(340.dp)
+                    .drawWithContent {
+                        shareLayer.record { this@drawWithContent.drawContent() }
+                        drawLayer(shareLayer)
+                    }
+            ) {
+                ShareHoroscopeCard(
+                    sign        = sign,
+                    forecast    = forecastForShare,
+                    periodLabel = state.period.localizedLabel(),
+                    tagline     = shareTagline,
+                )
+            }
+            LaunchedEffect(forecastForShare) {
+                // Ждём пару кадров, чтобы контент успел отрисоваться
+                withFrameNanos {}
+                withFrameNanos {}
+                kotlinx.coroutines.delay(280)
+                val bmp = shareLayer.toImageBitmap()
+                sharer.share(bmp, shareTagline)
+                shareForecast = null
+            }
         }
     }
 }
@@ -760,6 +812,7 @@ private fun ForecastCard(
     forecast: HoroscopeResponse,
     elementColor: Color,
     isFuture: Boolean = false,
+    onShare: (() -> Unit)? = null,
 ) {
 
     val borderColor = if (isFuture) AppColors.AccentGold.copy(alpha = 0.35f) else Color(0xFF1D1D29)
@@ -802,7 +855,7 @@ private fun ForecastCard(
             if (forecast.keyword.isNotBlank()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(end = if (onShare != null) 34.dp else 0.dp),
                 ) {
                     Box(
                         Modifier.weight(1f).height(1.dp)
@@ -832,6 +885,41 @@ private fun ForecastCard(
                 color = Color(0xFFD8D0C0),
                 lineHeight = TextUnit(26f, TextUnitType.Sp),
             )
+        }
+
+        // ── Кнопка «поделиться» — правый верхний угол карточки ─────────────────
+        if (onShare != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(AppColors.Card)
+                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.35f), CircleShape)
+                    .clickable { onShare() },
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(15.dp)) {
+                    val w = size.width
+                    val h = size.height
+                    val gold = AppColors.AccentGold
+                    val arrow = Path().apply {
+                        moveTo(w * 0.5f, h * 0.06f)
+                        lineTo(w * 0.5f, h * 0.60f)
+                        moveTo(w * 0.28f, h * 0.28f)
+                        lineTo(w * 0.5f, h * 0.06f)
+                        lineTo(w * 0.72f, h * 0.28f)
+                    }
+                    drawPath(arrow, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    val tray = Path().apply {
+                        moveTo(w * 0.20f, h * 0.48f)
+                        lineTo(w * 0.20f, h * 0.94f)
+                        lineTo(w * 0.80f, h * 0.94f)
+                        lineTo(w * 0.80f, h * 0.48f)
+                    }
+                    drawPath(tray, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                }
+            }
         }
     }
 }
@@ -1609,5 +1697,268 @@ private fun WizardAura(modifier: Modifier = Modifier) {
                 center = Offset(sx, sy),
             )
         }
+    }
+}
+
+// ── Share image card (рендерится offscreen для генерации картинки) ─────────────
+// Собирается по образцу карточки Таро: знак, ключевое слово, текст прогноза,
+// шкалы-оценки и брендинг. Рендерится за пределами экрана и снимается в PNG.
+
+@Composable
+private fun ShareHoroscopeCard(
+    sign: ZodiacSign,
+    forecast: HoroscopeResponse,
+    periodLabel: String,
+    tagline: String,
+) {
+    val elementColor = AppColors.elementColor(sign.element)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF0B0B13),
+                        Color(0xFF13110B),
+                        Color(0xFF0A0A11),
+                    )
+                )
+            )
+            .border(1.dp, AppColors.AccentGold.copy(alpha = 0.30f), RoundedCornerShape(20.dp))
+    ) {
+        // ── Декоративные звёзды ───────────────────────────────────────────────
+        Image(
+            painter = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(66.dp)
+                .offset(x = (-10).dp, y = 12.dp)
+                .graphicsLayer { alpha = 0.16f },
+        )
+        Image(
+            painter = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(15.dp)
+                .offset(x = 18.dp, y = 72.dp)
+                .graphicsLayer { alpha = 0.14f },
+        )
+        Image(
+            painter = painterResource(Res.drawable.ic_star),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .size(22.dp)
+                .offset(x = 16.dp, y = (-26).dp)
+                .graphicsLayer { alpha = 0.10f },
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // ── Заголовок ──────────────────────────────────────────────────────
+            Text(
+                text = tagline,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Light,
+                color = AppColors.TextPrimary,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            // ── Знак: иконка + название + даты ────────────────────────────────
+            Box(
+                modifier = Modifier.size(96.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(elementColor.copy(alpha = 0.14f), Color.Transparent)
+                            )
+                        )
+                        .border(1.dp, AppColors.AccentGold.copy(alpha = 0.30f), CircleShape)
+                )
+                Image(
+                    painter = sign.iconPainter(),
+                    contentDescription = sign.localizedName(),
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.colorMatrix(
+                        ColorMatrix(
+                            floatArrayOf(
+                                1.02f, 0.02f, 0.00f, 0f, 2f,
+                                0.00f, 0.98f, 0.00f, 0f, 0f,
+                                0.00f, 0.00f, 0.88f, 0f, -8f,
+                                0.00f, 0.00f, 0.00f, 1f, 0f,
+                            )
+                        )
+                    ),
+                    modifier = Modifier.size(72.dp),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = sign.localizedName(),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Light,
+                color = AppColors.TextPrimary,
+            )
+            Text(
+                text = "${sign.localizedDates()}  ·  $periodLabel",
+                fontSize = 11.sp,
+                color = AppColors.AccentGold,
+                letterSpacing = TextUnit(0.10f, TextUnitType.Em),
+            )
+
+            Spacer(Modifier.height(18.dp))
+
+            // ── Ключевое слово ─────────────────────────────────────────────────
+            if (forecast.keyword.isNotBlank()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Box(
+                        Modifier.weight(1f).height(1.dp)
+                            .background(AppColors.AccentGold.copy(alpha = 0.18f))
+                    )
+                    Text(
+                        text = "  ${forecast.keyword.uppercase()}  ",
+                        fontSize = 10.sp,
+                        color = AppColors.AccentGold,
+                        letterSpacing = TextUnit(0.28f, TextUnitType.Em),
+                    )
+                    Box(
+                        Modifier.weight(1f).height(1.dp)
+                            .background(AppColors.AccentGold.copy(alpha = 0.18f))
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+            }
+
+            // ── Текст прогноза ─────────────────────────────────────────────────
+            Text(
+                text = forecast.text,
+                fontSize = 13.sp,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.Light,
+                color = AppColors.TextSecondary,
+                textAlign = TextAlign.Center,
+                lineHeight = TextUnit(20f, TextUnitType.Sp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            // ── Шкалы-оценки (статичные, полностью заполненные) ────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                ShareScoreGauge(forecast.love,   str.horoscope_score_love,   "♡", ScoreLove)
+                ShareScoreGauge(forecast.career, str.horoscope_score_career, "✦", ScoreCareer)
+                ShareScoreGauge(forecast.health, str.horoscope_score_health, "◎", ScoreHealth)
+                ShareScoreGauge(forecast.energy, str.horoscope_score_energy, "⊕", ScoreEnergy)
+            }
+
+            Spacer(Modifier.height(22.dp))
+
+            // ── Разделитель ────────────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(AppColors.AccentGold.copy(alpha = 0.18f))
+            )
+            Spacer(Modifier.height(14.dp))
+
+            // ── Брендинг ───────────────────────────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.iruna),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(44.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = "Iruna: Tarot & Horoscope",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = AppColors.TextPrimary,
+                    letterSpacing = TextUnit(0.04f, TextUnitType.Em),
+                )
+            }
+        }
+    }
+}
+
+// ── Статичная шкала-оценка для картинки шеринга ───────────────────────────────
+
+@Composable
+private fun ShareScoreGauge(value: Int, label: String, icon: String, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier.size(62.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokeW = 3.dp.toPx()
+                val inset = strokeW / 2f
+                val r = size.minDimension / 2f - inset
+                val sweep = (value / 100f) * 360f
+                drawCircle(
+                    color = color.copy(alpha = 0.12f),
+                    radius = r,
+                    style = Stroke(width = strokeW),
+                )
+                drawArc(
+                    color = color,
+                    startAngle = -90f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    style = Stroke(width = strokeW, cap = StrokeCap.Round),
+                    alpha = 0.9f,
+                )
+                drawArc(
+                    color = color.copy(alpha = 0.25f),
+                    startAngle = -90f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    style = Stroke(width = strokeW * 3, cap = StrokeCap.Round),
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(icon, fontSize = 8.sp, color = color)
+                Text(
+                    text = value.toString(),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Light,
+                    color = AppColors.TextPrimary,
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            color = AppColors.TextMuted,
+            letterSpacing = TextUnit(0.06f, TextUnitType.Em),
+        )
     }
 }

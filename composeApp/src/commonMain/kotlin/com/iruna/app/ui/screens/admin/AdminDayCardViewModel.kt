@@ -18,6 +18,8 @@ data class AdminDayCardUiState(
     val loadError: String? = null,
     val isLoaded: Boolean = false,
     val generatingCardKeys: Set<String> = emptySet(),
+    val isGeneratingAll: Boolean = false,
+    val generateError: String? = null,
 )
 
 class AdminDayCardViewModel(private val api: AiGenerationService) : ViewModel() {
@@ -66,6 +68,40 @@ class AdminDayCardViewModel(private val api: AiGenerationService) : ViewModel() 
                 )
             } catch (e: Exception) {
                 _state.value = _state.value.copy(generatingCardKeys = _state.value.generatingCardKeys - card.resourceKey)
+            }
+        }
+    }
+
+    /** Сгенерировать прогноз для всех карт на текущем языке (последовательно). */
+    fun generateAllCards() {
+        if (_state.value.isGeneratingAll) return
+        viewModelScope.launch {
+            val lang = _state.value.lang
+            _state.value = _state.value.copy(
+                isGeneratingAll = true,
+                generatingCardKeys = ALL_TAROT.map { it.resourceKey }.toSet(),
+                generateError = null,
+            )
+            try {
+                ALL_TAROT.forEach { card ->
+                    try {
+                        val content = api.generateAdminDayCard(card, lang)
+                        val cards = _state.value.cards.toMutableMap()
+                        cards[card.resourceKey] = (cards[card.resourceKey] ?: DayCardContent()).copy(text = content.text)
+                        _state.value = _state.value.copy(
+                            cards = cards,
+                            generatingCardKeys = _state.value.generatingCardKeys - card.resourceKey,
+                        )
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        _state.value = _state.value.copy(
+                            generatingCardKeys = _state.value.generatingCardKeys - card.resourceKey,
+                            generateError = e.message ?: "Generation error",
+                        )
+                    }
+                }
+            } finally {
+                _state.value = _state.value.copy(isGeneratingAll = false, generatingCardKeys = emptySet())
             }
         }
     }
