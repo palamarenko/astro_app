@@ -55,6 +55,8 @@ object StringsRu : AppStrings {
     override val tarot_share_btn            = "Поделиться раскладом"
     override val tarot_share_tagline        = "Твой расклад Таро"
     override val horoscope_share_tagline    = "Твой гороскоп"
+    override val horoscope_cta_personal_label = "ТВОЙ ЛИЧНЫЙ"
+    override val horoscope_cta_personal_title = "Гороскоп на сегодня"
     override val daycard_label               = "Карта дня"
     override val daycard_soon                = "Карта дня скоро появится"
     override val daycard_subtitle            = "Ваша карта на сегодня"

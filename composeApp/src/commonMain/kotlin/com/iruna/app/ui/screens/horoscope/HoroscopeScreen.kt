@@ -87,7 +87,6 @@ fun HoroscopeScreen(
 
     // ── Scroll state ──────────────────────────────────────────────────────────
     val scrollState = rememberScrollState()
-    val scrollOffsetPx = scrollState.value.toFloat()
 
     // ── Sticky header height (measured at runtime) ────────────────────────────
     var stickyHeaderHeightPx by remember { mutableStateOf(0) }
@@ -96,9 +95,10 @@ fun HoroscopeScreen(
     var diffScroll by remember { mutableStateOf(0f) }
 
     // ── Parallax: hero sinks down as content scrolls up ───────────────────────
+    // Важно: НЕ читаем scrollState.value в scope композиции — иначе весь экран
+    // рекомпозируется на каждом кадре скролла. Сдвиг/прозрачность считаются
+    // внутри graphicsLayer-лямбд (фаза draw). Кэшируем только высоту hero.
     val heroHeightPx = with(density) { 320.dp.toPx() }
-    val heroAlpha = (1f - scrollOffsetPx / (heroHeightPx * 0.70f)).coerceIn(0f, 1f)
-    val heroTranslationY = scrollOffsetPx * 0.50f
 
     // ── Swipe / sign-transition tracking ─────────────────────────────────────
     val signIndex = ALL_SIGNS.indexOfFirst { it.id == sign?.id }
@@ -179,8 +179,9 @@ fun HoroscopeScreen(
                                         )
                     },
                     modifier = Modifier.graphicsLayer {
-                        translationY = heroTranslationY
-                        alpha = heroAlpha
+                        val offset = scrollState.value.toFloat()
+                        translationY = offset * 0.50f
+                        alpha = (1f - offset / (heroHeightPx * 0.70f)).coerceIn(0f, 1f)
                     },
                     label = "heroSign",
                 ) { s ->
@@ -232,12 +233,10 @@ fun HoroscopeScreen(
 
                 Box(
                     modifier = Modifier.padding(horizontal = Spacing.xl)
-                        .alpha(if (diffScroll > scrollState.value) 1f else 0f)
+                        .graphicsLayer { alpha = if (diffScroll > scrollState.value) 1f else 0f }
                         .onGloballyPositioned(onGloballyPositioned = { coords ->
                             if(tabPositions == 0f) tabPositions = coords.positionInWindow().y
                             if(stikiTabPositions != 0f && tabPositions != 0f && diffScroll == 0f) diffScroll = tabPositions - stikiTabPositions
-                            println(" HELLO ${tabPositions} ${stikiTabPositions} ${scrollState.value} ${diffScroll}")
-
                         })
                 ) {
                     PeriodTabsNew(
@@ -249,6 +248,12 @@ fun HoroscopeScreen(
 
                 // ── Content — scrolls normally, no parallax ───────────────────
                 Column(modifier = Modifier.padding(horizontal = Spacing.xl)) {
+                    Spacer(Modifier.height(14.dp))
+
+                    // ── CTA «Твой персональный гороскоп» — над гороскопом, между
+                    // табами день/неделя/месяц и карточкой прогноза ──────────────
+                    HoroscopeCta(onClick = { /* TODO: действие подключим позже */ })
+
                     Spacer(Modifier.height(14.dp))
 
                     AnimatedContent(
@@ -359,7 +364,7 @@ fun HoroscopeScreen(
             Column (Modifier.padding(horizontal = Spacing.xl).fillMaxWidth().onGloballyPositioned {
                 if(stikiTabPositions == 0f) stikiTabPositions = it.positionInWindow().y
                 if(stikiTabPositions != 0f && tabPositions != 0f && diffScroll == 0f) diffScroll =  tabPositions - stikiTabPositions
-            }.alpha(if (diffScroll <= scrollState.value && diffScroll != 0f) 1f else 0f).background(AppColors.Background)) {
+            }.graphicsLayer { alpha = if (diffScroll <= scrollState.value && diffScroll != 0f) 1f else 0f }.background(AppColors.Background)) {
                 PeriodTabsNew(
                     selected = state.period,
                     onSelect = { vm.setPeriod(it) },
@@ -855,7 +860,7 @@ private fun ForecastCard(
             if (forecast.keyword.isNotBlank()) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(end = if (onShare != null) 34.dp else 0.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Box(
                         Modifier.weight(1f).height(1.dp)
@@ -872,6 +877,11 @@ private fun ForecastCard(
                         Modifier.weight(1f).height(1.dp)
                             .background(AppColors.AccentGold.copy(alpha = 0.18f))
                     )
+                    // Кнопка «поделиться» — по центру линии-разделителя
+                    if (onShare != null) {
+                        Spacer(Modifier.width(10.dp))
+                        ForecastShareButton(onShare = onShare)
+                    }
                 }
                 Spacer(Modifier.height(14.dp))
             }
@@ -887,39 +897,49 @@ private fun ForecastCard(
             )
         }
 
-        // ── Кнопка «поделиться» — правый верхний угол карточки ─────────────────
-        if (onShare != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(AppColors.Card)
-                    .border(1.dp, AppColors.AccentGold.copy(alpha = 0.35f), CircleShape)
-                    .clickable { onShare() },
-                contentAlignment = Alignment.Center
-            ) {
-                Canvas(modifier = Modifier.size(15.dp)) {
-                    val w = size.width
-                    val h = size.height
-                    val gold = AppColors.AccentGold
-                    val arrow = Path().apply {
-                        moveTo(w * 0.5f, h * 0.06f)
-                        lineTo(w * 0.5f, h * 0.60f)
-                        moveTo(w * 0.28f, h * 0.28f)
-                        lineTo(w * 0.5f, h * 0.06f)
-                        lineTo(w * 0.72f, h * 0.28f)
-                    }
-                    drawPath(arrow, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
-                    val tray = Path().apply {
-                        moveTo(w * 0.20f, h * 0.48f)
-                        lineTo(w * 0.20f, h * 0.94f)
-                        lineTo(w * 0.80f, h * 0.94f)
-                        lineTo(w * 0.80f, h * 0.48f)
-                    }
-                    drawPath(tray, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
-                }
+        // Фолбэк: если ключевого слова нет (линии-разделителя тоже нет) —
+        // кнопка «поделиться» в правом верхнем углу карточки.
+        if (onShare != null && forecast.keyword.isBlank()) {
+            ForecastShareButton(
+                onShare = onShare,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        }
+    }
+}
+
+// ── Кнопка «поделиться» прогнозом ──────────────────────────────────────────────
+
+@Composable
+private fun ForecastShareButton(onShare: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(AppColors.Card)
+            .border(1.dp, AppColors.AccentGold.copy(alpha = 0.35f), CircleShape)
+            .clickable { onShare() },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(15.dp)) {
+            val w = size.width
+            val h = size.height
+            val gold = AppColors.AccentGold
+            val arrow = Path().apply {
+                moveTo(w * 0.5f, h * 0.06f)
+                lineTo(w * 0.5f, h * 0.60f)
+                moveTo(w * 0.28f, h * 0.28f)
+                lineTo(w * 0.5f, h * 0.06f)
+                lineTo(w * 0.72f, h * 0.28f)
             }
+            drawPath(arrow, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
+            val tray = Path().apply {
+                moveTo(w * 0.20f, h * 0.48f)
+                lineTo(w * 0.20f, h * 0.94f)
+                lineTo(w * 0.80f, h * 0.94f)
+                lineTo(w * 0.80f, h * 0.48f)
+            }
+            drawPath(tray, gold, style = Stroke(width = 1.9f * density, cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
     }
 }

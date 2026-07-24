@@ -55,6 +55,8 @@ object StringsEn : AppStrings {
     override val tarot_share_btn            = "Share reading"
     override val tarot_share_tagline        = "Your Tarot reading"
     override val horoscope_share_tagline    = "Your horoscope"
+    override val horoscope_cta_personal_label = "YOUR PERSONAL"
+    override val horoscope_cta_personal_title = "Horoscope for today"
     override val daycard_label               = "Card of the Day"
     override val daycard_soon                = "Card of the Day is coming soon"
     override val daycard_subtitle            = "Your card for today"

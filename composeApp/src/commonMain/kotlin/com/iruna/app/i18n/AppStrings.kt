@@ -58,6 +58,9 @@ interface AppStrings {
     val tarot_share_btn: String
     val tarot_share_tagline: String
     val horoscope_share_tagline: String
+    // CTA «Твой персональный гороскоп» — под карточкой прогноза
+    val horoscope_cta_personal_label: String
+    val horoscope_cta_personal_title: String
     val daycard_label: String
     val daycard_soon: String
     val daycard_subtitle: String

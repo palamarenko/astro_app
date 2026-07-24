@@ -55,6 +55,8 @@ object StringsAr : AppStrings {
     override val tarot_share_btn            = "مشاركة القراءة"
     override val tarot_share_tagline        = "قراءة التاروت الخاصة بك"
     override val horoscope_share_tagline    = "برجك"
+    override val horoscope_cta_personal_label = "برجك الشخصي"
+    override val horoscope_cta_personal_title = "توقعات اليوم"
     override val daycard_label               = "بطاقة اليوم"
     override val daycard_soon                = "بطاقة اليوم قادمة قريبًا"
     override val daycard_subtitle            = "بطاقتك لهذا اليوم"
